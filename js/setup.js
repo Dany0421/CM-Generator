@@ -1,0 +1,575 @@
+const SetupModule = (() => {
+  let _container = null;
+  let _saveTimer = null;
+  let _lastDirection = '';
+  let _mode = 'team'; // 'team' | 'player'
+
+  const ERA_OPTIONS = [
+    'Rebuild Era',
+    'Golden Gen',
+    'Fallen Giant',
+    'Underdog Run',
+    'Dynasty Mode',
+    'Mid-Table Crisis',
+    'Promotion Push',
+    'Survival Mode',
+  ];
+
+  const DIFFICULTY_OPTIONS = ['Legendary', 'Ultimate', 'Custom'];
+
+  function init(container) {
+    _container = container;
+    render();
+  }
+
+  function render() {
+    _container.replaceChildren();
+
+    const saved = Storage.get(Storage.KEYS.SETUP);
+    // Sync _mode from saved data
+    if (saved?.mode) _mode = saved.mode;
+
+    const headerFrag = document.createRange().createContextualFragment(`
+      <div class="module-header">
+        <div class="module-title-group">
+          <span class="module-label">Module 1</span>
+          <h1 class="module-title">Save Setup</h1>
+        </div>
+      </div>
+    `);
+    _container.appendChild(headerFrag);
+
+    _container.appendChild(_buildModeToggle());
+    _container.appendChild(_buildGenerateCard());
+
+    if (saved?.save_concept || saved?.player?.name) {
+      _container.appendChild(_buildConceptCard(saved));
+    }
+
+    _container.appendChild(_buildFormCard(saved));
+
+    lucide.createIcons();
+  }
+
+  function _buildModeToggle() {
+    const wrap = document.createElement('div');
+    wrap.className = 'setup-mode-toggle';
+
+    const teamBtn = document.createElement('button');
+    teamBtn.className = 'setup-mode-btn' + (_mode === 'team' ? ' active' : '');
+    teamBtn.textContent = 'Team Mode';
+    teamBtn.addEventListener('click', () => {
+      if (_mode === 'team') return;
+      _mode = 'team';
+      _saveMode();
+      render();
+    });
+
+    const playerBtn = document.createElement('button');
+    playerBtn.className = 'setup-mode-btn' + (_mode === 'player' ? ' active' : '');
+    playerBtn.textContent = 'Player Mode';
+    playerBtn.addEventListener('click', () => {
+      if (_mode === 'player') return;
+      _mode = 'player';
+      _saveMode();
+      render();
+    });
+
+    wrap.appendChild(teamBtn);
+    wrap.appendChild(playerBtn);
+    return wrap;
+  }
+
+  function _saveMode() {
+    const existing = Storage.get(Storage.KEYS.SETUP) || {};
+    existing.mode = _mode;
+    Storage.set(Storage.KEYS.SETUP, existing);
+  }
+
+  function _buildGenerateCard() {
+    const isPlayer = _mode === 'player';
+    const card = document.createElement('div');
+    card.className = 'card setup-generate-card';
+
+    const title = document.createElement('p');
+    title.className = 'setup-generate-title';
+    title.textContent = isPlayer ? 'Generate Your Player Concept' : 'Generate Your Save';
+    card.appendChild(title);
+
+    const sub = document.createElement('p');
+    sub.className = 'setup-generate-sub';
+    sub.textContent = isPlayer
+      ? 'Describe a direction or say "surprise me" — the AI creates a player, their story, and starting club.'
+      : 'Give a direction or say "surprise me" — the AI picks your manager, club, and builds the whole concept.';
+    card.appendChild(sub);
+
+    const textarea = document.createElement('textarea');
+    textarea.className = 'setup-direction-input';
+    textarea.id = 'setup-direction';
+    textarea.placeholder = isPlayer
+      ? 'e.g. "Mbappé rewind at Monaco 2016", "Greek wonderkid underdog", "surprise me"'
+      : 'e.g. "lower league England", "South American fallen giant", "surprise me"';
+    textarea.rows = 2;
+    if (_lastDirection) textarea.value = _lastDirection;
+    card.appendChild(textarea);
+
+    const btn = document.createElement('button');
+    btn.className = 'btn-primary setup-generate-btn';
+    btn.id = 'setup-generate-btn';
+    const i = document.createElement('i');
+    i.setAttribute('data-lucide', 'sparkles');
+    btn.appendChild(i);
+    btn.appendChild(document.createTextNode(isPlayer ? ' Generate Player Concept' : ' Generate Save Concept'));
+    btn.addEventListener('click', _generateConcept);
+    card.appendChild(btn);
+
+    return card;
+  }
+
+  function _buildConceptCard(data) {
+    const isPlayer = _mode === 'player';
+    const card = document.createElement('div');
+    card.className = 'card setup-concept-card';
+
+    const tagline = document.createElement('p');
+    tagline.className = 'setup-concept-tagline';
+    tagline.textContent = data.save_concept || data.player?.concept_hook || '';
+    card.appendChild(tagline);
+
+    const meta = document.createElement('div');
+    meta.className = 'setup-concept-meta';
+
+    if (isPlayer && data.player) {
+      const p = data.player;
+      [
+        p.name ? `${p.name}, ${p.age}` : null,
+        p.position,
+        p.nationality,
+        p.concept_type,
+        data.club,
+        data.league,
+        data.difficulty,
+      ].filter(Boolean).forEach(text => {
+        const chip = document.createElement('span');
+        chip.className = 'setup-concept-chip';
+        chip.textContent = text;
+        meta.appendChild(chip);
+      });
+    } else {
+      [data.manager, data.club, data.league, `${data.difficulty} · ${data.era}`]
+        .filter(Boolean)
+        .forEach(text => {
+          const chip = document.createElement('span');
+          chip.className = 'setup-concept-chip';
+          chip.textContent = text;
+          meta.appendChild(chip);
+        });
+    }
+
+    card.appendChild(meta);
+
+    const rerollBtn = document.createElement('button');
+    rerollBtn.className = 'btn-secondary setup-reroll-btn';
+    rerollBtn.id = 'setup-reroll-btn';
+    const ri = document.createElement('i');
+    ri.setAttribute('data-lucide', 'shuffle');
+    rerollBtn.appendChild(ri);
+    rerollBtn.appendChild(document.createTextNode(' Reroll'));
+    rerollBtn.addEventListener('click', _generateConcept);
+    card.appendChild(rerollBtn);
+
+    return card;
+  }
+
+  function _buildFormCard(saved) {
+    const isPlayer = _mode === 'player';
+    const card = document.createElement('div');
+    card.className = 'card';
+
+    // Manager + Season row
+    const topRow = document.createElement('div');
+    topRow.className = 'form-row two-col';
+
+    const managerGroup = document.createElement('div');
+    managerGroup.className = 'form-group';
+    const managerLabel = document.createElement('label');
+    managerLabel.className = 'form-label';
+    managerLabel.textContent = 'Manager Name';
+    const managerInput = document.createElement('input');
+    managerInput.className = 'form-input';
+    managerInput.id = 'setup-manager';
+    managerInput.type = 'text';
+    managerInput.placeholder = 'e.g. Nuno Espírito Santo';
+    managerInput.autocomplete = 'off';
+    managerInput.value = saved?.manager || '';
+    managerGroup.appendChild(managerLabel);
+    managerGroup.appendChild(managerInput);
+    topRow.appendChild(managerGroup);
+
+    const seasonGroup = document.createElement('div');
+    seasonGroup.className = 'form-group';
+    const seasonLabel = document.createElement('label');
+    seasonLabel.className = 'form-label';
+    seasonLabel.textContent = 'Season';
+    const seasonInput = document.createElement('input');
+    seasonInput.className = 'form-input';
+    seasonInput.id = 'setup-season';
+    seasonInput.type = 'number';
+    seasonInput.min = '1';
+    seasonInput.max = '50';
+    seasonInput.placeholder = '1';
+    seasonInput.value = saved?.season || 1;
+    seasonGroup.appendChild(seasonLabel);
+    seasonGroup.appendChild(seasonInput);
+    topRow.appendChild(seasonGroup);
+    card.appendChild(topRow);
+
+    // Player section (player mode only)
+    if (isPlayer) {
+      const playerSection = document.createElement('div');
+      playerSection.className = 'setup-player-section';
+
+      const sectionLabel = document.createElement('p');
+      sectionLabel.className = 'setup-player-section-label';
+      sectionLabel.textContent = 'Player';
+      playerSection.appendChild(sectionLabel);
+
+      const nameAgeRow = document.createElement('div');
+      nameAgeRow.className = 'form-row two-col';
+
+      const pNameGroup = document.createElement('div');
+      pNameGroup.className = 'form-group';
+      const pNameLabel = document.createElement('label');
+      pNameLabel.className = 'form-label';
+      pNameLabel.textContent = 'Player Name';
+      const pNameInput = document.createElement('input');
+      pNameInput.className = 'form-input';
+      pNameInput.id = 'setup-player-name';
+      pNameInput.type = 'text';
+      pNameInput.placeholder = 'e.g. Kylian Mbappé';
+      pNameInput.autocomplete = 'off';
+      pNameInput.value = saved?.player?.name || '';
+      pNameGroup.appendChild(pNameLabel);
+      pNameGroup.appendChild(pNameInput);
+      nameAgeRow.appendChild(pNameGroup);
+
+      const pAgeGroup = document.createElement('div');
+      pAgeGroup.className = 'form-group';
+      const pAgeLabel = document.createElement('label');
+      pAgeLabel.className = 'form-label';
+      pAgeLabel.textContent = 'Starting Age';
+      const pAgeInput = document.createElement('input');
+      pAgeInput.className = 'form-input';
+      pAgeInput.id = 'setup-player-age';
+      pAgeInput.type = 'number';
+      pAgeInput.min = '15';
+      pAgeInput.max = '40';
+      pAgeInput.placeholder = '17';
+      pAgeInput.value = saved?.player?.age || '';
+      pAgeGroup.appendChild(pAgeLabel);
+      pAgeGroup.appendChild(pAgeInput);
+      nameAgeRow.appendChild(pAgeGroup);
+      playerSection.appendChild(nameAgeRow);
+
+      const posNatRow = document.createElement('div');
+      posNatRow.className = 'form-row two-col';
+
+      const pPosGroup = document.createElement('div');
+      pPosGroup.className = 'form-group';
+      const pPosLabel = document.createElement('label');
+      pPosLabel.className = 'form-label';
+      pPosLabel.textContent = 'Position';
+      const pPosInput = document.createElement('input');
+      pPosInput.className = 'form-input';
+      pPosInput.id = 'setup-player-position';
+      pPosInput.type = 'text';
+      pPosInput.placeholder = 'e.g. ST, CAM, CB';
+      pPosInput.value = saved?.player?.position || '';
+      pPosGroup.appendChild(pPosLabel);
+      pPosGroup.appendChild(pPosInput);
+      posNatRow.appendChild(pPosGroup);
+
+      const pNatGroup = document.createElement('div');
+      pNatGroup.className = 'form-group';
+      const pNatLabel = document.createElement('label');
+      pNatLabel.className = 'form-label';
+      pNatLabel.textContent = 'Nationality';
+      const pNatInput = document.createElement('input');
+      pNatInput.className = 'form-input';
+      pNatInput.id = 'setup-player-nationality';
+      pNatInput.type = 'text';
+      pNatInput.placeholder = 'e.g. French';
+      pNatInput.value = saved?.player?.nationality || '';
+      pNatGroup.appendChild(pNatLabel);
+      pNatGroup.appendChild(pNatInput);
+      posNatRow.appendChild(pNatGroup);
+      playerSection.appendChild(posNatRow);
+
+      card.appendChild(playerSection);
+    }
+
+    // Club group
+    const clubGroup = document.createElement('div');
+    clubGroup.className = 'form-group';
+    const clubLabel = document.createElement('label');
+    clubLabel.className = 'form-label';
+    clubLabel.textContent = 'Club Name';
+    const clubInput = document.createElement('input');
+    clubInput.className = 'form-input';
+    clubInput.id = 'setup-club';
+    clubInput.type = 'text';
+    clubInput.placeholder = 'e.g. Vasco da Gama';
+    clubInput.autocomplete = 'off';
+    clubInput.value = saved?.club || '';
+    clubGroup.appendChild(clubLabel);
+    clubGroup.appendChild(clubInput);
+    card.appendChild(clubGroup);
+
+    // League + Division row
+    const leagueRow = document.createElement('div');
+    leagueRow.className = 'form-row two-col';
+
+    const leagueGroup = document.createElement('div');
+    leagueGroup.className = 'form-group';
+    const leagueLabel = document.createElement('label');
+    leagueLabel.className = 'form-label';
+    leagueLabel.textContent = 'League';
+    const leagueInput = document.createElement('input');
+    leagueInput.className = 'form-input';
+    leagueInput.id = 'setup-league';
+    leagueInput.type = 'text';
+    leagueInput.placeholder = 'e.g. Brasileirão Série A';
+    leagueInput.autocomplete = 'off';
+    leagueInput.value = saved?.league || '';
+    leagueGroup.appendChild(leagueLabel);
+    leagueGroup.appendChild(leagueInput);
+    leagueRow.appendChild(leagueGroup);
+
+    const divGroup = document.createElement('div');
+    divGroup.className = 'form-group';
+    const divLabel = document.createElement('label');
+    divLabel.className = 'form-label';
+    divLabel.textContent = 'Division / Tier';
+    const divInput = document.createElement('input');
+    divInput.className = 'form-input';
+    divInput.id = 'setup-division';
+    divInput.type = 'text';
+    divInput.placeholder = 'e.g. 1st Division';
+    divInput.autocomplete = 'off';
+    divInput.value = saved?.division || '';
+    divGroup.appendChild(divLabel);
+    divGroup.appendChild(divInput);
+    leagueRow.appendChild(divGroup);
+    card.appendChild(leagueRow);
+
+    // Difficulty + Era row
+    const diffEraRow = document.createElement('div');
+    diffEraRow.className = 'form-row two-col';
+
+    const diffGroup = document.createElement('div');
+    diffGroup.className = 'form-group';
+    const diffLabel = document.createElement('label');
+    diffLabel.className = 'form-label';
+    diffLabel.textContent = 'Difficulty';
+    const diffSel = document.createElement('select');
+    diffSel.className = 'form-select';
+    diffSel.id = 'setup-difficulty';
+    DIFFICULTY_OPTIONS.forEach(opt => {
+      const o = document.createElement('option');
+      o.value = opt;
+      o.textContent = opt;
+      diffSel.appendChild(o);
+    });
+    diffSel.value = saved?.difficulty || 'Legendary';
+    diffGroup.appendChild(diffLabel);
+    diffGroup.appendChild(diffSel);
+    diffEraRow.appendChild(diffGroup);
+
+    if (!isPlayer) {
+      const eraGroup = document.createElement('div');
+      eraGroup.className = 'form-group';
+      const eraLabel = document.createElement('label');
+      eraLabel.className = 'form-label';
+      eraLabel.textContent = 'Save Era';
+      const eraSel = document.createElement('select');
+      eraSel.className = 'form-select';
+      eraSel.id = 'setup-era';
+      ERA_OPTIONS.forEach(opt => {
+        const o = document.createElement('option');
+        o.value = opt;
+        o.textContent = opt;
+        eraSel.appendChild(o);
+      });
+      eraSel.value = saved?.era || 'Rebuild Era';
+      eraGroup.appendChild(eraLabel);
+      eraGroup.appendChild(eraSel);
+      diffEraRow.appendChild(eraGroup);
+    }
+
+    card.appendChild(diffEraRow);
+
+    // Save row
+    const saveRow = document.createElement('div');
+    saveRow.className = 'setup-save-row';
+    const indicator = document.createElement('span');
+    indicator.className = 'setup-saved-indicator';
+    indicator.id = 'setup-saved-indicator';
+    const checkIcon = document.createElement('i');
+    checkIcon.setAttribute('data-lucide', 'check');
+    indicator.appendChild(checkIcon);
+    indicator.appendChild(document.createTextNode(' Saved'));
+    saveRow.appendChild(indicator);
+    const saveBtn = document.createElement('button');
+    saveBtn.className = 'btn-primary';
+    saveBtn.id = 'setup-save-btn';
+    const saveIcon = document.createElement('i');
+    saveIcon.setAttribute('data-lucide', 'save');
+    saveBtn.appendChild(saveIcon);
+    saveBtn.appendChild(document.createTextNode(' Save Setup'));
+    saveBtn.addEventListener('click', save);
+    saveRow.appendChild(saveBtn);
+    card.appendChild(saveRow);
+
+    card.querySelectorAll('.form-input, .form-select').forEach(el => {
+      el.addEventListener('change', () => scheduleSave());
+    });
+
+    return card;
+  }
+
+  function scheduleSave() {
+    clearTimeout(_saveTimer);
+    _saveTimer = setTimeout(save, 800);
+  }
+
+  function save() {
+    clearTimeout(_saveTimer);
+    const existing = Storage.get(Storage.KEYS.SETUP) || {};
+    const isPlayer = _mode === 'player';
+
+    const data = {
+      mode:         _mode,
+      manager:      _container.querySelector('#setup-manager')?.value.trim() || '',
+      club:         _container.querySelector('#setup-club')?.value.trim() || '',
+      league:       _container.querySelector('#setup-league')?.value.trim() || '',
+      division:     _container.querySelector('#setup-division')?.value.trim() || '',
+      season:       parseInt(_container.querySelector('#setup-season')?.value) || 1,
+      difficulty:   _container.querySelector('#setup-difficulty')?.value || 'Legendary',
+      save_concept: existing.save_concept || '',
+    };
+
+    if (!isPlayer) {
+      data.era = _container.querySelector('#setup-era')?.value || 'Rebuild Era';
+    }
+
+    if (isPlayer) {
+      const prevPlayer = existing.player || {};
+      data.player = {
+        ...prevPlayer,
+        name:        _container.querySelector('#setup-player-name')?.value.trim() || prevPlayer.name || '',
+        age:         parseInt(_container.querySelector('#setup-player-age')?.value) || prevPlayer.age || 0,
+        position:    _container.querySelector('#setup-player-position')?.value.trim() || prevPlayer.position || '',
+        nationality: _container.querySelector('#setup-player-nationality')?.value.trim() || prevPlayer.nationality || '',
+      };
+    }
+
+    Storage.set(Storage.KEYS.SETUP, data);
+    _flashSaved();
+  }
+
+  function _flashSaved() {
+    const indicator = _container.querySelector('#setup-saved-indicator');
+    if (!indicator) return;
+    indicator.classList.add('visible');
+    setTimeout(() => indicator.classList.remove('visible'), 2000);
+  }
+
+  async function _generateConcept() {
+    const directionInput = _container.querySelector('#setup-direction');
+    const direction = directionInput?.value.trim() || '';
+    _lastDirection = direction;
+
+    const generateBtn = _container.querySelector('#setup-generate-btn');
+    const rerollBtn   = _container.querySelector('#setup-reroll-btn');
+
+    if (generateBtn) {
+      generateBtn.disabled = true;
+      generateBtn.replaceChildren();
+      const spinner = document.createElement('div');
+      spinner.className = 'spinner';
+      spinner.style.cssText = 'width:14px;height:14px;display:inline-block;margin-right:8px;flex-shrink:0;';
+      generateBtn.appendChild(spinner);
+      generateBtn.appendChild(document.createTextNode('Generating…'));
+    }
+    if (rerollBtn) rerollBtn.disabled = true;
+
+    try {
+      const existing = Storage.get(Storage.KEYS.SETUP) || {};
+      let newData;
+
+      if (_mode === 'player') {
+        const concept = await API.generatePlayerConcept(direction);
+        newData = {
+          mode:         'player',
+          manager:      concept.manager     || '',
+          club:         concept.club        || '',
+          league:       concept.league      || '',
+          division:     concept.division    || '',
+          season:       existing.season     || 1,
+          difficulty:   DIFFICULTY_OPTIONS.includes(concept.difficulty) ? concept.difficulty : 'Legendary',
+          save_concept: concept.concept_hook || '',
+          player: {
+            ...(existing.player || {}),
+            name:        concept.player_name        || '',
+            age:         concept.player_age          || 0,
+            position:    concept.player_position     || '',
+            nationality: concept.player_nationality  || '',
+            ovr:         concept.player_ovr          || 0,
+            potential:   concept.player_potential    || 0,
+            weakFoot:    concept.player_weak_foot    || 2,
+            skillMoves:  concept.player_skill_moves  || 2,
+            concept_type: concept.concept_type       || '',
+            concept_hook: concept.concept_hook       || '',
+          },
+        };
+      } else {
+        const concept = await API.generateSaveConcept(direction);
+        newData = {
+          mode:         'team',
+          manager:      concept.manager      || '',
+          club:         concept.club         || '',
+          league:       concept.league       || '',
+          division:     concept.division     || '',
+          season:       existing.season      || 1,
+          difficulty:   DIFFICULTY_OPTIONS.includes(concept.difficulty) ? concept.difficulty : 'Legendary',
+          era:          ERA_OPTIONS.includes(concept.era) ? concept.era : 'Rebuild Era',
+          save_concept: concept.save_concept || '',
+        };
+      }
+
+      Storage.set(Storage.KEYS.SETUP, newData);
+      render();
+
+      const dirInput = _container.querySelector('#setup-direction');
+      if (dirInput) dirInput.value = _lastDirection;
+
+      App.showToast(_mode === 'player' ? 'Player concept generated' : 'Save concept generated');
+
+    } catch (err) {
+      App.showError(err.message);
+
+      if (generateBtn) {
+        generateBtn.disabled = false;
+        generateBtn.replaceChildren();
+        const i = document.createElement('i');
+        i.setAttribute('data-lucide', 'sparkles');
+        generateBtn.appendChild(i);
+        generateBtn.appendChild(document.createTextNode(_mode === 'player' ? ' Generate Player Concept' : ' Generate Save Concept'));
+        lucide.createIcons();
+      }
+      if (rerollBtn) rerollBtn.disabled = false;
+    }
+  }
+
+  return { init, render };
+})();

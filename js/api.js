@@ -233,13 +233,28 @@ Return ONLY the JSON object. No preamble, no explanation, no markdown fences.`;
 
     const parts = [];
 
+    const isRewind = (player.concept_type || '').toLowerCase() === 'rewind';
+
     parts.push(
       'PLAYER CAREER SAVE\n' +
       `Player: ${player.name || '—'} | Age: ${currentAge || '—'} | ${player.position || '—'} | ${player.nationality || '—'}\n` +
       `Manager: ${setup.manager || '—'}\n` +
       `Current Club: ${setup.club || '—'} | ${setup.league || '—'} | ${setup.division || '—'}\n` +
-      `Season: ${setup.season || 1} | Difficulty: ${setup.difficulty || '—'}`
+      `Season: ${setup.season || 1} | Difficulty: ${setup.difficulty || '—'}\n` +
+      `Concept: ${player.concept_type || '—'}${player.concept_hook ? ` — ${player.concept_hook}` : ''}`
     );
+
+    if (isRewind) {
+      parts.push(
+        `REWIND SAVE — CRITICAL CONTEXT:\n` +
+        `This is a Rewind of ${player.name || 'this player'}'s career. You have knowledge of their real-world career — use it.\n` +
+        `The real career is NARRATIVE SHADOW, not a roadmap:\n` +
+        `- Reference what defined them in real life (trophies, failures, injuries, clubs, key moments) as the weight this save is diverging FROM\n` +
+        `- The save is going somewhere DIFFERENT from real history — that is the entire point\n` +
+        `- Never suggest or imply the player should follow their real career path\n` +
+        `- The concept hook above names the specific divergence angle — build everything around that`
+      );
+    }
 
     if (pastSeasons.length > 0) {
       const lines = pastSeasons.map(s => {
@@ -513,7 +528,7 @@ Return ONLY valid JSON (no markdown fences): { "summary": "string" }`;
 Design player career mode save concepts for a serious player with hundreds of hours in career mode. The user manages a club but the narrative revolves around ONE player's career arc.
 
 CONCEPT TYPES — pick one or go unexpected:
-- REWIND: Real player at an earlier age (e.g. Benzema at 17 in Lyon). You know the real career — now subvert it with different choices.
+- REWIND: A real licensed FC 25 player at 17-18 years old, starting from their actual early club. The goal is NOT to recreate their real career — it is to DIVERGE from it. Their real career is the shadow hanging over this save, not the roadmap. See REWIND RULES below.
 - UNDERDOG: Low-rated player with untapped potential. Live Editor sets a high potential ceiling — they just need the right environment.
 - PRODIGY PRESSURE: Highly-rated wonderkid. The hype is real, the collapse risk is real.
 - SHADOW: A player living in the shadow of a more famous teammate (same position, same club). The whole save is about overtaking them.
@@ -521,8 +536,28 @@ CONCEPT TYPES — pick one or go unexpected:
 - POSITION CONVERSION: A player moved to a new role — Live Editor reshapes the attributes.
 - WILD CARD: Something completely unexpected. Surprise the user.
 
+REWIND RULES — READ THIS BEFORE GENERATING A REWIND:
+A Rewind is NOT "play as Messi and do what Messi did." A Rewind is about picking a real player, starting at their first real club at 17-18, and doing something DIFFERENT from what their real career became.
+
+The real career is the narrative context — the weight of what ACTUALLY happened (the trophies not won, the injury that defined them, the club they left too early, the choice that changed everything) — but in this save, none of that is predetermined. The concept_hook must name the specific divergence: WHAT are we rewriting, and WHY is that interesting?
+
+GOOD Rewind (interesting divergence angle):
+→ Robben at 17 in Groningen: the injury curse hasn't started yet. Can you build the career without it?
+→ Xabi Alonso at Real Sociedad at 17: what if he never went to Liverpool and built everything in Spain instead?
+→ Cavani at Danubio at 18: what if he never took the path to Europe's giants and stayed to build a legacy in South America first?
+→ Van Persie at Feyenoord at 18: a generational striker who spent his best years on a broken team — what does the alternative look like?
+
+BAD Rewind (just recreates real career, no divergence):
+→ Messi at La Masia at 17 — doing exactly what Messi did (boring, no stakes)
+→ Ronaldo at Sporting at 17 — replicating the Man Utd path (the answer is already known)
+→ Any player where the "hook" is just "become as good as he became" — that is not a rewind, that is a repeat
+
+The concept_hook for a Rewind must name the divergence point or the tension with the real career. Examples:
+→ "Robben starts clean — no injuries, no Bayern, no PSV. What does the real career look like without the curse?"
+→ "Van Persie never wastes his 20s at Arsenal — build the legacy he never got."
+→ "What if Xabi Alonso never left Spain?"
+
 QUALITY RULES:
-- If doing a REWIND of a real player: use their ACTUAL early-career stats and club (e.g. Benzema at 17 was at Lyon, 65 OVR, not PSG). Research accuracy matters.
 - concept_hook = ONE sentence, movie logline. About THIS player at THIS moment. BANNED: "prove the doubters wrong", "fulfil potential", "rise from the ashes", "journey".
 - Do not pick obvious or safe. A Mbappé rewind at PSG is boring. Mbappé at Monaco at 16 before everything is interesting.
 - manager = realistic coaching name for that club (NOT a player name). Culturally plausible for the club's country.
@@ -597,7 +632,7 @@ RULES:
 - club_situation = the club's attitude toward this player. Is he the project, the backup, the wildcard? Financial or sporting context that directly affects him. 2-4 sentences.
 - season_framing = what THIS season means for the player's career. Name the stakes. What decision or outcome defines it? 2-4 sentences.
 - narrative_events = two ticking time bombs specific to THIS player. Moments that will force a choice before the season ends. Not background flavour. Specific, datable, consequential.
-- If this is a REWIND save: reference the real career with purpose. The shadow of what COULD have been should feel present.
+- If this is a REWIND save: the real career is narrative shadow, not a roadmap. Reference what actually happened in real life (what defined him, what he failed to achieve, what hurt him) as the weight this save is DIVERGING from — NOT as a path to follow. The player_backstory should name the real career's defining tension. The season_framing should make clear this save is going somewhere different. Never write as if the player will simply replicate real history.
 - Season 1: raw, uncertain, proving ground. Season 3+: a player mid-story with history behind him.
 - Never use: "prove the doubters wrong", "fulfil potential", "journey", "turning point", or any phrase that could apply to any player.
 

@@ -95,7 +95,8 @@ const HubModule = (() => {
   }
 
   function _isPlayerMode() {
-    return Storage.get(Storage.KEYS.SETUP)?.mode === 'player';
+    const mode = Storage.get(Storage.KEYS.SETUP)?.mode;
+    return mode === 'player' || mode === 'fiction';
   }
 
   function _buildTabs() {
@@ -844,7 +845,7 @@ const HubModule = (() => {
       });
 
       const mechanics  = ruleset.special_mechanics || {};
-      const isPlayerMode = Storage.get(Storage.KEYS.SETUP)?.mode === 'player';
+      const isPlayerMode = _isPlayerMode();
       const MECH_KEYS  = isPlayerMode
         ? ['chaos_wheel']
         : ['chaos_wheel', 'protected_player', 'academy_tracker'];
@@ -2049,7 +2050,7 @@ const HubModule = (() => {
 
     el.appendChild(header);
 
-    const isPlayer = setup?.mode === 'player';
+    const isPlayer = setup?.mode === 'player' || setup?.mode === 'fiction';
 
     // Club + League Position row
     const metaRow = document.createElement('div');

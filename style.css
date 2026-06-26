@@ -2402,16 +2402,18 @@ a { color: var(--accent); text-decoration: none; }
 /* ── Player Mode: Setup Mode Toggle ─────────────────────────────────────── */
 .setup-mode-toggle {
   display: flex;
-  gap: 6px;
+  gap: 4px;
   padding: 4px;
   background: var(--bg-elevated);
   border: 1px solid var(--border);
   border-radius: 12px;
-  width: fit-content;
+  width: 100%;
   margin-bottom: 16px;
+  box-sizing: border-box;
 }
 .setup-mode-btn {
-  padding: 6px 18px;
+  flex: 1;
+  padding: 6px 8px;
   border-radius: 9px;
   border: none;
   background: none;
@@ -2642,4 +2644,135 @@ a { color: var(--accent); text-decoration: none; }
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+}
+
+/* ── Fiction Module ─────────────────────────────── */
+
+.fiction-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 40px 24px;
+  text-align: center;
+  color: var(--text-muted);
+}
+.fiction-empty svg { width: 36px; height: 36px; opacity: .5; }
+
+.fiction-identity-card {}
+
+.fiction-name-row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.fiction-player-name {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 0;
+  line-height: 1.2;
+}
+.fiction-player-nat {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.fiction-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.fiction-physical-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.fiction-physical-item {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.fiction-physical-label {
+  font-size: 0.625rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+.fiction-physical-value {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.fiction-stat-group {
+  margin-bottom: 16px;
+}
+.fiction-stat-group:last-child { margin-bottom: 0; }
+
+.fiction-stat-group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.fiction-stat-group-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+}
+.fiction-stat-group-avg {
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.fiction-stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 16px;
+}
+.fiction-stat-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 3px 0;
+}
+.fiction-stat-name {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+.fiction-stat-value {
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.fiction-playstyles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.fiction-ps-chip {
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  padding: 4px 12px;
+  color: var(--text-secondary);
+}
+.fiction-ps-chip--plus {
+  background: rgba(255, 165, 0, 0.12);
+  border-color: rgba(255, 165, 0, 0.4);
+  color: #f0b429;
 }

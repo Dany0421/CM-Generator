@@ -219,7 +219,8 @@ Return ONLY the JSON object. No preamble, no explanation, no markdown fences.`;
   }
 
   function _isPlayerMode() {
-    return Storage.get(Storage.KEYS.SETUP)?.mode === 'player';
+    const mode = Storage.get(Storage.KEYS.SETUP)?.mode;
+    return mode === 'player' || mode === 'fiction';
   }
 
   function buildPlayerContext() {
@@ -233,10 +234,11 @@ Return ONLY the JSON object. No preamble, no explanation, no markdown fences.`;
 
     const parts = [];
 
-    const isRewind = (player.concept_type || '').toLowerCase() === 'rewind';
+    const isFiction = setup.mode === 'fiction';
+    const isRewind  = !isFiction && (player.concept_type || '').toLowerCase() === 'rewind';
 
     parts.push(
-      'PLAYER CAREER SAVE\n' +
+      (isFiction ? 'FICTION PLAYER CAREER SAVE\n' : 'PLAYER CAREER SAVE\n') +
       `Player: ${player.name || '—'} | Age: ${currentAge || '—'} | ${player.position || '—'} | ${player.nationality || '—'}\n` +
       `Manager: ${setup.manager || '—'}\n` +
       `Current Club: ${setup.club || '—'} | ${setup.league || '—'} | ${setup.division || '—'}\n` +
@@ -254,6 +256,35 @@ Return ONLY the JSON object. No preamble, no explanation, no markdown fences.`;
         `- Never suggest or imply the player should follow their real career path\n` +
         `- The concept hook above names the specific divergence angle — build everything around that`
       );
+    }
+
+    if (isFiction) {
+      const fp = Storage.get(Storage.KEYS.FICTION_PLAYER);
+      parts.push(
+        `FICTION MODE — CRITICAL:\n` +
+        `This player is entirely fictional — no real player exists with this name or identity.\n` +
+        `The concept/vibe above defines who they are. Build all narrative, challenges, and mechanics around their fictional identity.`
+      );
+      if (fp?.stats) {
+        const s = fp.stats;
+        const identity = fp;
+        const psLine = (fp.play_styles || []).join(', ') || '—';
+        const pspLine = (fp.play_styles_plus || []).join(', ') || '—';
+        parts.push(
+          `FICTION PLAYER FIFA CARD:\n` +
+          `${identity.height || '—'}cm | ${identity.weight || '—'}kg | ${identity.preferred_foot || '—'} foot | Weak Foot ${identity.weak_foot || '—'}★ | Skill Moves ${identity.skill_moves || '—'}★\n` +
+          `Work Rate: ${identity.work_rate_att || '—'} / ${identity.work_rate_def || '—'} | Alt Positions: ${(identity.alt_positions || []).join(', ') || '—'}\n` +
+          (fp.is_gk
+            ? `GK Stats: Diving ${s.diving||'—'} | Handling ${s.handling||'—'} | Kicking ${s.kicking||'—'} | Positioning ${s.gk_positioning||'—'} | Reflexes ${s.reflexes||'—'}`
+            : `Pace: Acc ${s.acceleration||'—'} / Spd ${s.sprint_speed||'—'}\n` +
+              `Shooting: Fin ${s.finishing||'—'} | Sht ${s.shot_power||'—'} | Long ${s.long_shots||'—'} | Vol ${s.volleys||'—'} | Pen ${s.penalties||'—'} | Pos ${s.attacking_positioning||'—'}\n` +
+              `Passing: Short ${s.short_passing||'—'} | Long ${s.long_passing||'—'} | Vis ${s.vision||'—'} | Cur ${s.curve||'—'} | Crs ${s.crossing||'—'}\n` +
+              `Dribbling: BC ${s.ball_control||'—'} | Drib ${s.dribbling||'—'} | Agi ${s.agility||'—'} | Bal ${s.balance||'—'} | Cmp ${s.composure||'—'}\n` +
+              `Defending: DA ${s.defensive_awareness||'—'} | Int ${s.interceptions||'—'} | Hd ${s.heading_accuracy||'—'} | Tck ${s.standing_tackle||'—'}\n` +
+              `Physical: Sta ${s.stamina||'—'} | Str ${s.strength||'—'} | Jmp ${s.jumping||'—'} | Agg ${s.aggression||'—'}`) + `\n` +
+          `PlayStyles: ${psLine} | PS+: ${pspLine}`
+        );
+      }
     }
 
     if (pastSeasons.length > 0) {
@@ -882,9 +913,9 @@ Return ONLY valid JSON (no markdown fences):
     const hub         = Storage.get(Storage.KEYS.HUB) || {};
     const currentNum  = setup.season || 1;
 
-    // Capture player stats from hub trophy entry if player mode
+    // Capture player stats from hub trophy entry if player/fiction mode
     let playerStats = undefined;
-    if (setup.mode === 'player') {
+    if (setup.mode === 'player' || setup.mode === 'fiction') {
       const hubEntry = (hub.seasons || []).find(s => s.season === currentNum);
       if (hubEntry) {
         playerStats = { club: setup.club || '', position: setup.player?.position || '', ...hubEntry.playerStats };
@@ -903,7 +934,7 @@ Return ONLY valid JSON (no markdown fences):
 
     setup.season = Math.min(currentNum + 1, 15);
     // Player ages one year per season
-    if (setup.mode === 'player' && setup.player) {
+    if ((setup.mode === 'player' || setup.mode === 'fiction') && setup.player) {
       setup.player.age = (setup.player.age || 0) + 1;
     }
     Storage.set(Storage.KEYS.SETUP, setup);
@@ -1040,6 +1071,100 @@ Return ONLY valid JSON (no markdown fences):
     return call(SYSTEM_PLAYER_CHALLENGE, msg, 1024);
   }
 
+  // ── Fiction Mode ─────────────────────────────────────────────
+
+  const SYSTEM_FICTION_CONCEPT = `You are a fiction player architect for FC 25 career mode. Your job is to design a compelling fictional player concept — a character that feels like they belong in a story, not a Wikipedia page.
+
+RULES:
+- The player must be ENTIRELY FICTIONAL. No real player should share their name, background, or career arc.
+- Draw from the user's concept/vibe: the archetype, the emotional tone, the context. This is the soul of the character.
+- The concept_hook is the character's core identity in one sentence — their defining tension, drive, or contradiction.
+- Club and league should feel right for who this character is at this stage of their career.
+- Age 16-22 for a starting save (unless the concept suggests otherwise).
+
+OUTPUT FORMAT (strict JSON):
+{
+  "player_name": "string",
+  "player_age": number,
+  "player_position": "string (main position — ST, CAM, CB, GK, etc.)",
+  "player_nationality": "string",
+  "manager": "string",
+  "club": "string",
+  "league": "string",
+  "division": "string",
+  "difficulty": "Legendary | Ultimate | Custom",
+  "concept_hook": "string (1 sentence — the character's core identity and tension)"
+}
+
+Return ONLY the JSON. No preamble, no markdown fences.`;
+
+  const SYSTEM_FICTION_PLAYER = `You are a FIFA card generator for fictional FC 25 players. Given a character concept, you generate their complete FIFA card — identity, attributes, and PlayStyles.
+
+RULES — NON-NEGOTIABLE:
+1. PURELY FICTIONAL. The player does not exist. No real player should inspire the numbers directly.
+2. STATS TELL THE STORY. A technically obsessed player has 90+ ball control and dribbling but maybe 60 stamina. A raw physical beast has pace and strength but low composure. An anime-style prodigy might have elite reactions and agility but weak defending. Stats are character writing.
+3. REALISTIC DISTRIBUTION. No player has 99 in everything. Every concept has strengths AND weaknesses that define them. Total stat floor/ceiling should reflect the age and concept (a 17-year-old raw talent isn't 90+ across the board).
+4. PLAYSTYLES from FC25 only. Field players: Finesse Shot, Power Header, Dead Ball, Power Shot, Chip Shot, Long Ball Pass, Whipped Pass, Incisive Pass, Trickster, Rapid, Flair, First Touch, Technical, Block, Intercept, Jockey, Slide Tackle, Bruiser, Long Throw, Aerial, Acrobatic, Bicycle Kick. GK: Far Reach, Cross Claimer, Footwork, Rush Out, Far Throw. Maximum 6 regular PlayStyles, max 2 PlayStyles+ (same names with + suffix). Only assign PS+ for the defining traits of the concept.
+5. GK flag: set is_gk=true only if position is GK. GK stat fields: diving, handling, kicking, gk_positioning, reflexes (plus acceleration and sprint_speed). Field players get the full field stat set.
+
+OUTPUT FORMAT (strict JSON):
+{
+  "name": "string",
+  "nationality": "string",
+  "age": number,
+  "position": "string",
+  "height": number,
+  "weight": number,
+  "preferred_foot": "Right | Left",
+  "weak_foot": number (1-5),
+  "skill_moves": number (1-5),
+  "work_rate_att": "High | Medium | Low",
+  "work_rate_def": "High | Medium | Low",
+  "alt_positions": ["string"],
+  "is_gk": false,
+  "stats": {
+    "acceleration": number, "sprint_speed": number,
+    "agility": number, "balance": number, "reactions": number,
+    "ball_control": number, "dribbling": number, "composure": number,
+    "finishing": number, "heading_accuracy": number,
+    "short_passing": number, "long_passing": number,
+    "curve": number, "free_kick_accuracy": number, "crossing": number,
+    "shot_power": number, "long_shots": number, "volleys": number, "penalties": number,
+    "attacking_positioning": number, "vision": number,
+    "jumping": number, "stamina": number, "strength": number,
+    "aggression": number, "interceptions": number,
+    "defensive_awareness": number, "standing_tackle": number, "sliding_tackle": number
+  },
+  "play_styles": ["string"],
+  "play_styles_plus": ["string"]
+}
+
+Return ONLY the JSON. No preamble, no markdown fences.`;
+
+  async function generateFictionConcept(direction) {
+    const existing = Storage.get(Storage.KEYS.SETUP);
+    const prevBlock = existing?.player?.name
+      ? `\n\nPREVIOUS CONCEPT — create something meaningfully different:\nPlayer: ${existing.player.name}, ${existing.player.position}\nClub: ${existing.club}\nConcept: ${existing.save_concept || '—'}`
+      : '';
+    const msg = `User concept/vibe: "${direction || 'surprise me'}"\n\nDesign a fictional FC 25 player concept.${prevBlock}`;
+    return call(SYSTEM_FICTION_CONCEPT, msg, 512);
+  }
+
+  async function generateFictionPlayer() {
+    const setup  = Storage.get(Storage.KEYS.SETUP) || {};
+    const player = setup.player || {};
+    const msg =
+      `Create the full FIFA card for this fictional player:\n\n` +
+      `Name: ${player.name || '—'}\n` +
+      `Age: ${player.age || 17}\n` +
+      `Position: ${player.position || '—'}\n` +
+      `Nationality: ${player.nationality || '—'}\n` +
+      `Club: ${setup.club || '—'} | ${setup.league || '—'}\n` +
+      `Character concept: ${player.concept_hook || setup.save_concept || 'surprise me'}\n\n` +
+      `Generate a complete FC25 card that embodies this concept. Stats must reflect who this character IS.`;
+    return call(SYSTEM_FICTION_PLAYER, msg, 1024);
+  }
+
   return {
     getKey,
     call,
@@ -1061,5 +1186,7 @@ Return ONLY valid JSON (no markdown fences):
     generateEvents,
     generateSeasonSummary,
     advanceSeason,
+    generateFictionConcept,
+    generateFictionPlayer,
   };
 })();

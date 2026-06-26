@@ -47,6 +47,7 @@
 
       <main class="app-main" id="app-main">
         <div id="module-setup"      class="module-panel active"></div>
+        <div id="module-fiction"    class="module-panel"></div>
         <div id="module-narrative"  class="module-panel"></div>
         <div id="module-challenges" class="module-panel"></div>
         <div id="module-ruleset"    class="module-panel"></div>
@@ -57,6 +58,10 @@
         <button class="nav-tab active" data-module="setup">
           <i data-lucide="sliders-horizontal"></i>
           <span>Setup</span>
+        </button>
+        <button class="nav-tab nav-tab-fiction hidden" data-module="fiction">
+          <i data-lucide="user-round-pen"></i>
+          <span>Player</span>
         </button>
         <button class="nav-tab" data-module="narrative">
           <i data-lucide="book-open"></i>
@@ -115,6 +120,7 @@
   <script src="js/storage.js"></script>
   <script src="js/api.js"></script>
   <script src="js/setup.js"></script>
+  <script src="js/fiction.js"></script>
   <script src="js/narrative.js"></script>
   <script src="js/challenges.js"></script>
   <script src="js/ruleset.js"></script>

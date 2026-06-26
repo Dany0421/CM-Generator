@@ -2,7 +2,7 @@ const SetupModule = (() => {
   let _container = null;
   let _saveTimer = null;
   let _lastDirection = '';
-  let _mode = 'team'; // 'team' | 'player'
+  let _mode = 'team'; // 'team' | 'player' | 'fiction'
 
   const ERA_OPTIONS = [
     'Rebuild Era',
@@ -62,6 +62,7 @@ const SetupModule = (() => {
       if (_mode === 'team') return;
       _mode = 'team';
       _saveMode();
+      App.setMode(_mode);
       render();
     });
 
@@ -72,11 +73,24 @@ const SetupModule = (() => {
       if (_mode === 'player') return;
       _mode = 'player';
       _saveMode();
+      App.setMode(_mode);
+      render();
+    });
+
+    const fictionBtn = document.createElement('button');
+    fictionBtn.className = 'setup-mode-btn' + (_mode === 'fiction' ? ' active' : '');
+    fictionBtn.textContent = 'Fiction Mode';
+    fictionBtn.addEventListener('click', () => {
+      if (_mode === 'fiction') return;
+      _mode = 'fiction';
+      _saveMode();
+      App.setMode(_mode);
       render();
     });
 
     wrap.appendChild(teamBtn);
     wrap.appendChild(playerBtn);
+    wrap.appendChild(fictionBtn);
     return wrap;
   }
 
@@ -87,28 +101,33 @@ const SetupModule = (() => {
   }
 
   function _buildGenerateCard() {
-    const isPlayer = _mode === 'player';
+    const isPlayer  = _mode === 'player';
+    const isFiction = _mode === 'fiction';
     const card = document.createElement('div');
     card.className = 'card setup-generate-card';
 
     const title = document.createElement('p');
     title.className = 'setup-generate-title';
-    title.textContent = isPlayer ? 'Generate Your Player Concept' : 'Generate Your Save';
+    title.textContent = isFiction ? 'Create Your Fiction Player' : isPlayer ? 'Generate Your Player Concept' : 'Generate Your Save';
     card.appendChild(title);
 
     const sub = document.createElement('p');
     sub.className = 'setup-generate-sub';
-    sub.textContent = isPlayer
-      ? 'Describe a direction or say "surprise me" — the AI creates a player, their story, and starting club.'
-      : 'Give a direction or say "surprise me" — the AI picks your manager, club, and builds the whole concept.';
+    sub.textContent = isFiction
+      ? 'Describe a concept, vibe, or character idea — the AI creates a fully fictional player from scratch, including all FIFA stats.'
+      : isPlayer
+        ? 'Describe a direction or say "surprise me" — the AI creates a player, their story, and starting club.'
+        : 'Give a direction or say "surprise me" — the AI picks your manager, club, and builds the whole concept.';
     card.appendChild(sub);
 
     const textarea = document.createElement('textarea');
     textarea.className = 'setup-direction-input';
     textarea.id = 'setup-direction';
-    textarea.placeholder = isPlayer
-      ? 'e.g. "Mbappé rewind at Monaco 2016", "Greek wonderkid underdog", "surprise me"'
-      : 'e.g. "lower league England", "South American fallen giant", "surprise me"';
+    textarea.placeholder = isFiction
+      ? 'e.g. "Brazilian striker with a tragic past and silky dribbling", "anime-style winger obsessed with perfection", "surprise me"'
+      : isPlayer
+        ? 'e.g. "Mbappé rewind at Monaco 2016", "Greek wonderkid underdog", "surprise me"'
+        : 'e.g. "lower league England", "South American fallen giant", "surprise me"';
     textarea.rows = 2;
     if (_lastDirection) textarea.value = _lastDirection;
     card.appendChild(textarea);
@@ -119,7 +138,7 @@ const SetupModule = (() => {
     const i = document.createElement('i');
     i.setAttribute('data-lucide', 'sparkles');
     btn.appendChild(i);
-    btn.appendChild(document.createTextNode(isPlayer ? ' Generate Player Concept' : ' Generate Save Concept'));
+    btn.appendChild(document.createTextNode(isFiction ? ' Create Fiction Player' : isPlayer ? ' Generate Player Concept' : ' Generate Save Concept'));
     btn.addEventListener('click', _generateConcept);
     card.appendChild(btn);
 
@@ -127,7 +146,8 @@ const SetupModule = (() => {
   }
 
   function _buildConceptCard(data) {
-    const isPlayer = _mode === 'player';
+    const isPlayer  = _mode === 'player';
+    const isFiction = _mode === 'fiction';
     const card = document.createElement('div');
     card.className = 'card setup-concept-card';
 
@@ -139,7 +159,7 @@ const SetupModule = (() => {
     const meta = document.createElement('div');
     meta.className = 'setup-concept-meta';
 
-    if (isPlayer && data.player) {
+    if ((isPlayer || isFiction) && data.player) {
       const p = data.player;
       [
         p.name ? `${p.name}, ${p.age}` : null,
@@ -182,7 +202,8 @@ const SetupModule = (() => {
   }
 
   function _buildFormCard(saved) {
-    const isPlayer = _mode === 'player';
+    const isPlayer  = _mode === 'player';
+    const isFiction = _mode === 'fiction';
     const card = document.createElement('div');
     card.className = 'card';
 
@@ -224,8 +245,8 @@ const SetupModule = (() => {
     topRow.appendChild(seasonGroup);
     card.appendChild(topRow);
 
-    // Player section (player mode only)
-    if (isPlayer) {
+    // Player section (player + fiction mode)
+    if (isPlayer || isFiction) {
       const playerSection = document.createElement('div');
       playerSection.className = 'setup-player-section';
 
@@ -385,7 +406,7 @@ const SetupModule = (() => {
     diffGroup.appendChild(diffSel);
     diffEraRow.appendChild(diffGroup);
 
-    if (!isPlayer) {
+    if (!isPlayer && !isFiction) {
       const eraGroup = document.createElement('div');
       eraGroup.className = 'form-group';
       const eraLabel = document.createElement('label');
@@ -444,8 +465,9 @@ const SetupModule = (() => {
 
   function save() {
     clearTimeout(_saveTimer);
-    const existing = Storage.get(Storage.KEYS.SETUP) || {};
-    const isPlayer = _mode === 'player';
+    const existing  = Storage.get(Storage.KEYS.SETUP) || {};
+    const isPlayer  = _mode === 'player';
+    const isFiction = _mode === 'fiction';
 
     const data = {
       mode:         _mode,
@@ -458,11 +480,11 @@ const SetupModule = (() => {
       save_concept: existing.save_concept || '',
     };
 
-    if (!isPlayer) {
+    if (!isPlayer && !isFiction) {
       data.era = _container.querySelector('#setup-era')?.value || 'Rebuild Era';
     }
 
-    if (isPlayer) {
+    if (isPlayer || isFiction) {
       const prevPlayer = existing.player || {};
       data.player = {
         ...prevPlayer,
@@ -507,7 +529,28 @@ const SetupModule = (() => {
       const existing = Storage.get(Storage.KEYS.SETUP) || {};
       let newData;
 
-      if (_mode === 'player') {
+      if (_mode === 'fiction') {
+        const concept = await API.generateFictionConcept(direction);
+        newData = {
+          mode:         'fiction',
+          manager:      concept.manager     || '',
+          club:         concept.club        || '',
+          league:       concept.league      || '',
+          division:     concept.division    || '',
+          season:       existing.season     || 1,
+          difficulty:   DIFFICULTY_OPTIONS.includes(concept.difficulty) ? concept.difficulty : 'Legendary',
+          save_concept: concept.concept_hook || '',
+          player: {
+            ...(existing.player || {}),
+            name:         concept.player_name     || '',
+            age:          concept.player_age       || 17,
+            position:     concept.player_position  || '',
+            nationality:  concept.player_nationality || '',
+            concept_type: 'Fiction',
+            concept_hook: concept.concept_hook    || '',
+          },
+        };
+      } else if (_mode === 'player') {
         const concept = await API.generatePlayerConcept(direction);
         newData = {
           mode:         'player',
@@ -553,7 +596,7 @@ const SetupModule = (() => {
       const dirInput = _container.querySelector('#setup-direction');
       if (dirInput) dirInput.value = _lastDirection;
 
-      App.showToast(_mode === 'player' ? 'Player concept generated' : 'Save concept generated');
+      App.showToast(_mode === 'fiction' ? 'Fiction player concept created' : _mode === 'player' ? 'Player concept generated' : 'Save concept generated');
 
     } catch (err) {
       App.showError(err.message);
@@ -564,7 +607,7 @@ const SetupModule = (() => {
         const i = document.createElement('i');
         i.setAttribute('data-lucide', 'sparkles');
         generateBtn.appendChild(i);
-        generateBtn.appendChild(document.createTextNode(_mode === 'player' ? ' Generate Player Concept' : ' Generate Save Concept'));
+        generateBtn.appendChild(document.createTextNode(_mode === 'fiction' ? ' Create Fiction Player' : _mode === 'player' ? ' Generate Player Concept' : ' Generate Save Concept'));
         lucide.createIcons();
       }
       if (rerollBtn) rerollBtn.disabled = false;

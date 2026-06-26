@@ -18,6 +18,19 @@ const App = (() => {
     document.getElementById('app-main').scrollTop = 0;
   }
 
+  function setMode(mode) {
+    const fictionTab = document.querySelector('.nav-tab-fiction');
+    if (!fictionTab) return;
+
+    if (mode === 'fiction') {
+      fictionTab.classList.remove('hidden');
+    } else {
+      fictionTab.classList.add('hidden');
+      // If currently on fiction tab, navigate away
+      if (_activeModule === 'fiction') navigate('setup');
+    }
+  }
+
   // ── Toast ────────────────────────────────────────────────────
   let _toastId = 0;
 
@@ -163,10 +176,12 @@ const App = (() => {
       closeSettings();
       // Re-render all modules
       SetupModule.render();
+      FictionModule.render();
       NarrativeModule.render();
       ChallengesModule.render();
       RulesetModule.render();
       HubModule.render();
+      setMode('team');
       showToast('All save data cleared');
     });
   }
@@ -183,15 +198,20 @@ const App = (() => {
 
     // Init all modules
     SetupModule.init(document.getElementById('module-setup'));
+    FictionModule.init(document.getElementById('module-fiction'));
     NarrativeModule.init(document.getElementById('module-narrative'));
     ChallengesModule.init(document.getElementById('module-challenges'));
     RulesetModule.init(document.getElementById('module-ruleset'));
     HubModule.init(document.getElementById('module-hub'));
 
+    // Show fiction tab if already in fiction mode
+    const savedMode = Storage.get(Storage.KEYS.SETUP)?.mode;
+    if (savedMode) setMode(savedMode);
+
     lucide.createIcons();
   }
 
-  return { init, navigate, showToast, showError };
+  return { init, navigate, setMode, showToast, showError };
 })();
 
 document.addEventListener('DOMContentLoaded', () => App.init());

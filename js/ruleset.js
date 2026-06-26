@@ -8,7 +8,8 @@ const RulesetModule = (() => {
   ];
 
   function _maxRules() {
-    return Storage.get(Storage.KEYS.SETUP)?.mode === 'player' ? 2 : 3;
+    const mode = Storage.get(Storage.KEYS.SETUP)?.mode;
+    return (mode === 'player' || mode === 'fiction') ? 2 : 3;
   }
 
   const MECHANIC_LABELS = {
@@ -254,7 +255,8 @@ const RulesetModule = (() => {
     const wrap = document.createElement('div');
     wrap.className = 'special-mechanics';
 
-    const isPlayer = Storage.get(Storage.KEYS.SETUP)?.mode === 'player';
+    const mode = Storage.get(Storage.KEYS.SETUP)?.mode;
+    const isPlayer = mode === 'player' || mode === 'fiction';
     const playerHiddenMechanics = new Set(['protected_player', 'academy_tracker']);
 
     Object.entries(MECHANIC_LABELS).forEach(([key, label]) => {

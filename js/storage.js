@@ -1,12 +1,13 @@
 const Storage = (() => {
   const KEYS = {
-    API_KEY:    'cg_api_key',
-    SETUP:      'cg_setup',
-    NARRATIVE:  'cg_narrative',
-    CHALLENGES: 'cg_challenges',
-    RULESET:    'cg_ruleset',
-    HUB:        'cg_hub',
-    SEASONS:    'cg_seasons',
+    API_KEY:        'cg_api_key',
+    SETUP:          'cg_setup',
+    NARRATIVE:      'cg_narrative',
+    CHALLENGES:     'cg_challenges',
+    RULESET:        'cg_ruleset',
+    HUB:            'cg_hub',
+    SEASONS:        'cg_seasons',
+    FICTION_PLAYER: 'cg_fiction_player',
   };
 
   // { [storageKey]: { prev: any, onUndo: fn, timerId: id } }

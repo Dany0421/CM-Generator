@@ -71,7 +71,7 @@ const ChallengesModule = (() => {
 
   function _buildEmpty() {
     const setup    = Storage.get(Storage.KEYS.SETUP);
-    const isPlayer = setup?.mode === 'player';
+    const isPlayer = setup?.mode === 'player' || setup?.mode === 'fiction';
     const wrap     = document.createElement('div');
     wrap.className = 'card challenge-empty';
 
@@ -244,7 +244,7 @@ const ChallengesModule = (() => {
 
   async function _generateAll() {
     const setup    = Storage.get(Storage.KEYS.SETUP);
-    const isPlayer = setup?.mode === 'player';
+    const isPlayer = setup?.mode === 'player' || setup?.mode === 'fiction';
     if (!setup?.club) {
       App.showError('Fill in your Save Setup first.');
       return;
@@ -319,7 +319,7 @@ const ChallengesModule = (() => {
     if (!cardEl) return;
 
     const setup       = Storage.get(Storage.KEYS.SETUP);
-    const isPlayer    = setup?.mode === 'player';
+    const isPlayer    = setup?.mode === 'player' || setup?.mode === 'fiction';
     const activeSet   = isPlayer ? PLAYER_DEFAULT_SET : DEFAULT_SET;
     const challenges  = Storage.get(Storage.KEYS.CHALLENGES) || [];
     const currentType = challenges[index]?.type || activeSet[index]?.type || 'chaos';

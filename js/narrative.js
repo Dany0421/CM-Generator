@@ -15,7 +15,7 @@ const NarrativeModule = (() => {
 
   function _getSections() {
     const mode = Storage.get(Storage.KEYS.SETUP)?.mode;
-    return mode === 'player' ? SECTIONS_PLAYER : SECTIONS_TEAM;
+    return (mode === 'player' || mode === 'fiction') ? SECTIONS_PLAYER : SECTIONS_TEAM;
   }
 
   function init(container) {

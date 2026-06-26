@@ -1147,6 +1147,27 @@ RULES — NON-NEGOTIABLE:
    Only assign PS+ for the single most defining trait of the concept.
 6. POSSIBLE PLAYSTYLES: Separately list the playstyles this player could realistically DEVELOP over their career — styles they don't have yet but fit their concept ceiling. These go in possible_play_styles and possible_play_styles_plus. Max 4 possible regular, max 2 possible PS+. Do not repeat styles already in play_styles / play_styles_plus.
 7. GK flag: set is_gk=true only if position is GK. GK stat fields: diving, handling, kicking, gk_positioning, reflexes (plus acceleration and sprint_speed). Field players get the full field stat set.
+8. OVR MUST BE CALCULATED FROM YOUR STATS — NOT GUESSED. FC 25 uses this exact formula:
+
+   Face stats (round each):
+   PAC = acceleration×0.55 + sprint_speed×0.45
+   SHO = attacking_positioning×0.32 + finishing×0.30 + shot_power×0.20 + long_shots×0.10 + volleys×0.05 + penalties×0.03
+   PAS = short_passing×0.30 + long_passing×0.20 + crossing×0.20 + vision×0.18 + curve×0.07 + free_kick_accuracy×0.05
+   DRI = ball_control×0.30 + reactions×0.25 + dribbling×0.20 + agility×0.15 + balance×0.10
+   DEF = standing_tackle×0.30 + defensive_awareness×0.25 + interceptions×0.20 + sliding_tackle×0.15 + heading_accuracy×0.10
+   PHY = strength×0.35 + stamina×0.25 + jumping×0.20 + aggression×0.20
+
+   Position OVR weights [PAC, SHO, PAS, DRI, DEF, PHY] (must sum to 100):
+   ST/CF: 5, 35, 5, 25, 5, 25
+   LW/RW: 15, 20, 15, 35, 5, 10
+   CAM:   5, 20, 30, 35, 5, 5
+   CM:    5, 15, 35, 25, 10, 10
+   CDM:   5, 5, 25, 15, 30, 20
+   LB/RB: 10, 5, 20, 20, 30, 15
+   CB:    5, 5, 10, 10, 40, 30
+   GK OVR = round(diving×0.23 + handling×0.23 + reflexes×0.23 + gk_positioning×0.15 + kicking×0.10 + (acceleration×0.55+sprint_speed×0.45)×0.06)
+
+   WORKFLOW: choose stats first → compute face stats → apply position weights → that result IS the overall. Do NOT set an overall target first and then pick stats to match it — work the formula forward, never backward.
 
 OUTPUT FORMAT (strict JSON):
 {
@@ -1154,7 +1175,7 @@ OUTPUT FORMAT (strict JSON):
   "nationality": "string",
   "age": number,
   "position": "string",
-  "overall": number (0-99, current OVR reflecting the stat distribution),
+  "overall": number (0-99, CALCULATED from the formula above — not guessed),
   "potential": number (0-99, career ceiling; must be >= overall; reflects concept ambition vs age),
   "height": number,
   "weight": number,

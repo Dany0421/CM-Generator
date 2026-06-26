@@ -648,6 +648,32 @@ ITALY (2 leagues):
 PORTUGAL (1 league only — FC 25 has NO Portuguese second division):
   Liga Portugal Bwin    → 1st Division
 
+NETHERLANDS:
+  Eredivisie            → 1st Division
+
+BELGIUM:
+  Pro League            → 1st Division
+
+TURKEY:
+  Süper Lig             → 1st Division
+
+SAUDI ARABIA:
+  Saudi Pro League      → 1st Division
+
+USA:
+  MLS                   → 1st Division
+
+NOT IN FC 25 — HARD FAILURE if used:
+- Japan (J1 League / J.League) — NOT in FC 25
+- China (CSL) — NOT in FC 25
+- South Korea (K League) — NOT in FC 25
+- Brazil (Brasileirão) — NOT in FC 25
+- Argentina (Liga Profesional) — NOT in FC 25
+- Mexico (Liga MX) — NOT in FC 25
+- Any other league not listed above
+
+IMPORTANT: A player's nationality does NOT determine their league. A Japanese player can play in the Premier League, Bundesliga, or any allowed league. Never pick a league based on the player's nationality — only pick from the allowed list above.
+
 DIVISION ACCURACY IS NON-NEGOTIABLE:
 - You must know with 100% certainty which league a club is in for FC 25 (2024/25 season) before picking it.
 - If you are not certain, pick a DIFFERENT club you ARE certain about. A wrong division is an automatic failure.

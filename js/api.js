@@ -1079,8 +1079,23 @@ RULES:
 - The player must be ENTIRELY FICTIONAL. No real player should share their name, background, or career arc.
 - Draw from the user's concept/vibe: the archetype, the emotional tone, the context. This is the soul of the character.
 - The concept_hook is the character's core identity in one sentence — their defining tension, drive, or contradiction.
-- Club and league should feel right for who this character is at this stage of their career.
+- Club and league must be from the FC 25 allowed list below. No exceptions.
 - Age 16-22 for a starting save (unless the concept suggests otherwise).
+
+ALLOWED LEAGUES — FC 25 only. Pick ONLY from this list:
+  Premier League | Championship | League One | League Two (England)
+  La Liga | La Liga 2 (Spain)
+  Bundesliga | 2. Bundesliga | 3. Liga (Germany)
+  Ligue 1 | Ligue 2 (France)
+  Serie A | Serie B (Italy)
+  Liga Portugal Bwin (Portugal)
+  Eredivisie (Netherlands)
+  Jupiler Pro League (Belgium)
+  Süper Lig (Turkey)
+  Saudi Pro League (Saudi Arabia)
+  MLS (USA)
+
+Do NOT use any league outside this list. Any other league is a hard failure.
 
 OUTPUT FORMAT (strict JSON):
 {
@@ -1089,9 +1104,9 @@ OUTPUT FORMAT (strict JSON):
   "player_position": "string (main position — ST, CAM, CB, GK, etc.)",
   "player_nationality": "string",
   "manager": "string",
-  "club": "string",
-  "league": "string",
-  "division": "string",
+  "club": "string — a plausible fictional or real club name from that league",
+  "league": "string — exact name from the allowed list",
+  "division": "string — e.g. 1st Division, 2nd Division",
   "difficulty": "Legendary | Ultimate | Custom",
   "concept_hook": "string (1 sentence — the character's core identity and tension)"
 }
@@ -1104,8 +1119,14 @@ RULES — NON-NEGOTIABLE:
 1. PURELY FICTIONAL. The player does not exist. No real player should inspire the numbers directly.
 2. STATS TELL THE STORY. A technically obsessed player has 90+ ball control and dribbling but maybe 60 stamina. A raw physical beast has pace and strength but low composure. An anime-style prodigy might have elite reactions and agility but weak defending. Stats are character writing.
 3. REALISTIC DISTRIBUTION. No player has 99 in everything. Every concept has strengths AND weaknesses that define them. Total stat floor/ceiling should reflect the age and concept (a 17-year-old raw talent isn't 90+ across the board).
-4. PLAYSTYLES from FC25 only. Field players: Finesse Shot, Power Header, Dead Ball, Power Shot, Chip Shot, Long Ball Pass, Whipped Pass, Incisive Pass, Trickster, Rapid, Flair, First Touch, Technical, Block, Intercept, Jockey, Slide Tackle, Bruiser, Long Throw, Aerial, Acrobatic, Bicycle Kick. GK: Far Reach, Cross Claimer, Footwork, Rush Out, Far Throw. Maximum 6 regular PlayStyles, max 2 PlayStyles+ (same names with + suffix). Only assign PS+ for the defining traits of the concept.
-5. GK flag: set is_gk=true only if position is GK. GK stat fields: diving, handling, kicking, gk_positioning, reflexes (plus acceleration and sprint_speed). Field players get the full field stat set.
+4. PLAYSTYLES from FC25 only. Field players: Finesse Shot, Power Header, Dead Ball, Power Shot, Chip Shot, Long Ball Pass, Whipped Pass, Incisive Pass, Trickster, Rapid, Flair, First Touch, Technical, Block, Intercept, Jockey, Slide Tackle, Bruiser, Long Throw, Aerial, Acrobatic, Bicycle Kick. GK: Far Reach, Cross Claimer, Footwork, Rush Out, Far Throw.
+5. AGE-BASED PLAYSTYLE LIMITS — HARD CAPS, no exceptions:
+   - Age 16-18: play_styles max 2, play_styles_plus MUST be [] (empty)
+   - Age 19-27: play_styles max 3, play_styles_plus max 2
+   - Age 28+:   play_styles max 4, play_styles_plus max 2
+   Only assign PS+ for the single most defining trait of the concept.
+6. POSSIBLE PLAYSTYLES: Separately list the playstyles this player could realistically DEVELOP over their career — styles they don't have yet but fit their concept ceiling. These go in possible_play_styles and possible_play_styles_plus. Max 4 possible regular, max 2 possible PS+. Do not repeat styles already in play_styles / play_styles_plus.
+7. GK flag: set is_gk=true only if position is GK. GK stat fields: diving, handling, kicking, gk_positioning, reflexes (plus acceleration and sprint_speed). Field players get the full field stat set.
 
 OUTPUT FORMAT (strict JSON):
 {
@@ -1136,7 +1157,9 @@ OUTPUT FORMAT (strict JSON):
     "defensive_awareness": number, "standing_tackle": number, "sliding_tackle": number
   },
   "play_styles": ["string"],
-  "play_styles_plus": ["string"]
+  "play_styles_plus": ["string"],
+  "possible_play_styles": ["string"],
+  "possible_play_styles_plus": ["string"]
 }
 
 Return ONLY the JSON. No preamble, no markdown fences.`;
@@ -1184,7 +1207,8 @@ Return ONLY the JSON. No preamble, no markdown fences.`;
       `realistic progression for their age and career arc. ` +
       `Do NOT completely change the stat profile — this is an evolution, not a new player.\n\n` +
       `Return ONLY the updated stats and playstyles in the same JSON format as SYSTEM_FICTION_PLAYER ` +
-      `(just "stats", "play_styles", "play_styles_plus" fields — no identity fields needed).`;
+      `(just "stats", "play_styles", "play_styles_plus", "possible_play_styles", "possible_play_styles_plus" fields — no identity fields needed). ` +
+      `Apply the same age-based playstyle limits as defined in the system prompt.`;
 
     return call(SYSTEM_FICTION_PLAYER, msg, 1024);
   }

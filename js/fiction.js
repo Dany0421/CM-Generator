@@ -309,9 +309,14 @@ const FictionModule = (() => {
   }
 
   function _buildPlayStylesCard(p) {
-    const styles     = p.play_styles     || [];
-    const stylesPlus = p.play_styles_plus || [];
-    if (styles.length === 0 && stylesPlus.length === 0) return document.createDocumentFragment();
+    const styles         = p.play_styles              || [];
+    const stylesPlus     = p.play_styles_plus         || [];
+    const possible       = p.possible_play_styles     || [];
+    const possiblePlus   = p.possible_play_styles_plus || [];
+
+    const hasActive   = styles.length > 0 || stylesPlus.length > 0;
+    const hasPossible = possible.length > 0 || possiblePlus.length > 0;
+    if (!hasActive && !hasPossible) return document.createDocumentFragment();
 
     const card = document.createElement('div');
     card.className = 'card';
@@ -324,25 +329,57 @@ const FictionModule = (() => {
     title.appendChild(t);
     card.appendChild(title);
 
-    const wrap = document.createElement('div');
-    wrap.className = 'fiction-playstyles';
-
-    stylesPlus.forEach(s => {
+    function makeChip(text, field, index, isPlus, isPossible) {
       const chip = document.createElement('span');
-      chip.className = 'fiction-ps-chip fiction-ps-chip--plus';
-      chip.textContent = s.endsWith('+') ? s : s + ' +';
-      wrap.appendChild(chip);
-    });
+      chip.className = 'fiction-ps-chip' +
+        (isPlus ? ' fiction-ps-chip--plus' : '') +
+        (isPossible ? ' fiction-ps-chip--possible' : '');
+      chip.textContent = text;
 
-    styles.forEach(s => {
-      const chip = document.createElement('span');
-      chip.className = 'fiction-ps-chip';
-      chip.textContent = s;
-      wrap.appendChild(chip);
-    });
+      if (!isPossible) {
+        const del = document.createElement('button');
+        del.className = 'fiction-ps-delete';
+        del.textContent = '×';
+        del.addEventListener('click', () => _deletePlayStyle(field, index));
+        chip.appendChild(del);
+      }
 
-    card.appendChild(wrap);
+      return chip;
+    }
+
+    if (hasActive) {
+      const wrap = document.createElement('div');
+      wrap.className = 'fiction-playstyles';
+      stylesPlus.forEach((s, i) => wrap.appendChild(makeChip(s.endsWith('+') ? s : s + ' +', 'play_styles_plus', i, true, false)));
+      styles.forEach((s, i)     => wrap.appendChild(makeChip(s, 'play_styles', i, false, false)));
+      card.appendChild(wrap);
+    }
+
+    if (hasPossible) {
+      const divider = document.createElement('div');
+      divider.className = 'fiction-ps-divider';
+      const label = document.createElement('span');
+      label.className = 'fiction-ps-possible-label';
+      label.textContent = 'Possible';
+      divider.appendChild(label);
+      card.appendChild(divider);
+
+      const possWrap = document.createElement('div');
+      possWrap.className = 'fiction-playstyles';
+      possiblePlus.forEach((s, i) => possWrap.appendChild(makeChip(s.endsWith('+') ? s : s + ' +', 'possible_play_styles_plus', i, true, true)));
+      possible.forEach((s, i)     => possWrap.appendChild(makeChip(s, 'possible_play_styles', i, false, true)));
+      card.appendChild(possWrap);
+    }
+
     return card;
+  }
+
+  function _deletePlayStyle(field, index) {
+    const fp = Storage.get(Storage.KEYS.FICTION_PLAYER);
+    if (!fp) return;
+    fp[field] = (fp[field] || []).filter((_, i) => i !== index);
+    Storage.set(Storage.KEYS.FICTION_PLAYER, fp);
+    render();
   }
 
   function _saveStat(key, value) {
@@ -376,9 +413,11 @@ const FictionModule = (() => {
       // Only update stats + playstyles, keep identity intact
       Storage.set(Storage.KEYS.FICTION_PLAYER, {
         ...current,
-        stats:           result.stats           || current.stats,
-        play_styles:     result.play_styles     || current.play_styles,
-        play_styles_plus: result.play_styles_plus || current.play_styles_plus,
+        stats:                     result.stats                     || current.stats,
+        play_styles:               result.play_styles               || current.play_styles,
+        play_styles_plus:          result.play_styles_plus          || current.play_styles_plus,
+        possible_play_styles:      result.possible_play_styles      || current.possible_play_styles,
+        possible_play_styles_plus: result.possible_play_styles_plus || current.possible_play_styles_plus,
       });
       render();
       App.showToast('Stats updated for current season');

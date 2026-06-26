@@ -2780,16 +2780,57 @@ a { color: var(--accent); text-decoration: none; }
   gap: 8px;
 }
 .fiction-ps-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-size: 0.75rem;
   font-weight: 600;
   background: var(--bg-elevated);
   border: 1px solid var(--border);
   border-radius: 100px;
-  padding: 4px 12px;
+  padding: 4px 10px;
   color: var(--text-secondary);
 }
 .fiction-ps-chip--plus {
   background: rgba(255, 165, 0, 0.12);
   border-color: rgba(255, 165, 0, 0.4);
   color: #f0b429;
+}
+.fiction-ps-chip--possible {
+  opacity: 0.45;
+  border-style: dashed;
+}
+.fiction-ps-delete {
+  background: none;
+  border: none;
+  padding: 0;
+  line-height: 1;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.fiction-ps-delete:hover {
+  color: var(--red);
+}
+.fiction-ps-divider {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0 6px;
+}
+.fiction-ps-divider::before,
+.fiction-ps-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+.fiction-ps-possible-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  white-space: nowrap;
 }

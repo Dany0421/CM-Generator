@@ -294,7 +294,12 @@ const RulesetModule = (() => {
       };
       textarea.placeholder = placeholders[key] || '';
 
-      textarea.addEventListener('input', () => _saveMechanic(key, textarea.value));
+      const autoResize = () => {
+        textarea.style.height = 'auto';
+        textarea.style.height = textarea.scrollHeight + 'px';
+      };
+      textarea.addEventListener('input', () => { _saveMechanic(key, textarea.value); autoResize(); });
+      requestAnimationFrame(autoResize);
       item.appendChild(textarea);
       wrap.appendChild(item);
     });

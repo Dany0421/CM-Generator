@@ -1004,7 +1004,6 @@ a { color: var(--accent); text-decoration: none; }
   font-family: var(--font);
   min-height: 56px;
   overflow: hidden;
-  field-sizing: content;
 }
 
 .mechanic-textarea::placeholder {

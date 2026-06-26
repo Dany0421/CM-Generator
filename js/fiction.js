@@ -221,19 +221,116 @@ const FictionModule = (() => {
     const chips = document.createElement('div');
     chips.className = 'fiction-chips';
 
-    const chipsData = [
-      p.age ? `Age ${p.age}` : null,
-      p.position || null,
-      ...(p.alt_positions || []),
-      p.preferred_foot ? `${p.preferred_foot} foot` : null,
-    ].filter(Boolean);
+    function saveIdentity(key, value) {
+      const fp = Storage.get(Storage.KEYS.FICTION_PLAYER);
+      if (!fp) return;
+      fp[key] = value;
+      Storage.set(Storage.KEYS.FICTION_PLAYER, fp);
+    }
 
-    chipsData.forEach(text => {
+    function makeEditableChip(text, onCommit) {
+      const chip = document.createElement('span');
+      chip.className = 'setup-concept-chip fiction-chip-editable';
+      chip.title = 'Tap to edit';
+
+      const label = document.createElement('span');
+      label.textContent = text;
+
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.className = 'fiction-chip-input';
+      input.value = text;
+
+      chip.appendChild(label);
+      chip.appendChild(input);
+
+      label.addEventListener('click', () => {
+        label.classList.add('hidden');
+        input.classList.add('visible');
+        input.focus();
+        input.select();
+      });
+
+      const commit = () => {
+        const val = input.value.trim();
+        if (val) { label.textContent = val; onCommit(val); }
+        label.classList.remove('hidden');
+        input.classList.remove('visible');
+      };
+      input.addEventListener('blur', commit);
+      input.addEventListener('keydown', e => {
+        if (e.key === 'Enter') { input.blur(); }
+        if (e.key === 'Escape') { label.classList.remove('hidden'); input.classList.remove('visible'); }
+      });
+
+      return chip;
+    }
+
+    // Age (read-only)
+    if (p.age) {
       const chip = document.createElement('span');
       chip.className = 'setup-concept-chip';
-      chip.textContent = text;
+      chip.textContent = `Age ${p.age}`;
+      chips.appendChild(chip);
+    }
+
+    // Position (editable)
+    if (p.position) {
+      chips.appendChild(makeEditableChip(p.position, val => saveIdentity('position', val)));
+    }
+
+    // Alt positions (editable + deletable + add)
+    const altPositions = p.alt_positions || [];
+    altPositions.forEach((pos, idx) => {
+      const chip = makeEditableChip(pos, val => {
+        const fp = Storage.get(Storage.KEYS.FICTION_PLAYER);
+        if (!fp) return;
+        fp.alt_positions = (fp.alt_positions || []).map((p2, i) => i === idx ? val : p2);
+        Storage.set(Storage.KEYS.FICTION_PLAYER, fp);
+      });
+      const del = document.createElement('button');
+      del.className = 'fiction-ps-delete';
+      del.textContent = '×';
+      del.addEventListener('click', e => {
+        e.stopPropagation();
+        const fp = Storage.get(Storage.KEYS.FICTION_PLAYER);
+        if (!fp) return;
+        fp.alt_positions = (fp.alt_positions || []).filter((_, i) => i !== idx);
+        Storage.set(Storage.KEYS.FICTION_PLAYER, fp);
+        render();
+      });
+      chip.appendChild(del);
       chips.appendChild(chip);
     });
+
+    // Add alt position button
+    const addAltBtn = document.createElement('button');
+    addAltBtn.className = 'fiction-chip-add';
+    addAltBtn.textContent = '+ pos';
+    addAltBtn.addEventListener('click', () => {
+      const fp = Storage.get(Storage.KEYS.FICTION_PLAYER);
+      if (!fp) return;
+      fp.alt_positions = [...(fp.alt_positions || []), 'CAM'];
+      Storage.set(Storage.KEYS.FICTION_PLAYER, fp);
+      render();
+    });
+    chips.appendChild(addAltBtn);
+
+    // Preferred foot (toggle)
+    if (p.preferred_foot) {
+      const footChip = document.createElement('span');
+      footChip.className = 'setup-concept-chip fiction-chip-editable';
+      footChip.textContent = `${p.preferred_foot} foot`;
+      footChip.title = 'Tap to toggle';
+      footChip.addEventListener('click', () => {
+        const newFoot = p.preferred_foot === 'Right' ? 'Left' : 'Right';
+        saveIdentity('preferred_foot', newFoot);
+        footChip.textContent = `${newFoot} foot`;
+        p.preferred_foot = newFoot;
+      });
+      chips.appendChild(footChip);
+    }
+
     card.appendChild(chips);
 
     const physical = document.createElement('div');

@@ -336,27 +336,102 @@ const FictionModule = (() => {
     const physical = document.createElement('div');
     physical.className = 'fiction-physical-row';
 
-    const physItems = [
-      { label: 'Height',     value: p.height ? `${p.height}cm` : '—' },
-      { label: 'Weight',     value: p.weight ? `${p.weight}kg` : '—' },
-      { label: 'Weak Foot',  value: p.weak_foot  ? '★'.repeat(p.weak_foot)  + '☆'.repeat(5 - p.weak_foot)  : '—' },
-      { label: 'Skill',      value: p.skill_moves ? '★'.repeat(p.skill_moves) + '☆'.repeat(5 - p.skill_moves) : '—' },
-      { label: 'Work Rate',  value: p.work_rate_att && p.work_rate_def ? `${p.work_rate_att[0]}/${p.work_rate_def[0]}` : '—' },
-    ];
+    const WR_OPTS = ['High', 'Medium', 'Low'];
 
-    physItems.forEach(({ label, value }) => {
+    function makePhysItem(label, valueEl) {
       const item = document.createElement('div');
       item.className = 'fiction-physical-item';
       const lbl = document.createElement('span');
       lbl.className = 'fiction-physical-label';
       lbl.textContent = label;
-      const val = document.createElement('span');
-      val.className = 'fiction-physical-value';
-      val.textContent = value;
       item.appendChild(lbl);
-      item.appendChild(val);
-      physical.appendChild(item);
-    });
+      item.appendChild(valueEl);
+      return item;
+    }
+
+    function makeNumberPhys(current, suffix, storageKey, min, max) {
+      const val = document.createElement('span');
+      val.className = 'fiction-physical-value fiction-stat-editable';
+      val.title = 'Tap to edit';
+      val.textContent = current ? `${current}${suffix}` : '—';
+
+      const input = document.createElement('input');
+      input.type = 'number';
+      input.min = min; input.max = max;
+      input.className = 'fiction-stat-input';
+      input.value = current || '';
+      input.style.width = '52px';
+
+      val.addEventListener('click', () => { val.classList.add('hidden'); input.classList.add('visible'); input.focus(); input.select(); });
+      const commit = () => {
+        let v = parseInt(input.value);
+        if (isNaN(v)) v = current;
+        v = Math.max(min, Math.min(max, v));
+        input.value = v;
+        val.textContent = `${v}${suffix}`;
+        val.classList.remove('hidden'); input.classList.remove('visible');
+        saveIdentity(storageKey, v);
+      };
+      input.addEventListener('blur', commit);
+      input.addEventListener('keydown', e => { if (e.key === 'Enter') commit(); if (e.key === 'Escape') { val.classList.remove('hidden'); input.classList.remove('visible'); } });
+
+      const wrap = document.createElement('span');
+      wrap.appendChild(val); wrap.appendChild(input);
+      return wrap;
+    }
+
+    function makeStarsPhys(current, storageKey) {
+      const val = document.createElement('span');
+      val.className = 'fiction-physical-value fiction-stat-editable';
+      val.title = 'Tap to change';
+      let cur = current || 1;
+      val.textContent = '★'.repeat(cur) + '☆'.repeat(5 - cur);
+      val.addEventListener('click', () => {
+        cur = (cur % 5) + 1;
+        val.textContent = '★'.repeat(cur) + '☆'.repeat(5 - cur);
+        saveIdentity(storageKey, cur);
+      });
+      return val;
+    }
+
+    function makeWorkRatePhys(att, def) {
+      const wrap = document.createElement('span');
+      wrap.className = 'fiction-physical-value';
+
+      let curAtt = att || 'Medium';
+      let curDef = def || 'Medium';
+
+      const attSpan = document.createElement('span');
+      attSpan.className = 'fiction-stat-editable';
+      attSpan.title = 'Tap to change';
+      attSpan.textContent = curAtt[0];
+      attSpan.addEventListener('click', () => {
+        curAtt = WR_OPTS[(WR_OPTS.indexOf(curAtt) + 1) % 3];
+        attSpan.textContent = curAtt[0];
+        saveIdentity('work_rate_att', curAtt);
+      });
+
+      const sep = document.createTextNode('/');
+
+      const defSpan = document.createElement('span');
+      defSpan.className = 'fiction-stat-editable';
+      defSpan.title = 'Tap to change';
+      defSpan.textContent = curDef[0];
+      defSpan.addEventListener('click', () => {
+        curDef = WR_OPTS[(WR_OPTS.indexOf(curDef) + 1) % 3];
+        defSpan.textContent = curDef[0];
+        saveIdentity('work_rate_def', curDef);
+      });
+
+      wrap.appendChild(attSpan); wrap.appendChild(sep); wrap.appendChild(defSpan);
+      return wrap;
+    }
+
+    physical.appendChild(makePhysItem('Height',    makeNumberPhys(p.height,      'cm', 'height',      140, 210)));
+    physical.appendChild(makePhysItem('Weight',    makeNumberPhys(p.weight,      'kg', 'weight',       40, 120)));
+    physical.appendChild(makePhysItem('Weak Foot', makeStarsPhys(p.weak_foot,   'weak_foot')));
+    physical.appendChild(makePhysItem('Skill',     makeStarsPhys(p.skill_moves, 'skill_moves')));
+    physical.appendChild(makePhysItem('Work Rate', makeWorkRatePhys(p.work_rate_att, p.work_rate_def)));
 
     card.appendChild(physical);
     return card;

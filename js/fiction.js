@@ -83,6 +83,7 @@ const FictionModule = (() => {
   }
 
   function _buildHeader() {
+    const hasPlayer = !!(Storage.get(Storage.KEYS.FICTION_PLAYER)?.stats);
     const frag = document.createRange().createContextualFragment(`
       <div class="module-header">
         <div class="module-title-group">
@@ -90,14 +91,24 @@ const FictionModule = (() => {
           <h1 class="module-title">Player Creation</h1>
         </div>
         <div class="module-actions">
-          <button class="btn-secondary" id="fiction-generate-btn">
-            <i data-lucide="sparkles"></i>
-            Generate Player
-          </button>
+          ${hasPlayer
+            ? `<button class="btn-secondary" id="fiction-update-btn">
+                <i data-lucide="trending-up"></i>
+                Update Stats
+               </button>`
+            : `<button class="btn-secondary" id="fiction-generate-btn">
+                <i data-lucide="sparkles"></i>
+                Generate Player
+               </button>`
+          }
         </div>
       </div>
     `);
-    frag.querySelector('#fiction-generate-btn').addEventListener('click', _generatePlayer);
+    if (hasPlayer) {
+      frag.querySelector('#fiction-update-btn').addEventListener('click', _updateStats);
+    } else {
+      frag.querySelector('#fiction-generate-btn').addEventListener('click', _generatePlayer);
+    }
     return frag;
   }
 
@@ -244,12 +255,49 @@ const FictionModule = (() => {
         nameEl.textContent = STAT_LABELS[k] || k;
 
         const valEl = document.createElement('span');
-        valEl.className = 'fiction-stat-value';
+        valEl.className = 'fiction-stat-value fiction-stat-editable';
         valEl.textContent = val;
         valEl.style.color = _statColor(val);
+        valEl.title = 'Tap to edit';
+
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.min = 1;
+        input.max = 99;
+        input.className = 'fiction-stat-input';
+        input.value = val;
+
+        valEl.addEventListener('click', () => {
+          valEl.classList.add('hidden');
+          input.classList.add('visible');
+          input.focus();
+          input.select();
+        });
+
+        const commit = () => {
+          let v = parseInt(input.value);
+          if (isNaN(v)) v = val;
+          v = Math.max(1, Math.min(99, v));
+          input.value = v;
+          valEl.textContent = v;
+          valEl.style.color = _statColor(v);
+          valEl.classList.remove('hidden');
+          input.classList.remove('visible');
+          _saveStat(k, v);
+        };
+        input.addEventListener('blur', commit);
+        input.addEventListener('keydown', e => {
+          if (e.key === 'Enter')  commit();
+          if (e.key === 'Escape') {
+            input.value = val;
+            valEl.classList.remove('hidden');
+            input.classList.remove('visible');
+          }
+        });
 
         row.appendChild(nameEl);
         row.appendChild(valEl);
+        row.appendChild(input);
         grid.appendChild(row);
       });
 
@@ -295,6 +343,57 @@ const FictionModule = (() => {
 
     card.appendChild(wrap);
     return card;
+  }
+
+  function _saveStat(key, value) {
+    const fp = Storage.get(Storage.KEYS.FICTION_PLAYER);
+    if (!fp?.stats) return;
+    fp.stats[key] = value;
+    Storage.set(Storage.KEYS.FICTION_PLAYER, fp);
+  }
+
+  async function _updateStats() {
+    const setup = Storage.get(Storage.KEYS.SETUP);
+    if (!setup?.player?.name) {
+      App.showError('No fiction player found.');
+      return;
+    }
+
+    const btn = _container.querySelector('#fiction-update-btn');
+    if (btn) {
+      btn.disabled = true;
+      btn.replaceChildren();
+      const spinner = document.createElement('div');
+      spinner.className = 'spinner';
+      spinner.style.cssText = 'width:14px;height:14px;display:inline-block;margin-right:8px;flex-shrink:0;';
+      btn.appendChild(spinner);
+      btn.appendChild(document.createTextNode('Updating…'));
+    }
+
+    try {
+      const result = await API.updateFictionPlayer();
+      const current = Storage.get(Storage.KEYS.FICTION_PLAYER) || {};
+      // Only update stats + playstyles, keep identity intact
+      Storage.set(Storage.KEYS.FICTION_PLAYER, {
+        ...current,
+        stats:           result.stats           || current.stats,
+        play_styles:     result.play_styles     || current.play_styles,
+        play_styles_plus: result.play_styles_plus || current.play_styles_plus,
+      });
+      render();
+      App.showToast('Stats updated for current season');
+    } catch (err) {
+      App.showError(err.message);
+      if (btn) {
+        btn.disabled = false;
+        btn.replaceChildren();
+        const i = document.createElement('i');
+        i.setAttribute('data-lucide', 'trending-up');
+        btn.appendChild(i);
+        btn.appendChild(document.createTextNode(' Update Stats'));
+        lucide.createIcons();
+      }
+    }
   }
 
   async function _generatePlayer() {

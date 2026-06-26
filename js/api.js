@@ -1150,6 +1150,45 @@ Return ONLY the JSON. No preamble, no markdown fences.`;
     return call(SYSTEM_FICTION_CONCEPT, msg, 512);
   }
 
+  async function updateFictionPlayer() {
+    const setup       = Storage.get(Storage.KEYS.SETUP) || {};
+    const player      = setup.player || {};
+    const fp          = Storage.get(Storage.KEYS.FICTION_PLAYER) || {};
+    const pastSeasons = Storage.get(Storage.KEYS.SEASONS) || [];
+
+    const currentStats = fp.stats ? Object.entries(fp.stats)
+      .map(([k, v]) => `${k}: ${v}`).join(', ') : 'none';
+
+    const seasonHistory = pastSeasons.length > 0
+      ? pastSeasons.map(s => {
+          const ps = s.playerStats || {};
+          return `Season ${s.season}: ${[
+            ps.apps    != null ? `${ps.apps} apps`    : null,
+            ps.goals   != null ? `${ps.goals}G`       : null,
+            ps.assists != null ? `${ps.assists}A`     : null,
+            ps.avgRating != null ? `avg ${ps.avgRating}` : null,
+            ps.ovrStart != null && ps.ovrEnd != null ? `OVR ${ps.ovrStart}→${ps.ovrEnd}` : null,
+          ].filter(Boolean).join(', ') || '(no stats)'}`;
+        }).join('\n')
+      : 'No past seasons yet';
+
+    const msg =
+      `Update the FIFA stats for this fictional player based on their career progression:\n\n` +
+      `Player: ${player.name || '—'} | Age: ${player.age || '—'} | ${player.position || '—'}\n` +
+      `Current Season: ${setup.season || 1}\n` +
+      `Concept: ${player.concept_hook || setup.save_concept || '—'}\n\n` +
+      `CURRENT STATS:\n${currentStats}\n\n` +
+      `CAREER HISTORY:\n${seasonHistory}\n\n` +
+      `Update the stats to reflect where this player is NOW in their career. ` +
+      `Evolve naturally from the current stats — improvements in areas consistent with their concept, ` +
+      `realistic progression for their age and career arc. ` +
+      `Do NOT completely change the stat profile — this is an evolution, not a new player.\n\n` +
+      `Return ONLY the updated stats and playstyles in the same JSON format as SYSTEM_FICTION_PLAYER ` +
+      `(just "stats", "play_styles", "play_styles_plus" fields — no identity fields needed).`;
+
+    return call(SYSTEM_FICTION_PLAYER, msg, 1024);
+  }
+
   async function generateFictionPlayer() {
     const setup  = Storage.get(Storage.KEYS.SETUP) || {};
     const player = setup.player || {};
@@ -1188,5 +1227,6 @@ Return ONLY the JSON. No preamble, no markdown fences.`;
     advanceSeason,
     generateFictionConcept,
     generateFictionPlayer,
+    updateFictionPlayer,
   };
 })();

@@ -2756,6 +2756,23 @@ a { color: var(--accent); text-decoration: none; }
   font-size: 0.875rem;
   font-weight: 700;
 }
+.fiction-stat-editable { cursor: pointer; }
+.fiction-stat-editable:active { opacity: 0.7; }
+.fiction-stat-input {
+  display: none;
+  width: 44px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  font-weight: 700;
+  font-family: var(--font);
+  text-align: center;
+  padding: 2px 4px;
+  outline: none;
+}
+.fiction-stat-input.visible { display: block; }
 
 .fiction-playstyles {
   display: flex;

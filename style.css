@@ -2456,6 +2456,28 @@ a { color: var(--accent); text-decoration: none; }
   gap: 10px;
   margin-bottom: 8px;
 }
+.competitions-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.competition-row {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px;
+}
+.competition-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.competition-name-input {
+  flex: 1;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
 
 /* ── Season Log: Date Row ────────────────────────────────────────────────── */
 .log-date-row {
@@ -2678,6 +2700,36 @@ a { color: var(--accent); text-decoration: none; }
   font-size: 0.8rem;
   color: var(--text-muted);
   font-weight: 500;
+}
+
+.fiction-ovr-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.fiction-ovr-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 20px;
+  min-width: 72px;
+}
+.fiction-ovr-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+}
+.fiction-ovr-value {
+  font-size: 1.5rem;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--text-primary);
 }
 
 .fiction-chips {

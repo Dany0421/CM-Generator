@@ -290,19 +290,39 @@ Return ONLY the JSON object. No preamble, no explanation, no markdown fences.`;
     if (pastSeasons.length > 0) {
       const lines = pastSeasons.map(s => {
         const ps = s.playerStats || {};
-        const stats = [
-          ps.apps    != null ? `${ps.apps} apps`    : null,
-          ps.goals   != null ? `${ps.goals}G`        : null,
-          ps.assists != null ? `${ps.assists}A`       : null,
-          ps.avgRating != null ? `avg ${ps.avgRating}` : null,
-          ps.ovrStart != null && ps.ovrEnd != null ? `OVR ${ps.ovrStart}→${ps.ovrEnd}` : null,
-        ].filter(Boolean).join(', ');
         const pAge   = (player.age || 0) - (pastSeasons.length - s.season + 1) + 1;
         const pChalls = (s.challenges || []).map(c => c.hub_line || c.title).filter(Boolean).join(' / ');
-        let line = `Season ${s.season} (age ${pAge}, ${ps.club || setup.club || '—'}): ${stats || '(no stats)'}`;
-        if (s.summary)         line += `\n  ${s.summary}`;
-        if (ps.careerMoment)   line += `\n  Key moment: ${ps.careerMoment}`;
-        if (pChalls)           line += `\n  Challenges: ${pChalls}`;
+        const ovrLine = ps.ovrStart != null && ps.ovrEnd != null ? `OVR ${ps.ovrStart}→${ps.ovrEnd}` : null;
+        const potLine = ps.potential != null ? `Potential ${ps.potential}` : null;
+
+        let statsStr;
+        if (ps.competitions && ps.competitions.length > 0) {
+          statsStr = ps.competitions.map(c => {
+            const parts = [
+              c.apps       != null ? `${c.apps} apps`        : null,
+              c.goals      != null ? `${c.goals}G`           : null,
+              c.assists    != null ? `${c.assists}A`         : null,
+              c.cleanSheets != null ? `${c.cleanSheets} CS`  : null,
+              c.avgRating  != null ? `avg ${c.avgRating}`    : null,
+            ].filter(Boolean).join(' ');
+            return `${c.name || 'Unknown'}: ${parts || '—'}`;
+          }).join(' | ');
+        } else {
+          // backward compat with old flat structure
+          statsStr = [
+            ps.apps      != null ? `${ps.apps} apps`      : null,
+            ps.goals     != null ? `${ps.goals}G`          : null,
+            ps.assists   != null ? `${ps.assists}A`         : null,
+            ps.avgRating != null ? `avg ${ps.avgRating}`   : null,
+          ].filter(Boolean).join(', ');
+        }
+
+        let line = `Season ${s.season} (age ${pAge}, ${ps.club || setup.club || '—'}):`;
+        if (ovrLine || potLine) line += ` ${[ovrLine, potLine].filter(Boolean).join(' | ')}`;
+        if (statsStr) line += `\n  ${statsStr}`;
+        if (s.summary)       line += `\n  ${s.summary}`;
+        if (ps.careerMoment) line += `\n  Key moment: ${ps.careerMoment}`;
+        if (pChalls)         line += `\n  Challenges: ${pChalls}`;
         return line;
       }).join('\n');
       parts.push(
@@ -1134,6 +1154,8 @@ OUTPUT FORMAT (strict JSON):
   "nationality": "string",
   "age": number,
   "position": "string",
+  "overall": number (0-99, current OVR reflecting the stat distribution),
+  "potential": number (0-99, career ceiling; must be >= overall; reflects concept ambition vs age),
   "height": number,
   "weight": number,
   "preferred_foot": "Right | Left",
@@ -1185,13 +1207,30 @@ Return ONLY the JSON. No preamble, no markdown fences.`;
     const seasonHistory = pastSeasons.length > 0
       ? pastSeasons.map(s => {
           const ps = s.playerStats || {};
-          return `Season ${s.season}: ${[
-            ps.apps    != null ? `${ps.apps} apps`    : null,
-            ps.goals   != null ? `${ps.goals}G`       : null,
-            ps.assists != null ? `${ps.assists}A`     : null,
-            ps.avgRating != null ? `avg ${ps.avgRating}` : null,
-            ps.ovrStart != null && ps.ovrEnd != null ? `OVR ${ps.ovrStart}→${ps.ovrEnd}` : null,
-          ].filter(Boolean).join(', ') || '(no stats)'}`;
+          const ovrLine = ps.ovrStart != null && ps.ovrEnd != null ? `OVR ${ps.ovrStart}→${ps.ovrEnd}` : null;
+          const potLine = ps.potential != null ? `Potential ${ps.potential}` : null;
+          let statsStr;
+          if (ps.competitions && ps.competitions.length > 0) {
+            statsStr = ps.competitions.map(c => {
+              const parts = [
+                c.apps        != null ? `${c.apps} apps`      : null,
+                c.goals       != null ? `${c.goals}G`         : null,
+                c.assists     != null ? `${c.assists}A`       : null,
+                c.cleanSheets != null ? `${c.cleanSheets} CS` : null,
+                c.avgRating   != null ? `avg ${c.avgRating}`  : null,
+              ].filter(Boolean).join(' ');
+              return `${c.name || 'Unknown'}: ${parts || '—'}`;
+            }).join(' | ');
+          } else {
+            statsStr = [
+              ps.apps      != null ? `${ps.apps} apps`      : null,
+              ps.goals     != null ? `${ps.goals}G`          : null,
+              ps.assists   != null ? `${ps.assists}A`         : null,
+              ps.avgRating != null ? `avg ${ps.avgRating}`   : null,
+            ].filter(Boolean).join(', ');
+          }
+          const summary = [[ovrLine, potLine].filter(Boolean).join(' | '), statsStr].filter(Boolean).join(' — ');
+          return `Season ${s.season}: ${summary || '(no stats)'}`;
         }).join('\n')
       : 'No past seasons yet';
 
@@ -1206,8 +1245,9 @@ Return ONLY the JSON. No preamble, no markdown fences.`;
       `Evolve naturally from the current stats — improvements in areas consistent with their concept, ` +
       `realistic progression for their age and career arc. ` +
       `Do NOT completely change the stat profile — this is an evolution, not a new player.\n\n` +
-      `Return ONLY the updated stats and playstyles in the same JSON format as SYSTEM_FICTION_PLAYER ` +
-      `(just "stats", "play_styles", "play_styles_plus", "possible_play_styles", "possible_play_styles_plus" fields — no identity fields needed). ` +
+      `Return ONLY the updated fields in this JSON format: ` +
+      `"overall" (updated OVR), "stats", "play_styles", "play_styles_plus", "possible_play_styles", "possible_play_styles_plus". ` +
+      `Do NOT return identity fields (name, height, etc.) or "potential" — potential is managed separately. ` +
       `Apply the same age-based playstyle limits as defined in the system prompt.`;
 
     return call(SYSTEM_FICTION_PLAYER, msg, 1024);

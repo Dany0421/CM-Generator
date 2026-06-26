@@ -158,6 +158,66 @@ const FictionModule = (() => {
     nameRow.appendChild(nat);
     card.appendChild(nameRow);
 
+    // OVR + Potential row
+    const ovrRow = document.createElement('div');
+    ovrRow.className = 'fiction-ovr-row';
+
+    function makeOvrField(label, storageKey, currentVal) {
+      const wrap = document.createElement('div');
+      wrap.className = 'fiction-ovr-item';
+
+      const lbl = document.createElement('span');
+      lbl.className = 'fiction-ovr-label';
+      lbl.textContent = label;
+
+      const valEl = document.createElement('span');
+      valEl.className = 'fiction-ovr-value fiction-stat-editable';
+      valEl.textContent = currentVal ?? '—';
+      if (currentVal != null) valEl.style.color = _statColor(currentVal);
+      valEl.title = 'Tap to edit';
+
+      const input = document.createElement('input');
+      input.type = 'number';
+      input.min = 1;
+      input.max = 99;
+      input.className = 'fiction-stat-input';
+      input.value = currentVal ?? '';
+
+      valEl.addEventListener('click', () => {
+        valEl.classList.add('hidden');
+        input.classList.add('visible');
+        input.focus();
+        input.select();
+      });
+
+      const commit = () => {
+        let v = parseInt(input.value);
+        if (isNaN(v)) v = currentVal ?? 0;
+        v = Math.max(1, Math.min(99, v));
+        input.value = v;
+        valEl.textContent = v;
+        valEl.style.color = _statColor(v);
+        valEl.classList.remove('hidden');
+        input.classList.remove('visible');
+        const fp = Storage.get(Storage.KEYS.FICTION_PLAYER);
+        if (fp) { fp[storageKey] = v; Storage.set(Storage.KEYS.FICTION_PLAYER, fp); }
+      };
+      input.addEventListener('blur', commit);
+      input.addEventListener('keydown', e => {
+        if (e.key === 'Enter') commit();
+        if (e.key === 'Escape') { input.value = currentVal ?? ''; valEl.classList.remove('hidden'); input.classList.remove('visible'); }
+      });
+
+      wrap.appendChild(lbl);
+      wrap.appendChild(valEl);
+      wrap.appendChild(input);
+      return wrap;
+    }
+
+    ovrRow.appendChild(makeOvrField('OVR', 'overall', p.overall ?? null));
+    ovrRow.appendChild(makeOvrField('Potential', 'potential', p.potential ?? null));
+    card.appendChild(ovrRow);
+
     const chips = document.createElement('div');
     chips.className = 'fiction-chips';
 
@@ -413,6 +473,7 @@ const FictionModule = (() => {
       // Only update stats + playstyles, keep identity intact
       Storage.set(Storage.KEYS.FICTION_PLAYER, {
         ...current,
+        overall:                   result.overall                   ?? current.overall,
         stats:                     result.stats                     || current.stats,
         play_styles:               result.play_styles               || current.play_styles,
         play_styles_plus:          result.play_styles_plus          || current.play_styles_plus,

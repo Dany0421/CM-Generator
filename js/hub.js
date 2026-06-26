@@ -2092,9 +2092,11 @@ const HubModule = (() => {
 
     el.appendChild(metaRow);
 
-    // Player stats section (player mode only)
+    // Player stats section (player/fiction mode only)
     if (isPlayer) {
-      const ps = season.playerStats || {};
+      const isGK = (setup?.player?.position || '').toUpperCase() === 'GK' ||
+                   !!(Storage.get(Storage.KEYS.FICTION_PLAYER)?.is_gk);
+
       const statsSection = document.createElement('div');
       statsSection.className = 'player-season-stats';
 
@@ -2104,55 +2106,169 @@ const HubModule = (() => {
       statsLabel.textContent = 'Player Stats';
       statsSection.appendChild(statsLabel);
 
-      const statsGrid = document.createElement('div');
-      statsGrid.className = 'player-stats-grid';
-
-      const statFields = [
-        { key: 'apps',      label: 'Apps',      type: 'number', placeholder: '0'  },
-        { key: 'goals',     label: 'Goals',     type: 'number', placeholder: '0'  },
-        { key: 'assists',   label: 'Assists',   type: 'number', placeholder: '0'  },
-        { key: 'avgRating', label: 'Avg Rating',type: 'number', placeholder: '7.0', step: '0.1' },
-        { key: 'ovrStart',  label: 'OVR Start', type: 'number', placeholder: '72' },
-        { key: 'ovrEnd',    label: 'OVR End',   type: 'number', placeholder: '75' },
-        { key: 'potential', label: 'Potential', type: 'number', placeholder: '85' },
-      ];
-
-      statFields.forEach(({ key, label, type, placeholder, step }) => {
+      // OVR + Potential row
+      const ovrGrid = document.createElement('div');
+      ovrGrid.className = 'player-stats-grid';
+      [
+        { key: 'ovrStart',  label: 'OVR Start', placeholder: '72' },
+        { key: 'ovrEnd',    label: 'OVR End',   placeholder: '75' },
+        { key: 'potential', label: 'Potential', placeholder: '85' },
+      ].forEach(({ key, label, placeholder }) => {
         const grp = document.createElement('div');
         grp.className = 'trophy-meta-group';
         const lbl = document.createElement('label');
         lbl.className = 'trophy-meta-label';
         lbl.textContent = label;
         const inp = document.createElement('input');
-        inp.type = type;
+        inp.type = 'number';
         inp.className = 'form-input';
         inp.placeholder = placeholder;
-        if (step) inp.step = step;
-        inp.value = ps[key] != null ? ps[key] : '';
+        inp.value = (season.playerStats || {})[key] != null ? (season.playerStats || {})[key] : '';
         inp.addEventListener('input', () => {
           const updated = { ...(season.playerStats || {}) };
-          updated[key] = step ? parseFloat(inp.value) : (parseInt(inp.value) || null);
+          updated[key] = parseInt(inp.value) || null;
+          season.playerStats = updated;
           _updateSeason(season.id, { playerStats: updated });
         });
         grp.appendChild(lbl);
         grp.appendChild(inp);
-        statsGrid.appendChild(grp);
+        ovrGrid.appendChild(grp);
       });
-      statsSection.appendChild(statsGrid);
+      statsSection.appendChild(ovrGrid);
+
+      // Competitions section
+      const compsHeader = document.createElement('div');
+      compsHeader.className = 'trophy-season-label';
+      compsHeader.style.cssText = 'margin-top:14px;margin-bottom:8px;';
+      compsHeader.textContent = 'Performances';
+      statsSection.appendChild(compsHeader);
+
+      // Ensure Liga default exists
+      if (!(season.playerStats || {}).competitions) {
+        const updated = { ...(season.playerStats || {}), competitions: [{ name: 'Liga', apps: null, goals: null, assists: null, cleanSheets: null, avgRating: null }] };
+        season.playerStats = updated;
+        _updateSeason(season.id, { playerStats: updated });
+      }
+
+      const compsWrap = document.createElement('div');
+      compsWrap.className = 'competitions-wrap';
+
+      function renderCompetitions() {
+        compsWrap.replaceChildren();
+        const competitions = (season.playerStats || {}).competitions || [];
+        competitions.forEach((comp, idx) => {
+          const row = document.createElement('div');
+          row.className = 'competition-row';
+
+          const nameRow = document.createElement('div');
+          nameRow.className = 'competition-name-row';
+          const nameInp = document.createElement('input');
+          nameInp.type = 'text';
+          nameInp.className = 'form-input competition-name-input';
+          nameInp.value = comp.name || '';
+          nameInp.placeholder = 'Competition';
+          nameInp.addEventListener('input', () => {
+            const updated = { ...(season.playerStats || {}) };
+            updated.competitions = updated.competitions.map((c, i) => i === idx ? { ...c, name: nameInp.value } : c);
+            season.playerStats = updated;
+            _updateSeason(season.id, { playerStats: updated });
+          });
+          nameRow.appendChild(nameInp);
+
+          const delBtn = document.createElement('button');
+          delBtn.className = 'btn-icon';
+          delBtn.style.color = 'var(--text-muted)';
+          const delI = document.createElement('i');
+          delI.setAttribute('data-lucide', 'trash-2');
+          delBtn.appendChild(delI);
+          delBtn.addEventListener('click', () => {
+            const updated = { ...(season.playerStats || {}) };
+            updated.competitions = updated.competitions.filter((_, i) => i !== idx);
+            season.playerStats = updated;
+            _updateSeason(season.id, { playerStats: updated });
+            renderCompetitions();
+            lucide.createIcons();
+          });
+          nameRow.appendChild(delBtn);
+          row.appendChild(nameRow);
+
+          const compGrid = document.createElement('div');
+          compGrid.className = 'player-stats-grid';
+          const compFields = [
+            { key: 'apps',      label: 'Apps',       placeholder: '0'   },
+            ...(isGK
+              ? [{ key: 'cleanSheets', label: 'Clean Sheets', placeholder: '0' }]
+              : [
+                  { key: 'goals',   label: 'Goals',   placeholder: '0' },
+                  { key: 'assists', label: 'Assists',  placeholder: '0' },
+                ]
+            ),
+            { key: 'avgRating', label: 'Avg Rating', placeholder: '7.0', step: '0.1' },
+          ];
+
+          compFields.forEach(({ key, label, placeholder, step }) => {
+            const grp = document.createElement('div');
+            grp.className = 'trophy-meta-group';
+            const lbl = document.createElement('label');
+            lbl.className = 'trophy-meta-label';
+            lbl.textContent = label;
+            const inp = document.createElement('input');
+            inp.type = 'number';
+            inp.className = 'form-input';
+            inp.placeholder = placeholder;
+            if (step) inp.step = step;
+            inp.value = comp[key] != null ? comp[key] : '';
+            inp.addEventListener('input', () => {
+              const updated = { ...(season.playerStats || {}) };
+              updated.competitions = updated.competitions.map((c, i) =>
+                i === idx ? { ...c, [key]: step ? parseFloat(inp.value) : (parseInt(inp.value) ?? null) } : c
+              );
+              season.playerStats = updated;
+              _updateSeason(season.id, { playerStats: updated });
+            });
+            grp.appendChild(lbl);
+            grp.appendChild(inp);
+            compGrid.appendChild(grp);
+          });
+
+          row.appendChild(compGrid);
+          compsWrap.appendChild(row);
+        });
+      }
+
+      renderCompetitions();
+      statsSection.appendChild(compsWrap);
+
+      const addCompBtn = document.createElement('button');
+      addCompBtn.className = 'btn-secondary';
+      addCompBtn.style.cssText = 'width:100%;margin-top:8px;';
+      const addI = document.createElement('i');
+      addI.setAttribute('data-lucide', 'plus');
+      addCompBtn.appendChild(addI);
+      addCompBtn.appendChild(document.createTextNode(' Add Competition'));
+      addCompBtn.addEventListener('click', () => {
+        const updated = { ...(season.playerStats || {}) };
+        updated.competitions = [...(updated.competitions || []), { name: '', apps: null, goals: null, assists: null, cleanSheets: null, avgRating: null }];
+        season.playerStats = updated;
+        _updateSeason(season.id, { playerStats: updated });
+        renderCompetitions();
+        lucide.createIcons();
+      });
+      statsSection.appendChild(addCompBtn);
 
       // Career moment textarea
       const momentLbl = document.createElement('label');
       momentLbl.className = 'trophy-meta-label';
-      momentLbl.style.marginTop = '10px';
-      momentLbl.style.display = 'block';
+      momentLbl.style.cssText = 'margin-top:12px;display:block;';
       momentLbl.textContent = 'Key Career Moment';
       const momentInput = document.createElement('textarea');
       momentInput.className = 'trophy-notes-input';
       momentInput.placeholder = 'e.g. "Scored hat-trick vs rivals, linked with Real Madrid"…';
-      momentInput.value = ps.careerMoment || '';
+      momentInput.value = (season.playerStats || {}).careerMoment || '';
       momentInput.addEventListener('input', () => {
         const updated = { ...(season.playerStats || {}) };
         updated.careerMoment = momentInput.value;
+        season.playerStats = updated;
         _updateSeason(season.id, { playerStats: updated });
       });
       statsSection.appendChild(momentLbl);

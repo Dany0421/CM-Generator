@@ -1043,7 +1043,7 @@ a { color: var(--accent); text-decoration: none; }
   resize: none;
   outline: none;
   font-family: var(--font);
-  min-height: 80px;
+  min-height: 120px;
   overflow: hidden;
 }
 

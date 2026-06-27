@@ -314,14 +314,13 @@ const RulesetModule = (() => {
       textarea.placeholder = placeholders[key] || '';
 
       const autoResize = () => {
-        textarea.style.height = 'auto';
-        textarea.style.height = Math.max(textarea.scrollHeight, 56) + 'px';
+        textarea.style.height = '0px';
+        textarea.style.height = textarea.scrollHeight + 'px';
       };
       textarea.addEventListener('input', () => { _saveMechanic(key, textarea.value); autoResize(); });
-      // Run after element is in DOM
-      setTimeout(autoResize, 0);
       item.appendChild(textarea);
       wrap.appendChild(item);
+      setTimeout(autoResize, 50);
     });
 
     card.appendChild(wrap);

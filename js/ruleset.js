@@ -356,6 +356,7 @@ const RulesetModule = (() => {
     const ruleset = _getRuleset();
     if (!ruleset[sectionKey]) return;
     ruleset[sectionKey][index] = value;
+    delete ruleset.hub_summary;
     _saveRuleset(ruleset);
   }
 

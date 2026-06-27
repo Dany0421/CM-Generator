@@ -178,7 +178,7 @@ const ChallengesModule = (() => {
     const commitTitle = () => {
       const val = titleInput.value.trim() || ch.title;
       titleEl.textContent = val; titleEl.classList.remove('hidden'); titleInput.classList.remove('visible');
-      const chs = Storage.get(Storage.KEYS.CHALLENGES) || []; if (chs[index]) { chs[index].title = val; Storage.set(Storage.KEYS.CHALLENGES, chs); }
+      const chs = Storage.get(Storage.KEYS.CHALLENGES) || []; if (chs[index]) { chs[index].title = val; delete chs[index].hub_line; Storage.set(Storage.KEYS.CHALLENGES, chs); }
     };
     titleInput.addEventListener('blur', commitTitle);
     titleInput.addEventListener('keydown', e => { if (e.key === 'Enter') commitTitle(); if (e.key === 'Escape') { titleEl.classList.remove('hidden'); titleInput.classList.remove('visible'); } });
@@ -200,7 +200,7 @@ const ChallengesModule = (() => {
     const commitDesc = () => {
       const val = descInput.value.trim() || ch.description;
       descEl.textContent = val; descEl.classList.remove('hidden'); descInput.classList.remove('visible');
-      const chs = Storage.get(Storage.KEYS.CHALLENGES) || []; if (chs[index]) { chs[index].description = val; Storage.set(Storage.KEYS.CHALLENGES, chs); }
+      const chs = Storage.get(Storage.KEYS.CHALLENGES) || []; if (chs[index]) { chs[index].description = val; delete chs[index].hub_line; Storage.set(Storage.KEYS.CHALLENGES, chs); }
     };
     descInput.addEventListener('blur', commitDesc);
     descInput.addEventListener('keydown', e => { if (e.key === 'Escape') { descEl.classList.remove('hidden'); descInput.classList.remove('visible'); } });
@@ -208,10 +208,40 @@ const ChallengesModule = (() => {
     card.appendChild(descEl);
     card.appendChild(descInput);
 
-    // Duration chip only
+    // Duration (tap to edit)
     if (ch.duration && ch.duration !== '—') {
-      const durationEl = _buildMetaItem('Duration', ch.duration);
-      card.appendChild(durationEl);
+      const wrap = document.createElement('div');
+      wrap.className = 'challenge-meta-item';
+
+      const lbl = document.createElement('span');
+      lbl.className = 'challenge-meta-label';
+      lbl.textContent = 'Duration';
+
+      const val = document.createElement('span');
+      val.className = 'challenge-meta-value narrative-text-editable';
+      val.title = 'Tap to edit';
+      val.textContent = ch.duration;
+
+      const durInput = document.createElement('input');
+      durInput.type = 'text';
+      durInput.className = 'challenge-edit-input';
+      durInput.value = ch.duration;
+      durInput.style.marginBottom = '0';
+
+      val.addEventListener('click', () => { val.classList.add('hidden'); durInput.classList.add('visible'); durInput.focus(); durInput.select(); });
+      const commitDur = () => {
+        const v = durInput.value.trim() || ch.duration;
+        val.textContent = v; val.classList.remove('hidden'); durInput.classList.remove('visible');
+        const chs = Storage.get(Storage.KEYS.CHALLENGES) || [];
+        if (chs[index]) { chs[index].duration = v; delete chs[index].hub_line; Storage.set(Storage.KEYS.CHALLENGES, chs); }
+      };
+      durInput.addEventListener('blur', commitDur);
+      durInput.addEventListener('keydown', e => { if (e.key === 'Enter') commitDur(); if (e.key === 'Escape') { val.classList.remove('hidden'); durInput.classList.remove('visible'); } });
+
+      wrap.appendChild(lbl);
+      wrap.appendChild(val);
+      wrap.appendChild(durInput);
+      card.appendChild(wrap);
     }
 
     return card;

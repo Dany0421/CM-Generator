@@ -15,6 +15,7 @@ const App = (() => {
     document.querySelectorAll(`.nav-tab[data-module="${name}"]`).forEach(t => t.classList.add('active'));
 
     if (name === 'fiction') FictionModule.render();
+    if (name === 'hub') HubModule.render();
 
     // Scroll to top on navigation
     document.getElementById('app-main').scrollTop = 0;

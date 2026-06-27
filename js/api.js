@@ -103,6 +103,30 @@ ITALY (2 leagues):
 PORTUGAL (1 league only — FC 25 has NO Portuguese second division):
   Liga Portugal Bwin    → 1st Division
 
+NETHERLANDS:
+  Eredivisie            → 1st Division
+
+BELGIUM:
+  Pro League            → 1st Division
+
+TURKEY:
+  Süper Lig             → 1st Division
+
+SAUDI ARABIA:
+  Saudi Pro League      → 1st Division
+
+USA:
+  MLS                   → 1st Division
+
+NOT IN FC 25 — HARD FAILURE if used:
+- Japan (J1 League / J.League) — NOT in FC 25. Clubs like Gamba Osaka, Urawa Red Diamonds, Vissel Kobe, Kashima Antlers — NONE are in FC 25.
+- China (CSL) — NOT in FC 25
+- South Korea (K League) — NOT in FC 25
+- Brazil (Brasileirão) — NOT in FC 25
+- Argentina (Liga Profesional) — NOT in FC 25
+- Mexico (Liga MX) — NOT in FC 25
+- Any other league not listed above
+
 "league" in your output MUST be copied EXACTLY from this list. "division" must match the tier shown above.
 
 DIVISION ACCURACY IS NON-NEGOTIABLE:
@@ -664,7 +688,7 @@ USA:
   MLS                   → 1st Division
 
 NOT IN FC 25 — HARD FAILURE if used:
-- Japan (J1 League / J.League) — NOT in FC 25
+- Japan (J1 League / J.League) — NOT in FC 25. Clubs like Gamba Osaka, Urawa Red Diamonds, Vissel Kobe, Kashima Antlers, FC Tokyo — NONE of them are in FC 25. Do not use any Japanese club.
 - China (CSL) — NOT in FC 25
 - South Korea (K League) — NOT in FC 25
 - Brazil (Brasileirão) — NOT in FC 25
@@ -1142,6 +1166,13 @@ ALLOWED LEAGUES — FC 25 only. Pick ONLY from this list:
   MLS (USA)
 
 Do NOT use any league outside this list. Any other league is a hard failure.
+
+BANNED LEAGUES — using these is an automatic failure regardless of the character concept:
+- Japan: J1 League / J.League (Gamba Osaka, Urawa Red Diamonds, Vissel Kobe, Kashima Antlers, FC Tokyo — ALL banned)
+- China: CSL — Brazil: Brasileirão — Argentina: Liga Profesional — Mexico: Liga MX — South Korea: K League
+- ANY league not in the allowed list above
+
+CRITICAL: A character's nationality, aesthetic, or inspiration (e.g. anime, Japanese culture) does NOT mean they play in a Japanese league. A Japanese-inspired character plays in the Premier League, Bundesliga, Eredivisie, or another allowed league. Never match league to nationality.
 
 OUTPUT FORMAT (strict JSON):
 {

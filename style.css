@@ -701,6 +701,41 @@ a { color: var(--accent); text-decoration: none; }
   color: var(--text-primary);
   line-height: 1.7;
 }
+.narrative-text-editable { cursor: pointer; }
+.narrative-text-editable:hover { opacity: 0.75; }
+.narrative-edit-input {
+  display: none;
+  width: 100%;
+  background: var(--bg-elevated);
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 0.9375rem;
+  font-family: var(--font);
+  line-height: 1.7;
+  padding: 8px 10px;
+  resize: none;
+  outline: none;
+  box-sizing: border-box;
+  min-height: 60px;
+}
+.narrative-edit-input.visible { display: block; }
+.challenge-edit-input {
+  display: none;
+  width: 100%;
+  background: var(--bg-elevated);
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 0.9375rem;
+  font-weight: 700;
+  font-family: var(--font);
+  padding: 4px 8px;
+  outline: none;
+  box-sizing: border-box;
+  margin-bottom: 6px;
+}
+.challenge-edit-input.visible { display: block; }
 
 .narrative-events-grid {
   display: grid;

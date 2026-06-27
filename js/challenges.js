@@ -163,17 +163,50 @@ const ChallengesModule = (() => {
 
     card.appendChild(top);
 
-    // Title
+    // Title (tap to edit)
     const titleEl = document.createElement('p');
-    titleEl.className = 'challenge-title';
+    titleEl.className = 'challenge-title narrative-text-editable';
+    titleEl.title = 'Tap to edit';
     titleEl.textContent = ch.title || '';
-    card.appendChild(titleEl);
 
-    // Description (contains narrative + consequence in one block)
+    const titleInput = document.createElement('input');
+    titleInput.type = 'text';
+    titleInput.className = 'challenge-edit-input';
+    titleInput.value = ch.title || '';
+
+    titleEl.addEventListener('click', () => { titleEl.classList.add('hidden'); titleInput.classList.add('visible'); titleInput.focus(); titleInput.select(); });
+    const commitTitle = () => {
+      const val = titleInput.value.trim() || ch.title;
+      titleEl.textContent = val; titleEl.classList.remove('hidden'); titleInput.classList.remove('visible');
+      const chs = Storage.get(Storage.KEYS.CHALLENGES) || []; if (chs[index]) { chs[index].title = val; Storage.set(Storage.KEYS.CHALLENGES, chs); }
+    };
+    titleInput.addEventListener('blur', commitTitle);
+    titleInput.addEventListener('keydown', e => { if (e.key === 'Enter') commitTitle(); if (e.key === 'Escape') { titleEl.classList.remove('hidden'); titleInput.classList.remove('visible'); } });
+
+    card.appendChild(titleEl);
+    card.appendChild(titleInput);
+
+    // Description (tap to edit)
     const descEl = document.createElement('p');
-    descEl.className = 'challenge-description';
+    descEl.className = 'challenge-description narrative-text-editable';
+    descEl.title = 'Tap to edit';
     descEl.textContent = ch.description || '';
+
+    const descInput = document.createElement('textarea');
+    descInput.className = 'narrative-edit-input';
+    descInput.value = ch.description || '';
+
+    descEl.addEventListener('click', () => { descEl.classList.add('hidden'); descInput.classList.add('visible'); descInput.style.height = descInput.scrollHeight + 'px'; descInput.focus(); descInput.select(); });
+    const commitDesc = () => {
+      const val = descInput.value.trim() || ch.description;
+      descEl.textContent = val; descEl.classList.remove('hidden'); descInput.classList.remove('visible');
+      const chs = Storage.get(Storage.KEYS.CHALLENGES) || []; if (chs[index]) { chs[index].description = val; Storage.set(Storage.KEYS.CHALLENGES, chs); }
+    };
+    descInput.addEventListener('blur', commitDesc);
+    descInput.addEventListener('keydown', e => { if (e.key === 'Escape') { descEl.classList.remove('hidden'); descInput.classList.remove('visible'); } });
+
     card.appendChild(descEl);
+    card.appendChild(descInput);
 
     // Duration chip only
     if (ch.duration && ch.duration !== '—') {

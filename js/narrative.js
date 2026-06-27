@@ -141,7 +141,7 @@ const NarrativeModule = (() => {
     // Content area
     const contentEl = document.createElement('div');
     contentEl.className = 'narrative-section-content';
-    _setSectionText(contentEl, text);
+    _setSectionText(contentEl, text, key);
     card.appendChild(contentEl);
 
     return card;
@@ -198,13 +198,13 @@ const NarrativeModule = (() => {
 
     const contentEl = document.createElement('div');
     contentEl.className = 'event-content';
-    _setSectionText(contentEl, text);
+    _setSectionText(contentEl, text, null, index);
     item.appendChild(contentEl);
 
     return item;
   }
 
-  function _setSectionText(el, text) {
+  function _setSectionText(el, text, storageKey, eventIndex) {
     el.replaceChildren();
     if (!text) {
       const p = document.createElement('p');
@@ -213,12 +213,50 @@ const NarrativeModule = (() => {
       p.style.fontStyle = 'italic';
       p.textContent = 'Not generated yet.';
       el.appendChild(p);
-    } else {
-      const p = document.createElement('p');
-      p.className = 'narrative-text';
-      p.textContent = text;
-      el.appendChild(p);
+      return;
     }
+
+    const p = document.createElement('p');
+    p.className = 'narrative-text narrative-text-editable';
+    p.title = 'Tap to edit';
+    p.textContent = text;
+
+    const textarea = document.createElement('textarea');
+    textarea.className = 'narrative-edit-input';
+    textarea.value = text;
+
+    p.addEventListener('click', () => {
+      p.classList.add('hidden');
+      textarea.classList.add('visible');
+      textarea.style.height = textarea.scrollHeight + 'px';
+      textarea.focus();
+      textarea.select();
+    });
+
+    const commit = () => {
+      const val = textarea.value.trim() || text;
+      p.textContent = val;
+      p.classList.remove('hidden');
+      textarea.classList.remove('visible');
+      if (!storageKey) return;
+      const saved = Storage.get(Storage.KEYS.NARRATIVE) || {};
+      if (eventIndex != null) {
+        const events = saved.narrative_events || [];
+        events[eventIndex] = val;
+        saved.narrative_events = events;
+      } else {
+        saved[storageKey] = val;
+      }
+      Storage.set(Storage.KEYS.NARRATIVE, saved);
+    };
+
+    textarea.addEventListener('blur', commit);
+    textarea.addEventListener('keydown', e => {
+      if (e.key === 'Escape') { p.classList.remove('hidden'); textarea.classList.remove('visible'); }
+    });
+
+    el.appendChild(p);
+    el.appendChild(textarea);
   }
 
   function _setLoading(contentEl) {

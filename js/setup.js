@@ -151,10 +151,44 @@ const SetupModule = (() => {
     const card = document.createElement('div');
     card.className = 'card setup-concept-card';
 
+    const taglineText = data.save_concept || data.player?.concept_hook || '';
+
     const tagline = document.createElement('p');
-    tagline.className = 'setup-concept-tagline';
-    tagline.textContent = data.save_concept || data.player?.concept_hook || '';
+    tagline.className = 'setup-concept-tagline setup-tagline-editable';
+    tagline.title = 'Tap to edit';
+    tagline.textContent = taglineText;
+
+    const taglineInput = document.createElement('textarea');
+    taglineInput.className = 'setup-tagline-input';
+    taglineInput.value = taglineText;
+    taglineInput.rows = 2;
+
+    tagline.addEventListener('click', () => {
+      tagline.classList.add('hidden');
+      taglineInput.classList.add('visible');
+      taglineInput.focus();
+      taglineInput.select();
+    });
+
+    const commitTagline = () => {
+      const val = taglineInput.value.trim() || taglineText;
+      tagline.textContent = val;
+      tagline.classList.remove('hidden');
+      taglineInput.classList.remove('visible');
+      const saved = Storage.get(Storage.KEYS.SETUP);
+      if (!saved) return;
+      saved.save_concept = val;
+      if (saved.player) saved.player.concept_hook = val;
+      Storage.set(Storage.KEYS.SETUP, saved);
+    };
+
+    taglineInput.addEventListener('blur', commitTagline);
+    taglineInput.addEventListener('keydown', e => {
+      if (e.key === 'Escape') { tagline.classList.remove('hidden'); taglineInput.classList.remove('visible'); }
+    });
+
     card.appendChild(tagline);
+    card.appendChild(taglineInput);
 
     const meta = document.createElement('div');
     meta.className = 'setup-concept-meta';

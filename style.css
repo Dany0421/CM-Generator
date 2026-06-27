@@ -2198,6 +2198,27 @@ a { color: var(--accent); text-decoration: none; }
   margin-bottom: 14px;
   font-style: italic;
 }
+.setup-tagline-editable { cursor: pointer; }
+.setup-tagline-editable:hover { opacity: 0.75; }
+.setup-tagline-input {
+  display: none;
+  width: 100%;
+  background: var(--bg-elevated);
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 1.0625rem;
+  font-weight: 600;
+  font-style: italic;
+  font-family: var(--font);
+  line-height: 1.55;
+  padding: 6px 10px;
+  resize: none;
+  outline: none;
+  margin-bottom: 14px;
+  box-sizing: border-box;
+}
+.setup-tagline-input.visible { display: block; }
 
 .setup-concept-meta {
   display: flex;

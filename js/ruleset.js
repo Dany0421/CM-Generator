@@ -273,6 +273,9 @@ const RulesetModule = (() => {
       lbl.textContent = label;
       labelRow.appendChild(lbl);
 
+      const mechBtnGroup = document.createElement('div');
+      mechBtnGroup.className = 'card-header-actions';
+
       const regenBtn = document.createElement('button');
       regenBtn.className = 'icon-btn';
       regenBtn.title = 'Regenerate ' + label;
@@ -280,7 +283,21 @@ const RulesetModule = (() => {
       regenIcon.setAttribute('data-lucide', 'refresh-cw');
       regenBtn.appendChild(regenIcon);
       regenBtn.addEventListener('click', () => _regenerateMechanic(key));
-      labelRow.appendChild(regenBtn);
+      mechBtnGroup.appendChild(regenBtn);
+
+      const clearBtn = document.createElement('button');
+      clearBtn.className = 'icon-btn';
+      clearBtn.title = 'Clear ' + label;
+      const clearIcon = document.createElement('i');
+      clearIcon.setAttribute('data-lucide', 'x');
+      clearBtn.appendChild(clearIcon);
+      clearBtn.addEventListener('click', () => {
+        textarea.value = '';
+        _saveMechanic(key, '');
+        autoResize();
+      });
+      mechBtnGroup.appendChild(clearBtn);
+      labelRow.appendChild(mechBtnGroup);
 
       item.appendChild(labelRow);
 
@@ -298,10 +315,11 @@ const RulesetModule = (() => {
 
       const autoResize = () => {
         textarea.style.height = 'auto';
-        textarea.style.height = textarea.scrollHeight + 'px';
+        textarea.style.height = Math.max(textarea.scrollHeight, 56) + 'px';
       };
       textarea.addEventListener('input', () => { _saveMechanic(key, textarea.value); autoResize(); });
-      requestAnimationFrame(autoResize);
+      // Run after element is in DOM
+      setTimeout(autoResize, 0);
       item.appendChild(textarea);
       wrap.appendChild(item);
     });

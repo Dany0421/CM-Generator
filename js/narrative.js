@@ -127,6 +127,9 @@ const NarrativeModule = (() => {
     titleEl.textContent = label;
     headerEl.appendChild(titleEl);
 
+    const btnGroup = document.createElement('div');
+    btnGroup.className = 'card-header-actions';
+
     const regenBtn = document.createElement('button');
     regenBtn.className = 'icon-btn';
     regenBtn.title = 'Regenerate ' + label;
@@ -134,7 +137,23 @@ const NarrativeModule = (() => {
     regenIcon.setAttribute('data-lucide', 'refresh-cw');
     regenBtn.appendChild(regenIcon);
     regenBtn.addEventListener('click', () => _regenerateSection(key));
-    headerEl.appendChild(regenBtn);
+    btnGroup.appendChild(regenBtn);
+
+    const delBtn = document.createElement('button');
+    delBtn.className = 'icon-btn';
+    delBtn.title = 'Clear ' + label;
+    const delIcon = document.createElement('i');
+    delIcon.setAttribute('data-lucide', 'x');
+    delBtn.appendChild(delIcon);
+    delBtn.addEventListener('click', () => {
+      const saved = Storage.get(Storage.KEYS.NARRATIVE) || {};
+      delete saved[key];
+      Storage.set(Storage.KEYS.NARRATIVE, saved);
+      _setSectionText(contentEl, '', key);
+      lucide.createIcons();
+    });
+    btnGroup.appendChild(delBtn);
+    headerEl.appendChild(btnGroup);
 
     card.appendChild(headerEl);
 
@@ -192,7 +211,28 @@ const NarrativeModule = (() => {
     regenIcon.setAttribute('data-lucide', 'refresh-cw');
     regenBtn.appendChild(regenIcon);
     regenBtn.addEventListener('click', () => _regenerateEvent(index));
-    header.appendChild(regenBtn);
+
+    const evBtnGroup = document.createElement('div');
+    evBtnGroup.className = 'card-header-actions';
+    evBtnGroup.appendChild(regenBtn);
+
+    const evDelBtn = document.createElement('button');
+    evDelBtn.className = 'icon-btn';
+    evDelBtn.title = `Clear Event ${index + 1}`;
+    const evDelIcon = document.createElement('i');
+    evDelIcon.setAttribute('data-lucide', 'x');
+    evDelBtn.appendChild(evDelIcon);
+    evDelBtn.addEventListener('click', () => {
+      const saved = Storage.get(Storage.KEYS.NARRATIVE) || {};
+      const events = saved.narrative_events || [];
+      events[index] = '';
+      saved.narrative_events = events;
+      Storage.set(Storage.KEYS.NARRATIVE, saved);
+      _setSectionText(contentEl, '', null, index);
+      lucide.createIcons();
+    });
+    evBtnGroup.appendChild(evDelBtn);
+    header.appendChild(evBtnGroup);
 
     item.appendChild(header);
 

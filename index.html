@@ -100,6 +100,20 @@
               <button class="btn-secondary" id="settings-key-save">Update</button>
             </div>
           </div>
+          <div class="settings-section">
+            <p class="settings-section-label">Career Data</p>
+            <div class="settings-row">
+              <button class="btn-secondary" id="export-data-btn">
+                <i data-lucide="download"></i>
+                Export Career
+              </button>
+              <button class="btn-secondary" id="import-data-btn">
+                <i data-lucide="upload"></i>
+                Import Career
+              </button>
+              <input type="file" id="import-file-input" accept=".json" style="display:none">
+            </div>
+          </div>
           <div class="settings-danger-zone">
             <p class="danger-label">Danger Zone</p>
             <button class="btn-danger" id="clear-data-btn">

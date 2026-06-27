@@ -171,6 +171,15 @@ RULES FOR GENERATION:
 - Include at least one rule that will create a memorable moment of pain at some point in the save
 - Squad rules, transfer rules, gameplay rules, and special mechanics must all be covered
 
+IF THE CONTEXT SAYS "PLAYER CAREER SAVE" OR "FICTION PLAYER CAREER SAVE":
+- You are NOT the manager. You are writing rules for a PLAYER controlling their own career.
+- squad_rules → personal conduct rules: who the player will/won't play alongside, position loyalty, captain ambitions, relationships with teammates
+- transfer_rules → career decisions the player must follow: rejecting/accepting clubs, never returning to a former club, only moving upward, loyalty clauses
+- gameplay_rules → personal performance standards: minimum avg rating, stats targets per season that trigger Live Editor consequences, play style restrictions
+- special_mechanics → tied to the player's personal concept and arc, not the club's finances
+- NO rules about squad composition, signing players, board decisions, or budget — the player doesn't control those
+- In FICTION MODE specifically: every rule must feel like it belongs to this character's story and identity
+
 OUTPUT FORMAT (strict JSON):
 {
 "squad_rules": ["string", "string", "string"],
@@ -285,9 +294,12 @@ Return ONLY the JSON object. No preamble, no explanation, no markdown fences.`;
     if (isFiction) {
       const fp = Storage.get(Storage.KEYS.FICTION_PLAYER);
       parts.push(
-        `FICTION MODE — CRITICAL:\n` +
-        `This player is entirely fictional — no real player exists with this name or identity.\n` +
-        `The concept/vibe above defines who they are. Build all narrative, challenges, and mechanics around their fictional identity.`
+        `FICTION MODE — PLAYER IS THE STORY:\n` +
+        `This player is entirely fictional. The story lives INSIDE the player — their identity, their inner conflict, their growth, their relationships.\n` +
+        `The club, league, and finances are BACKDROP ONLY. Do not make the club the subject.\n` +
+        `BANNED in fiction mode: board decisions, club budget problems, transfer market pressure, team results as the main driver.\n` +
+        `REQUIRED: every narrative beat, every challenge, every event must trace back to something personal to THIS specific character — their concept, their psychology, their arc.\n` +
+        `The concept/vibe above IS the story. Build everything around it.`
       );
       if (fp?.stats) {
         const s = fp.stats;
@@ -557,7 +569,9 @@ Return ONLY the JSON object. No preamble, no explanation, no markdown fences.`;
   }
 
   async function generateRuleset() {
-    const context = buildContext();
+    const setup = Storage.get(Storage.KEYS.SETUP) || {};
+    const isPlayerMode = setup.mode === 'player' || setup.mode === 'fiction';
+    const context = isPlayerMode ? buildPlayerContext() : buildContext();
     const msg = `Suggest a ruleset for this save:\n\n${context}`;
     return call(SYSTEM_RULESET, msg, 4096);
   }
@@ -736,6 +750,7 @@ RULES:
 - If this is a REWIND save: the real career is narrative shadow, not a roadmap. Reference what actually happened in real life (what defined him, what he failed to achieve, what hurt him) as the weight this save is DIVERGING from — NOT as a path to follow. The player_backstory should name the real career's defining tension. The season_framing should make clear this save is going somewhere different. Never write as if the player will simply replicate real history.
 - Season 1: raw, uncertain, proving ground. Season 3+: a player mid-story with history behind him.
 - Never use: "prove the doubters wrong", "fulfil potential", "journey", "turning point", or any phrase that could apply to any player.
+- If the context says FICTION MODE: the club is backdrop. manager_backstory and club_situation must still be written from the player's perspective — how THEY experience the club, not what the club is doing. No board politics, no budget talk, no team results as the main driver. Everything must trace back to the player's fictional identity and concept.
 
 OUTPUT FORMAT (strict JSON):
 {
@@ -763,6 +778,8 @@ Right tone:
 → "Sevilla want him at €15M but only if he's in form. 7+ avg in the next 4 games → you MUST accept (Live Editor transfer). Miss it → offer dies, potential drops 2 pts. Either way something is lost."
 
 BANNED: generic stat targets ("score 15 goals"), soft consequences, long paragraphs, anything that could apply to any player, vague outcomes.
+
+If the context says FICTION MODE: challenges must be rooted in the player's fictional identity and concept — NOT club finances, board decisions, or transfer market pressure. The club is backdrop. Every challenge must feel like it belongs to THIS specific character's story.
 
 Generate EXACTLY 3 challenges — one of each type:
 
@@ -1044,7 +1061,8 @@ Return ONLY valid JSON (no markdown fences):
   }
 
   async function generateSingleRule(sectionKey) {
-    const context = buildContext();
+    const setup = Storage.get(Storage.KEYS.SETUP) || {};
+    const context = (setup.mode === 'player' || setup.mode === 'fiction') ? buildPlayerContext() : buildContext();
     const ruleset = Storage.get(Storage.KEYS.RULESET) || {};
     const existing = (ruleset[sectionKey] || []).map((r, i) => `${i + 1}. ${r}`).join('\n') || '(none yet)';
     const sectionNames = {

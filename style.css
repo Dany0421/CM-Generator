@@ -284,6 +284,12 @@ a { color: var(--accent); text-decoration: none; }
   gap: 12px;
   margin-bottom: 16px;
 }
+.card-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
 
 .card-title {
   font-size: 0.8125rem;
@@ -1037,7 +1043,7 @@ a { color: var(--accent); text-decoration: none; }
   resize: none;
   outline: none;
   font-family: var(--font);
-  min-height: 56px;
+  min-height: 80px;
   overflow: hidden;
 }
 
@@ -2001,6 +2007,25 @@ a { color: var(--accent); text-decoration: none; }
   gap: 16px;
 }
 
+.settings-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 16px;
+}
+.settings-section-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.settings-row {
+  display: flex;
+  gap: 8px;
+}
 .settings-danger-zone {
   display: flex;
   flex-direction: column;

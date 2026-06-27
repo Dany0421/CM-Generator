@@ -161,6 +161,20 @@ const ChallengesModule = (() => {
     regenBtn.addEventListener('click', () => _regenerateChallenge(index));
     top.appendChild(regenBtn);
 
+    const delBtn = document.createElement('button');
+    delBtn.className = 'icon-btn';
+    delBtn.title = 'Delete this challenge';
+    const delIcon = document.createElement('i');
+    delIcon.setAttribute('data-lucide', 'x');
+    delBtn.appendChild(delIcon);
+    delBtn.addEventListener('click', () => {
+      const chs = Storage.get(Storage.KEYS.CHALLENGES) || [];
+      chs.splice(index, 1);
+      Storage.set(Storage.KEYS.CHALLENGES, chs);
+      render();
+    });
+    top.appendChild(delBtn);
+
     card.appendChild(top);
 
     // Title (tap to edit)

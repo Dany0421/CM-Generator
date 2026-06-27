@@ -173,6 +173,57 @@ const App = (() => {
       showToast('API key updated');
     });
 
+    // Settings: export career
+    document.getElementById('export-data-btn').addEventListener('click', () => {
+      const data = {};
+      const skip = new Set([Storage.KEYS.API_KEY]);
+      Object.entries(Storage.KEYS).forEach(([, v]) => {
+        if (!skip.has(v)) {
+          const val = Storage.get(v);
+          if (val !== null) data[v] = val;
+        }
+      });
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `career-${new Date().toISOString().slice(0,10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('Career exported');
+    });
+
+    // Settings: import career
+    document.getElementById('import-data-btn').addEventListener('click', () => {
+      document.getElementById('import-file-input').click();
+    });
+
+    document.getElementById('import-file-input').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        try {
+          const data = JSON.parse(ev.target.result);
+          Object.entries(data).forEach(([k, v]) => Storage.set(k, v));
+          closeSettings();
+          SetupModule.render();
+          FictionModule.render();
+          NarrativeModule.render();
+          ChallengesModule.render();
+          RulesetModule.render();
+          HubModule.render();
+          const mode = Storage.get(Storage.KEYS.SETUP)?.mode || 'team';
+          setMode(mode);
+          showToast('Career imported successfully');
+        } catch {
+          showError('Invalid career file.');
+        }
+        e.target.value = '';
+      };
+      reader.readAsText(file);
+    });
+
     // Settings: clear data
     document.getElementById('clear-data-btn').addEventListener('click', () => {
       Storage.clearAll();

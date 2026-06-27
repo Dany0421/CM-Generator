@@ -2767,18 +2767,17 @@ a { color: var(--accent); text-decoration: none; }
 .fiction-chip-editable:active { opacity: 0.7; }
 .fiction-chip-input {
   display: none;
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  background: var(--bg-elevated);
-  border: 1px solid var(--accent);
-  border-radius: 100px;
+  width: 80px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--accent);
+  border-radius: 0;
   color: var(--text-primary);
   font-size: 0.75rem;
   font-weight: 600;
   font-family: var(--font);
   text-align: center;
-  padding: 0 8px;
+  padding: 0 2px;
   outline: none;
 }
 .fiction-chip-input.visible { display: block; }
@@ -2962,6 +2961,12 @@ a { color: var(--accent); text-decoration: none; }
 .fiction-ps-chip--possible {
   opacity: 0.45;
   border-style: dashed;
+}
+.fiction-ps-chip--editable .fiction-ps-chip-label {
+  cursor: pointer;
+}
+.fiction-ps-chip--editable .fiction-ps-chip-label:hover {
+  color: var(--text-primary);
 }
 .fiction-ps-delete {
   background: none;

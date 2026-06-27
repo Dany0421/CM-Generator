@@ -561,20 +561,106 @@ const FictionModule = (() => {
     title.appendChild(t);
     card.appendChild(title);
 
-    function makeChip(text, field, index, isPlus, isPossible) {
+    function makeActiveChip(text, field, index, isPlus) {
       const chip = document.createElement('span');
-      chip.className = 'fiction-ps-chip' +
-        (isPlus ? ' fiction-ps-chip--plus' : '') +
-        (isPossible ? ' fiction-ps-chip--possible' : '');
-      chip.textContent = text;
+      chip.className = 'fiction-ps-chip fiction-ps-chip--editable' + (isPlus ? ' fiction-ps-chip--plus' : '');
 
-      if (!isPossible) {
-        const del = document.createElement('button');
-        del.className = 'fiction-ps-delete';
-        del.textContent = '×';
-        del.addEventListener('click', () => _deletePlayStyle(field, index));
-        chip.appendChild(del);
-      }
+      const label = document.createElement('span');
+      label.className = 'fiction-ps-chip-label';
+      label.textContent = text;
+      chip.appendChild(label);
+
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.className = 'fiction-chip-input';
+      input.value = text;
+      input.style.display = 'none';
+      chip.appendChild(input);
+
+      const del = document.createElement('button');
+      del.className = 'fiction-ps-delete';
+      del.textContent = '×';
+      del.addEventListener('click', (e) => { e.stopPropagation(); _deletePlayStyle(field, index); });
+      chip.appendChild(del);
+
+      label.addEventListener('click', () => {
+        label.style.display = 'none';
+        del.style.display = 'none';
+        input.style.display = 'inline-block';
+        input.focus();
+        input.select();
+      });
+
+      const commit = () => {
+        const val = input.value.trim();
+        label.style.display = 'inline';
+        del.style.display = 'inline';
+        input.style.display = 'none';
+        if (!val) { _deletePlayStyle(field, index); return; }
+        label.textContent = val;
+        const fp = Storage.get(Storage.KEYS.FICTION_PLAYER);
+        if (!fp) return;
+        fp[field] = (fp[field] || []).map((v, i) => i === index ? val : v);
+        Storage.set(Storage.KEYS.FICTION_PLAYER, fp);
+      };
+
+      input.addEventListener('blur', commit);
+      input.addEventListener('keydown', e => {
+        if (e.key === 'Enter') input.blur();
+        if (e.key === 'Escape') { input.value = text; input.blur(); }
+      });
+
+      return chip;
+    }
+
+    function makePossibleChip(text, field, index, isPlus) {
+      const chip = document.createElement('span');
+      chip.className = 'fiction-ps-chip fiction-ps-chip--possible fiction-ps-chip--editable' + (isPlus ? ' fiction-ps-chip--plus' : '');
+
+      const label = document.createElement('span');
+      label.className = 'fiction-ps-chip-label';
+      label.textContent = text;
+      chip.appendChild(label);
+
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.className = 'fiction-chip-input';
+      input.value = text;
+      input.style.display = 'none';
+      chip.appendChild(input);
+
+      const del = document.createElement('button');
+      del.className = 'fiction-ps-delete';
+      del.textContent = '×';
+      del.addEventListener('click', (e) => { e.stopPropagation(); _deletePlayStyle(field, index); });
+      chip.appendChild(del);
+
+      label.addEventListener('click', () => {
+        label.style.display = 'none';
+        del.style.display = 'none';
+        input.style.display = 'inline-block';
+        input.focus();
+        input.select();
+      });
+
+      const commit = () => {
+        const val = input.value.trim();
+        label.style.display = 'inline';
+        del.style.display = 'inline';
+        input.style.display = 'none';
+        if (!val) { _deletePlayStyle(field, index); return; }
+        label.textContent = val;
+        const fp = Storage.get(Storage.KEYS.FICTION_PLAYER);
+        if (!fp) return;
+        fp[field] = (fp[field] || []).map((v, i) => i === index ? val : v);
+        Storage.set(Storage.KEYS.FICTION_PLAYER, fp);
+      };
+
+      input.addEventListener('blur', commit);
+      input.addEventListener('keydown', e => {
+        if (e.key === 'Enter') input.blur();
+        if (e.key === 'Escape') { input.value = text; input.blur(); }
+      });
 
       return chip;
     }
@@ -582,8 +668,33 @@ const FictionModule = (() => {
     if (hasActive) {
       const wrap = document.createElement('div');
       wrap.className = 'fiction-playstyles';
-      stylesPlus.forEach((s, i) => wrap.appendChild(makeChip(s.endsWith('+') ? s : s + ' +', 'play_styles_plus', i, true, false)));
-      styles.forEach((s, i)     => wrap.appendChild(makeChip(s, 'play_styles', i, false, false)));
+      stylesPlus.forEach((s, i) => wrap.appendChild(makeActiveChip(s.endsWith('+') ? s : s + ' +', 'play_styles_plus', i, true)));
+      styles.forEach((s, i)     => wrap.appendChild(makeActiveChip(s, 'play_styles', i, false)));
+
+      const addPs = document.createElement('button');
+      addPs.className = 'fiction-chip-add';
+      addPs.textContent = '+ ps';
+      addPs.addEventListener('click', () => {
+        const fp = Storage.get(Storage.KEYS.FICTION_PLAYER);
+        if (!fp) return;
+        fp.play_styles = [...(fp.play_styles || []), 'New PS'];
+        Storage.set(Storage.KEYS.FICTION_PLAYER, fp);
+        render();
+      });
+      wrap.appendChild(addPs);
+
+      const addPsPlus = document.createElement('button');
+      addPsPlus.className = 'fiction-chip-add';
+      addPsPlus.textContent = '+ ps+';
+      addPsPlus.addEventListener('click', () => {
+        const fp = Storage.get(Storage.KEYS.FICTION_PLAYER);
+        if (!fp) return;
+        fp.play_styles_plus = [...(fp.play_styles_plus || []), 'New PS+'];
+        Storage.set(Storage.KEYS.FICTION_PLAYER, fp);
+        render();
+      });
+      wrap.appendChild(addPsPlus);
+
       card.appendChild(wrap);
     }
 
@@ -598,8 +709,33 @@ const FictionModule = (() => {
 
       const possWrap = document.createElement('div');
       possWrap.className = 'fiction-playstyles';
-      possiblePlus.forEach((s, i) => possWrap.appendChild(makeChip(s.endsWith('+') ? s : s + ' +', 'possible_play_styles_plus', i, true, true)));
-      possible.forEach((s, i)     => possWrap.appendChild(makeChip(s, 'possible_play_styles', i, false, true)));
+      possiblePlus.forEach((s, i) => possWrap.appendChild(makePossibleChip(s.endsWith('+') ? s : s + ' +', 'possible_play_styles_plus', i, true)));
+      possible.forEach((s, i)     => possWrap.appendChild(makePossibleChip(s, 'possible_play_styles', i, false)));
+
+      const addPossPs = document.createElement('button');
+      addPossPs.className = 'fiction-chip-add';
+      addPossPs.textContent = '+ ps';
+      addPossPs.addEventListener('click', () => {
+        const fp = Storage.get(Storage.KEYS.FICTION_PLAYER);
+        if (!fp) return;
+        fp.possible_play_styles = [...(fp.possible_play_styles || []), 'New PS'];
+        Storage.set(Storage.KEYS.FICTION_PLAYER, fp);
+        render();
+      });
+      possWrap.appendChild(addPossPs);
+
+      const addPossPsPlus = document.createElement('button');
+      addPossPsPlus.className = 'fiction-chip-add';
+      addPossPsPlus.textContent = '+ ps+';
+      addPossPsPlus.addEventListener('click', () => {
+        const fp = Storage.get(Storage.KEYS.FICTION_PLAYER);
+        if (!fp) return;
+        fp.possible_play_styles_plus = [...(fp.possible_play_styles_plus || []), 'New PS+'];
+        Storage.set(Storage.KEYS.FICTION_PLAYER, fp);
+        render();
+      });
+      possWrap.appendChild(addPossPsPlus);
+
       card.appendChild(possWrap);
     }
 

@@ -256,6 +256,15 @@ Return ONLY the JSON object. No preamble, no explanation, no markdown fences.`;
     return mode === 'player' || mode === 'fiction';
   }
 
+  function _getLastSeasonHighlights() {
+    const log = (Storage.get(Storage.KEYS.HUB) || {}).log || [];
+    const divIdxs = log.reduce((acc, e, i) => { if (e.isDivider) acc.push(i); return acc; }, []);
+    if (divIdxs.length === 0) return [];
+    const last = divIdxs[divIdxs.length - 1];
+    const prev = divIdxs.length >= 2 ? divIdxs[divIdxs.length - 2] : -1;
+    return log.slice(prev + 1, last).filter(e => !e.isDivider && e.highlight);
+  }
+
   function buildPlayerContext() {
     const setup      = Storage.get(Storage.KEYS.SETUP) || {};
     const narrative  = Storage.get(Storage.KEYS.NARRATIVE);
@@ -425,6 +434,15 @@ Return ONLY the JSON object. No preamble, no explanation, no markdown fences.`;
       if (lines.length > 0) parts.push(lines.join('\n'));
     }
 
+    const highlights = _getLastSeasonHighlights();
+    if (highlights.length > 0) {
+      const lines = highlights.map(e => {
+        const date = e.gameDate ? `${e.gameDate.day} ${e.gameDate.month}: ` : '';
+        return `- ${date}${e.text}`;
+      }).join('\n');
+      parts.push(`KEY MOMENTS FROM LAST SEASON (use as context — reference these events, do not ignore them):\n${lines}`);
+    }
+
     return parts.join('\n\n');
   }
 
@@ -517,6 +535,15 @@ Return ONLY the JSON object. No preamble, no explanation, no markdown fences.`;
         ].filter(Boolean).map(r => `- ${r}`).join('\n');
         if (ruleLines) parts.push(`PERMANENT RULESET (do not contradict or reuse these mechanics):\n${ruleLines}`);
       }
+    }
+
+    const highlights = _getLastSeasonHighlights();
+    if (highlights.length > 0) {
+      const lines = highlights.map(e => {
+        const date = e.gameDate ? `${e.gameDate.day} ${e.gameDate.month}: ` : '';
+        return `- ${date}${e.text}`;
+      }).join('\n');
+      parts.push(`KEY MOMENTS FROM LAST SEASON (use as context — reference these events, do not ignore them):\n${lines}`);
     }
 
     return parts.join('\n\n');

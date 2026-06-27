@@ -1267,7 +1267,7 @@ Return ONLY the JSON. No preamble, no markdown fences.`;
   async function generateFictionConcept(direction) {
     const existing = Storage.get(Storage.KEYS.SETUP);
     const prevBlock = existing?.player?.name
-      ? `\n\nPREVIOUS CONCEPT — create something meaningfully different:\nPlayer: ${existing.player.name}, ${existing.player.position}\nClub: ${existing.club}\nConcept: ${existing.save_concept || '—'}`
+      ? `\n\nPREVIOUS CONCEPT — create something meaningfully different. Do NOT reuse the same club, league, nationality, or concept:\nPlayer: ${existing.player.name}, ${existing.player.position}, ${existing.player.nationality || '—'}\nClub: ${existing.club} | League: ${existing.league || '—'}\nConcept: ${existing.save_concept || '—'}`
       : '';
     const msg = `User concept/vibe: "${direction || 'surprise me'}"\n\nDesign a fictional FC 25 player concept.${prevBlock}`;
     return call(SYSTEM_FICTION_CONCEPT, msg, 512);

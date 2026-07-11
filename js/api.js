@@ -10,6 +10,16 @@ const API = (() => {
     Storage.set(Storage.KEYS.MODEL, model);
   }
 
+  // Fable 5: thinking is always on (eats into max_tokens) and safety
+  // classifiers can decline a request — opt into a server-side fallback to
+  // Opus 4.8 so a decline is transparently re-served in the same call.
+  function _applyFableConfig(body, headers) {
+    if (body.model !== 'claude-fable-5') return;
+    body.max_tokens = Math.max(body.max_tokens, 8192);
+    body.fallbacks = [{ model: 'claude-opus-4-8' }];
+    headers['anthropic-beta'] = 'server-side-fallback-2026-06-01';
+  }
+
   // ── Structured Output Schemas ────────────────────────────────
   // Passed as output_config.format (json_schema) — the API guarantees the
   // response is valid JSON matching the schema, so parse failures disappear.
@@ -314,16 +324,15 @@ Return ONLY the JSON object. No preamble, no explanation, no markdown fences.`;
       body.output_config = { format: { type: 'json_schema', schema } };
     }
 
-    const res = await fetch(ENDPOINT, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': key,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
-      },
-      body: JSON.stringify(body),
-    });
+    const headers = {
+      'Content-Type': 'application/json',
+      'x-api-key': key,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true',
+    };
+    _applyFableConfig(body, headers);
+
+    const res = await fetch(ENDPOINT, { method: 'POST', headers, body: JSON.stringify(body) });
 
     if (!res.ok) {
       let errMsg = `API error ${res.status}`;
@@ -335,6 +344,9 @@ Return ONLY the JSON object. No preamble, no explanation, no markdown fences.`;
     }
 
     const data = await res.json();
+    if (data.stop_reason === 'refusal') {
+      throw new Error('The model declined this request. Try regenerating or rephrasing.');
+    }
     const raw = (data.content || []).find(b => b.type === 'text')?.text ?? '';
 
     // With a schema the API guarantees valid JSON; without one, strip fences first
@@ -1063,21 +1075,21 @@ RULES:
     const key = getKey();
     if (!key) throw new Error('No API key configured.');
 
-    const res = await fetch(ENDPOINT, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': key,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
-      },
-      body: JSON.stringify({
-        model: getModel(),
-        max_tokens: maxTokens,
-        system: SYSTEM_CHAT + '\n\nCURRENT SAVE STATE:\n' + snapshot,
-        messages,
-      }),
-    });
+    const body = {
+      model: getModel(),
+      max_tokens: maxTokens,
+      system: SYSTEM_CHAT + '\n\nCURRENT SAVE STATE:\n' + snapshot,
+      messages,
+    };
+    const headers = {
+      'Content-Type': 'application/json',
+      'x-api-key': key,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true',
+    };
+    _applyFableConfig(body, headers);
+
+    const res = await fetch(ENDPOINT, { method: 'POST', headers, body: JSON.stringify(body) });
 
     if (!res.ok) {
       let errMsg = `API error ${res.status}`;
@@ -1089,6 +1101,9 @@ RULES:
     }
 
     const data = await res.json();
+    if (data.stop_reason === 'refusal') {
+      throw new Error('The model declined this request. Try rephrasing.');
+    }
     return (data.content || []).find(b => b.type === 'text')?.text ?? '';
   }
 

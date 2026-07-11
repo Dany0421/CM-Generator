@@ -282,6 +282,7 @@ Return ONLY the JSON object. No preamble, no explanation, no markdown fences.`;
     parts.push(
       (isFiction ? 'FICTION PLAYER CAREER SAVE\n' : 'PLAYER CAREER SAVE\n') +
       `Player: ${player.name || '—'} | Age: ${currentAge || '—'} | ${player.position || '—'} | ${player.nationality || '—'}\n` +
+      (player.ovr || player.potential ? `OVR: ${player.ovr || '—'} | Potential: ${player.potential || '—'} | Weak Foot: ${player.weakFoot || '—'}★ | Skill Moves: ${player.skillMoves || '—'}★\n` : '') +
       `Manager: ${setup.manager || '—'}\n` +
       `Current Club: ${setup.club || '—'} | ${setup.league || '—'} | ${setup.division || '—'}\n` +
       `Season: ${setup.season || 1} | Difficulty: ${setup.difficulty || '—'}\n` +
@@ -797,12 +798,16 @@ The user has Live Editor:
 
 DESCRIPTION LENGTH: MAX 4 LINES per challenge. Tight, direct, specific. No walls of text.
 
+ATTRIBUTE CONSEQUENCES — MANDATORY:
+At least 2 of the 3 challenges must have a consequence on SPECIFIC individual attributes (e.g. Finishing -2, Composure +3, Sprint Speed frozen, Weak Foot +1★) — NOT just OVR or potential. Pick attributes that match the player's position and the story of the challenge (a striker's confidence crisis hits Finishing and Composure; a winger forced to defend gains Def. Awareness but loses Flair-adjacent stats). OVR/potential consequences are still allowed, but attribute-level consequences are the core currency.
+
 CORE RULE — how a challenge must read:
 One sentence of context. Then condition → consequence. That's it.
 Right tone:
 → "The club has no budget left. If he doesn't hit 6 goal contributions before January, he gets listed — if no offer comes, potential drops 3 pts via Live Editor. The ceiling just cracked."
-→ "He hasn't scored in 5 games and the manager is already looking at replacements. 3 more blanks → OVR drops 2 pts (Live Editor) and next window he goes on the list with no negotiation."
+→ "He hasn't scored in 5 games and the manager is already looking at replacements. 3 more blanks → Finishing -3 and Composure -2 (Live Editor). Score twice in that run → Finishing +2 instead."
 → "Sevilla want him at €15M but only if he's in form. 7+ avg in the next 4 games → you MUST accept (Live Editor transfer). Miss it → offer dies, potential drops 2 pts. Either way something is lost."
+→ "The coach put him on a weak-foot programme and told the press. 5 goal contributions with clear weak-foot involvement by March → Weak Foot +1★. Fail → Curve and Long Shots -2 each."
 
 BANNED: generic stat targets ("score 15 goals"), soft consequences, long paragraphs, anything that could apply to any player, vague outcomes.
 
@@ -812,8 +817,8 @@ Generate EXACTLY 3 challenges — one of each type:
 
 PERFORMANCE ARC (type: "performance_arc"):
 - In-game stats as triggers for Live Editor consequences. Context + condition + consequence in one block.
-- Good: "3 games below 7.0 against top-half sides → potential drops 4 pts (Live Editor). The board's belief in his ceiling just cracked publicly."
-- Good: "A rival in the same position is ahead. If the gap hits 5 goal contributions by March → OVR drops 2 pts and the starting spot is formally gone."
+- Good: "3 games below 7.0 against top-half sides → Composure -3 and Reactions -2 (Live Editor). The board's belief in his ceiling just cracked publicly."
+- Good: "A rival in the same position is ahead. If the gap hits 5 goal contributions by March → OVR drops 2 pts and the starting spot is formally gone. Overtake him → Attacking Positioning +3."
 
 DEVELOPMENT MILESTONE (type: "development_milestone"):
 - Live Editor growth with a locked cost for failure. One sentence of WHY, then the condition and consequence.
@@ -901,6 +906,80 @@ Return strict JSON:
 }
 
 Return ONLY the JSON. No preamble, no markdown fences.`;
+
+  const SYSTEM_CHAT = `You are the save assistant inside a FC 25 career mode companion app. The user chats with you to inspect or adjust anything in their current save. You receive the full save state as JSON below.
+
+BEHAVIOUR:
+- Reply in the language the user writes in (they often mix Portuguese and English).
+- Short, direct answers. Mobile-readable. No fluff.
+- You are a co-writer with taste: when rewriting narrative or challenges, match the existing quality bar — specific, punchy, zero clichés ("prove the doubters wrong", "new chapter" etc. are banned).
+- Never invent save data — everything you say about the save must come from the JSON.
+
+MAKING CHANGES:
+When the user asks you to change something concrete, explain the change in one short line and include EXACTLY ONE fenced json block:
+
+\`\`\`json
+{"actions":[{"target":"fiction.stats.finishing","value":84}]}
+\`\`\`
+
+The app renders this as a preview card with an Apply button — the user confirms before anything is saved. Do not repeat the JSON content in prose.
+
+TARGETS — dot/bracket paths rooted at one of:
+- setup — {manager, club, league, division, season, difficulty, era, save_concept, player:{name, age, position, nationality, ovr, potential, weakFoot, skillMoves, concept_hook}}
+- narrative — {manager_backstory, club_situation, season_framing, narrative_events:[2 strings]}
+- challenges — array of {title, type, description, duration, stakes, difficulty, hub_line}
+- ruleset — {squad_rules:[], transfer_rules:[], gameplay_rules:[], special_mechanics:{chaos_wheel, protected_player, academy_tracker}}
+- fiction — the fiction player card (fiction mode only): {overall, potential, height, weight, preferred_foot, weak_foot, skill_moves, work_rate_att, work_rate_def, alt_positions, stats:{...}, play_styles, play_styles_plus, possible_play_styles, possible_play_styles_plus}
+
+Path examples:
+- narrative.season_framing
+- narrative.narrative_events[1]
+- challenges[2].description
+- challenges[0]  (replace a whole challenge object)
+- ruleset.transfer_rules[0]
+- ruleset.special_mechanics.chaos_wheel
+- fiction.stats.finishing
+- setup.player.potential
+
+RULES:
+- Value types must match the existing schema. Stats are numbers 1-99. Setting an array path replaces the whole array.
+- When you edit a challenge's title or description, ALSO set its hub_line in the same actions block (max 12 words, trigger → consequence style).
+- Every change must stay executable within FC 25 + Live Editor mechanics.
+- If the user asks to edit something outside these targets (season log, trophies, players journal), say you can't edit that from chat and point them to the right tab.
+- Only include an actions block when the user clearly wants a change. Questions get answers, not actions.`;
+
+  async function chatCall(snapshot, messages, maxTokens = 2048) {
+    const key = getKey();
+    if (!key) throw new Error('No API key configured.');
+
+    const res = await fetch(ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+      body: JSON.stringify({
+        model: MODEL,
+        max_tokens: maxTokens,
+        system: SYSTEM_CHAT + '\n\nCURRENT SAVE STATE:\n' + snapshot,
+        messages,
+      }),
+    });
+
+    if (!res.ok) {
+      let errMsg = `API error ${res.status}`;
+      try {
+        const errData = await res.json();
+        errMsg = errData?.error?.message || errMsg;
+      } catch { /* ignore */ }
+      throw new Error(errMsg);
+    }
+
+    const data = await res.json();
+    return data.content?.[0]?.text ?? '';
+  }
 
   const SYSTEM_CONDENSE = `You condense FC 25 career mode challenges and rules into ultra-short hub lines.
 
@@ -1394,6 +1473,7 @@ Return ONLY the JSON. No preamble, no markdown fences.`;
   return {
     getKey,
     call,
+    chatCall,
     buildContext,
     buildPlayerContext,
     generateNarrative,

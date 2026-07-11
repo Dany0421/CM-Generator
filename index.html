@@ -81,6 +81,29 @@
         </button>
       </nav>
 
+      <button id="chat-fab" class="chat-fab" title="Save Assistant">
+        <i data-lucide="message-circle"></i>
+      </button>
+
+    </div>
+
+    <!-- Chat Modal -->
+    <div id="chat-modal" class="modal hidden">
+      <div class="modal-backdrop" id="chat-backdrop"></div>
+      <div class="modal-sheet chat-sheet">
+        <div class="modal-handle"></div>
+        <div class="modal-header">
+          <h2>Save Assistant</h2>
+          <button class="icon-btn" id="chat-close-btn"><i data-lucide="x"></i></button>
+        </div>
+        <div class="chat-messages" id="chat-messages"></div>
+        <div class="chat-input-row">
+          <textarea id="chat-input" class="chat-input" rows="1" placeholder="Ajusta narrative, challenges, rules, stats…"></textarea>
+          <button class="btn-primary chat-send-btn" id="chat-send-btn" title="Send">
+            <i data-lucide="send"></i>
+          </button>
+        </div>
+      </div>
     </div>
 
     <!-- Settings Modal -->
@@ -139,6 +162,7 @@
   <script src="js/challenges.js"></script>
   <script src="js/ruleset.js"></script>
   <script src="js/hub.js"></script>
+  <script src="js/chat.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

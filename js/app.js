@@ -257,6 +257,7 @@ const App = (() => {
     ChallengesModule.init(document.getElementById('module-challenges'));
     RulesetModule.init(document.getElementById('module-ruleset'));
     HubModule.init(document.getElementById('module-hub'));
+    ChatModule.init();
 
     // Show fiction tab if already in fiction mode
     const savedMode = Storage.get(Storage.KEYS.SETUP)?.mode;

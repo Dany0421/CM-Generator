@@ -1,6 +1,98 @@
 const API = (() => {
-  const ENDPOINT = 'https://api.anthropic.com/v1/messages';
-  const MODEL    = 'claude-sonnet-4-6';
+  const ENDPOINT      = 'https://api.anthropic.com/v1/messages';
+  const DEFAULT_MODEL = 'claude-sonnet-4-6';
+
+  function getModel() {
+    return Storage.get(Storage.KEYS.MODEL) || DEFAULT_MODEL;
+  }
+
+  function setModel(model) {
+    Storage.set(Storage.KEYS.MODEL, model);
+  }
+
+  // ── Structured Output Schemas ────────────────────────────────
+  // Passed as output_config.format (json_schema) — the API guarantees the
+  // response is valid JSON matching the schema, so parse failures disappear.
+  const S = {
+    str:    { type: 'string' },
+    int:    { type: 'integer' },
+    strArr: { type: 'array', items: { type: 'string' } },
+    arr(items) { return { type: 'array', items }; },
+    obj(properties, required) {
+      return {
+        type: 'object',
+        properties,
+        required: required || Object.keys(properties),
+        additionalProperties: false,
+      };
+    },
+  };
+
+  const NARRATIVE_SCHEMA = S.obj({
+    manager_backstory: S.str,
+    club_situation:    S.str,
+    season_framing:    S.str,
+    narrative_events:  S.strArr,
+  });
+
+  const CHALLENGE_SCHEMA = S.obj({
+    title:       S.str,
+    type:        S.str,
+    description: S.str,
+    duration:    S.str,
+    stakes:      S.str,
+    difficulty:  { type: 'string', enum: ['Mild', 'Brutal', 'Savage'] },
+    hub_line:    S.str,
+  });
+
+  const PLAYER_CHALLENGES_SCHEMA = S.obj({ challenges: S.arr(CHALLENGE_SCHEMA) });
+
+  const SAVE_CONCEPT_SCHEMA = S.obj({
+    manager: S.str, club: S.str, league: S.str, division: S.str,
+    season: S.int, difficulty: S.str, era: S.str, save_concept: S.str,
+  });
+
+  const PLAYER_CONCEPT_SCHEMA = S.obj({
+    player_name: S.str, player_age: S.int, player_position: S.str, player_nationality: S.str,
+    player_ovr: S.int, player_potential: S.int, player_weak_foot: S.int, player_skill_moves: S.int,
+    concept_type: S.str, concept_hook: S.str,
+    manager: S.str, club: S.str, league: S.str, division: S.str, difficulty: S.str,
+  });
+
+  const FICTION_CONCEPT_SCHEMA = S.obj({
+    player_name: S.str, player_age: S.int, player_position: S.str, player_nationality: S.str,
+    manager: S.str, club: S.str, league: S.str, division: S.str,
+    difficulty: S.str, concept_hook: S.str,
+  });
+
+  const RULESET_SCHEMA = S.obj({
+    squad_rules:    S.strArr,
+    transfer_rules: S.strArr,
+    gameplay_rules: S.strArr,
+    special_mechanics: S.obj({ chaos_wheel: S.str, protected_player: S.str, academy_tracker: S.str }),
+    hub_summary: S.obj({
+      squad_rules: S.strArr, transfer_rules: S.strArr, gameplay_rules: S.strArr,
+      chaos_wheel: S.str, protected_player: S.str, academy_tracker: S.str,
+    }),
+  });
+
+  const EVENTS_SCHEMA = S.obj({
+    events: S.arr(S.obj({ text: S.str, type: { type: 'string', enum: ['positive', 'negative'] } })),
+  });
+
+  const SUMMARY_SCHEMA = S.obj({ summary: S.str });
+
+  const CAREER_MOVE_SCHEMA = S.obj({
+    type: S.str, title: S.str, narrative: S.str, stakes: S.str, mechanic: S.str,
+  });
+
+  const CONDENSE_SCHEMA = S.obj({
+    challenges: S.strArr, squad_rules: S.strArr, transfer_rules: S.strArr, gameplay_rules: S.strArr,
+    chaos_wheel: S.str, protected_player: S.str, academy_tracker: S.str,
+  });
+
+  const VALUE_SCHEMA = S.obj({ value: S.str });
+  const RULE_SCHEMA  = S.obj({ rule: S.str });
 
   const SYSTEM_NARRATIVE = `You are a career mode narrative engine for FC 25. Your job is to generate deeply immersive, specific, and emotionally grounded storylines for a football manager career save.
 
@@ -208,9 +300,19 @@ Return ONLY the JSON object. No preamble, no explanation, no markdown fences.`;
     return Storage.get(Storage.KEYS.API_KEY);
   }
 
-  async function call(systemPrompt, userMessage, maxTokens = 2048) {
+  async function call(systemPrompt, userMessage, maxTokens = 2048, schema = null) {
     const key = getKey();
     if (!key) throw new Error('No API key configured.');
+
+    const body = {
+      model: getModel(),
+      max_tokens: maxTokens,
+      system: systemPrompt,
+      messages: [{ role: 'user', content: userMessage }],
+    };
+    if (schema) {
+      body.output_config = { format: { type: 'json_schema', schema } };
+    }
 
     const res = await fetch(ENDPOINT, {
       method: 'POST',
@@ -220,12 +322,7 @@ Return ONLY the JSON object. No preamble, no explanation, no markdown fences.`;
         'anthropic-version': '2023-06-01',
         'anthropic-dangerous-direct-browser-access': 'true',
       },
-      body: JSON.stringify({
-        model: MODEL,
-        max_tokens: maxTokens,
-        system: systemPrompt,
-        messages: [{ role: 'user', content: userMessage }],
-      }),
+      body: JSON.stringify(body),
     });
 
     if (!res.ok) {
@@ -238,10 +335,12 @@ Return ONLY the JSON object. No preamble, no explanation, no markdown fences.`;
     }
 
     const data = await res.json();
-    const raw = data.content?.[0]?.text ?? '';
+    const raw = (data.content || []).find(b => b.type === 'text')?.text ?? '';
 
-    // Strip markdown fences if present (handle optional leading whitespace)
-    const cleaned = raw.replace(/^\s*```(?:json)?\s*/m, '').replace(/\s*```\s*$/m, '').trim();
+    // With a schema the API guarantees valid JSON; without one, strip fences first
+    const cleaned = schema
+      ? raw.trim()
+      : raw.replace(/^\s*```(?:json)?\s*/m, '').replace(/\s*```\s*$/m, '').trim();
 
     try {
       return JSON.parse(cleaned);
@@ -337,7 +436,10 @@ Return ONLY the JSON object. No preamble, no explanation, no markdown fences.`;
       const lines = pastSeasons.map(s => {
         const ps = s.playerStats || {};
         const pAge   = (player.age || 0) - (pastSeasons.length - s.season + 1) + 1;
-        const pChalls = (s.challenges || []).map(c => c.hub_line || c.title).filter(Boolean).join(' / ');
+        const pChalls = (s.challenges || []).map(c => {
+          const line = c.hub_line || c.title;
+          return line ? `[${(c.status || 'Active').toUpperCase()}] ${line}` : null;
+        }).filter(Boolean).join(' / ');
         const ovrLine = ps.ovrStart != null && ps.ovrEnd != null ? `OVR ${ps.ovrStart}→${ps.ovrEnd}` : null;
         const potLine = ps.potential != null ? `Potential ${ps.potential}` : null;
 
@@ -373,7 +475,8 @@ Return ONLY the JSON object. No preamble, no explanation, no markdown fences.`;
       }).join('\n');
       parts.push(
         `CAREER ARC — ${pastSeasons.length} completed season(s):\n` +
-        `(Do NOT revisit resolved arcs. Do NOT reuse past challenge concepts.)\n${lines}`
+        `(Do NOT revisit resolved arcs. Do NOT reuse past challenge concepts.)\n` +
+        `(Challenge statuses are canon: FAILED/BROKEN challenges left real marks on this player's career — reference their consequences. COMPLETED ones are earned reputation.)\n${lines}`
       );
     }
 
@@ -400,8 +503,9 @@ Return ONLY the JSON object. No preamble, no explanation, no markdown fences.`;
     }
 
     if (challenges && challenges.length > 0) {
-      const list = challenges.map(c => `- ${c.hub_line || c.title}`).join('\n');
-      parts.push('ACTIVE CHALLENGES (do not contradict or repeat):\n' + list);
+      const tracker = (Storage.get(Storage.KEYS.HUB) || {}).tracker || {};
+      const list = challenges.map((c, i) => `- [${(tracker[i] || 'Active').toUpperCase()}] ${c.hub_line || c.title}`).join('\n');
+      parts.push('CURRENT SEASON CHALLENGES with live status (do not contradict or repeat; FAILED/BROKEN ones already have consequences in play):\n' + list);
     }
 
     if (ruleset) {
@@ -473,14 +577,18 @@ Return ONLY the JSON object. No preamble, no explanation, no markdown fences.`;
     if (pastSeasons.length > 0) {
       const lines = pastSeasons.map(s => {
         const pChalls = (s.challenges || [])
-          .map(c => c.hub_line || c.title).filter(Boolean)
+          .map(c => {
+            const line = c.hub_line || c.title;
+            return line ? `[${(c.status || 'Active').toUpperCase()}] ${line}` : null;
+          }).filter(Boolean)
           .join(' / ');
         return `Season ${s.season}: ${s.summary || '(no summary)'}` +
           (pChalls ? `\n  Past challenges: ${pChalls}` : '');
       }).join('\n');
       parts.push(
         `SEASON HISTORY — ${pastSeasons.length} completed season(s):\n` +
-        `(Do NOT revisit resolved narrative arcs. Do NOT reuse past challenge concepts.)\n${lines}`
+        `(Do NOT revisit resolved narrative arcs. Do NOT reuse past challenge concepts.)\n` +
+        `(Challenge statuses are canon: FAILED/BROKEN challenges are scars — the board, fans and media remember them; reference their consequences. COMPLETED ones are earned history.)\n${lines}`
       );
     }
 
@@ -508,8 +616,9 @@ Return ONLY the JSON object. No preamble, no explanation, no markdown fences.`;
     }
 
     if (challenges && Array.isArray(challenges) && challenges.length > 0) {
-      const list = challenges.map(c => `- ${c.hub_line || c.title}`).join('\n');
-      parts.push('ACTIVE CHALLENGES (do not contradict or repeat these):\n' + list);
+      const tracker = (Storage.get(Storage.KEYS.HUB) || {}).tracker || {};
+      const list = challenges.map((c, i) => `- [${(tracker[i] || 'Active').toUpperCase()}] ${c.hub_line || c.title}`).join('\n');
+      parts.push('CURRENT SEASON CHALLENGES with live status (do not contradict or repeat; FAILED/BROKEN ones already have consequences in play):\n' + list);
     }
 
     if (ruleset) {
@@ -572,7 +681,7 @@ Return ONLY the JSON object. No preamble, no explanation, no markdown fences.`;
       msg = `Generate a narrative for this save:\n\n${context}`;
     }
 
-    return call(system, msg);
+    return call(system, msg, 2048, NARRATIVE_SCHEMA);
   }
 
   async function generateNarrativeEvent(eventIndex) {
@@ -587,13 +696,13 @@ Return ONLY the JSON object. No preamble, no explanation, no markdown fences.`;
       `season_framing: ${current.season_framing || '—'}\n` +
       `narrative_events[${otherIdx}]: ${other || '—'}`;
 
-    return call(SYSTEM_NARRATIVE, msg);
+    return call(SYSTEM_NARRATIVE, msg, 2048, NARRATIVE_SCHEMA);
   }
 
   async function generateChallenge(type) {
     const context = buildContext();
     const msg = `Generate a ${type} challenge for this save:\n\n${context}`;
-    return call(SYSTEM_CHALLENGE, msg);
+    return call(SYSTEM_CHALLENGE, msg, 2048, CHALLENGE_SCHEMA);
   }
 
   async function generateRuleset() {
@@ -601,7 +710,7 @@ Return ONLY the JSON object. No preamble, no explanation, no markdown fences.`;
     const isPlayerMode = setup.mode === 'player' || setup.mode === 'fiction';
     const context = isPlayerMode ? buildPlayerContext() : buildContext();
     const msg = `Suggest a ruleset for this save:\n\n${context}`;
-    return call(SYSTEM_RULESET, msg, 4096);
+    return call(SYSTEM_RULESET, msg, 4096, RULESET_SCHEMA);
   }
 
   async function generateSaveConcept(direction) {
@@ -611,7 +720,7 @@ Return ONLY the JSON object. No preamble, no explanation, no markdown fences.`;
       : '';
 
     const msg = `User's direction: "${direction || 'surprise me'}"\n\nDesign a complete FC 25 career mode save concept. If the direction is vague or says "surprise me", be bold and unexpected — pick something a serious career mode player would find genuinely compelling, not the obvious first choice.${prevBlock}`;
-    return call(SYSTEM_SAVE_CONCEPT, msg);
+    return call(SYSTEM_SAVE_CONCEPT, msg, 2048, SAVE_CONCEPT_SCHEMA);
   }
 
   const SYSTEM_EVENTS = `You generate 10 random season events for a FC 25 career mode save. These are one-time bombshell moments — not ongoing rules, not challenges. The player must act on each one immediately when it is rolled.
@@ -830,22 +939,24 @@ CAREER DECISION (type: "career_decision"):
 - Good: "A bigger club tabled an offer. Hit 8 contributions in the first half → you MUST accept (Live Editor transfer). Miss it → offer dies and potential drops 2 pts. No safe path."
 - Good: "Contract expires in 6 months, the club's offer is an insult. Under 8 contributions → forced free transfer to lower division (Live Editor). Over 14 → release clause triggers automatically."
 
-OUTPUT (strict JSON array of exactly 3):
-[
-  {
-    "title": "string — max 6 words, punchy",
-    "type": "performance_arc | development_milestone | career_decision",
-    "description": "string — MAX 4 LINES. Situation + condition + consequence in one block.",
-    "duration": "string",
-    "stakes": "string — 1 sentence, the absolute worst case",
-    "difficulty": "Mild | Brutal | Savage",
-    "hub_line": "string — ONE line, max 12 words. Trigger → consequence. Arrow (→)."
-  },
-  { ... },
-  { ... }
-]
+OUTPUT (strict JSON — exactly 3 challenges):
+{
+  "challenges": [
+    {
+      "title": "string — max 6 words, punchy",
+      "type": "performance_arc | development_milestone | career_decision",
+      "description": "string — MAX 4 LINES. Situation + condition + consequence in one block.",
+      "duration": "string",
+      "stakes": "string — 1 sentence, the absolute worst case",
+      "difficulty": "Mild | Brutal | Savage",
+      "hub_line": "string — ONE line, max 12 words. Trigger → consequence. Arrow (→)."
+    },
+    { ... },
+    { ... }
+  ]
+}
 
-Return ONLY the JSON array. No preamble, no markdown fences.`;
+Return ONLY the JSON object. No preamble, no markdown fences.`;
 
   const SYSTEM_PLAYER_EVENTS = `You generate 10 random season events for a FC 25 player career mode save. These are one-time bombshell moments affecting the PLAYER specifically — not the team in general. The user must act on each one immediately when rolled.
 
@@ -961,7 +1072,7 @@ RULES:
         'anthropic-dangerous-direct-browser-access': 'true',
       },
       body: JSON.stringify({
-        model: MODEL,
+        model: getModel(),
         max_tokens: maxTokens,
         system: SYSTEM_CHAT + '\n\nCURRENT SAVE STATE:\n' + snapshot,
         messages,
@@ -978,7 +1089,7 @@ RULES:
     }
 
     const data = await res.json();
-    return data.content?.[0]?.text ?? '';
+    return (data.content || []).find(b => b.type === 'text')?.text ?? '';
   }
 
   const SYSTEM_CONDENSE = `You condense FC 25 career mode challenges and rules into ultra-short hub lines.
@@ -1012,7 +1123,7 @@ Return ONLY valid JSON (no markdown fences):
     };
 
     const msg = `Condense these FC 25 career mode items into ultra-short hub lines:\n${JSON.stringify(payload, null, 2)}`;
-    const result = await call(SYSTEM_CONDENSE, msg, 2048);
+    const result = await call(SYSTEM_CONDENSE, msg, 2048, CONDENSE_SCHEMA);
 
     // Patch hub_line into each challenge and save
     const updatedChallenges = challenges.map((ch, i) => ({
@@ -1051,7 +1162,7 @@ Return ONLY valid JSON (no markdown fences):
     const context = mode === 'player' ? buildPlayerContext() : buildContext();
     const system  = mode === 'player' ? SYSTEM_PLAYER_EVENTS : SYSTEM_EVENTS;
     const msg = `Generate 10 random season events for this save:\n\n${context}${avoidBlock}`;
-    const result = await call(system, msg, 1024);
+    const result = await call(system, msg, 1024, EVENTS_SCHEMA);
 
     const hub = Storage.get(Storage.KEYS.HUB) || {};
     hub.events = {
@@ -1097,7 +1208,7 @@ Return ONLY valid JSON (no markdown fences):
     }
 
     const msg = `Summarize this completed season:\n\n${context}${resultsBlock}`;
-    return call(system, msg, 512);
+    return call(system, msg, 512, SUMMARY_SCHEMA);
   }
 
   function advanceSeason(summary) {
@@ -1119,7 +1230,11 @@ Return ONLY valid JSON (no markdown fences):
       season:      currentNum,
       summary:     summary || '',
       narrative:   Storage.get(Storage.KEYS.NARRATIVE),
-      challenges:  Storage.get(Storage.KEYS.CHALLENGES) || [],
+      // Archive challenges WITH their final tracker status — failed ones become scars
+      challenges:  (Storage.get(Storage.KEYS.CHALLENGES) || []).map((c, i) => ({
+        ...c,
+        status: (hub.tracker || {})[i] || 'Active',
+      })),
       events:      (hub.events?.rolled || []).map(i => hub.events?.pool?.[i]).filter(Boolean),
       ...(playerStats ? { playerStats } : {}),
     });
@@ -1163,7 +1278,7 @@ Return ONLY valid JSON (no markdown fences):
     const desc = names[key] || key;
     const current = mechanic[key] || '(not set)';
     const msg = `${context}\n\nCurrent value for ${key}:\n${current}\n\nGenerate a NEW, more interesting version of this mechanic: ${desc}.\nMust be executable within FC 25. Return ONLY:\n{\n  "value": "string"\n}`;
-    return call(SYSTEM_RULESET, msg);
+    return call(SYSTEM_RULESET, msg, 2048, VALUE_SCHEMA);
   }
 
   async function generateSingleRule(sectionKey) {
@@ -1178,7 +1293,7 @@ Return ONLY valid JSON (no markdown fences):
     };
     const name = sectionNames[sectionKey] || sectionKey;
     const msg = `${context}\n\nExisting ${name} rules:\n${existing}\n\nGenerate ONE new rule for the ${name} section. Must fit the existing ruleset as a coherent addition, not duplicate existing rules, and be executable within FC 25 mechanics.\n\nReturn ONLY this JSON:\n{\n  "rule": "string"\n}`;
-    return call(SYSTEM_RULESET, msg);
+    return call(SYSTEM_RULESET, msg, 2048, RULE_SCHEMA);
   }
 
   async function generateNarrativeAfterTransfer() {
@@ -1230,13 +1345,13 @@ Return ONLY valid JSON (no markdown fences):
     const context = parts.join('\n\n');
     const msg = `The player has JUST transferred to a new club mid-season. Generate a fresh narrative for this new situation:\n\n${context}\n\nGenerate ONLY club_situation and season_framing relevant to the NEW club. manager_backstory can stay general about the player's identity. narrative_events should reflect the new club context.`;
 
-    return call(SYSTEM_PLAYER_NARRATIVE, msg);
+    return call(SYSTEM_PLAYER_NARRATIVE, msg, 2048, NARRATIVE_SCHEMA);
   }
 
   async function generateCareerMove() {
     const context = buildPlayerContext();
     const msg = `Generate a career-defining situation for this player right now:\n\n${context}`;
-    return call(SYSTEM_PLAYER_CAREER_MOVE, msg, 1024);
+    return call(SYSTEM_PLAYER_CAREER_MOVE, msg, 1024, CAREER_MOVE_SCHEMA);
   }
 
   async function generatePlayerConcept(direction) {
@@ -1245,13 +1360,14 @@ Return ONLY valid JSON (no markdown fences):
       ? `\n\nPREVIOUS CONCEPT — pick something meaningfully different:\nPlayer: ${existing.player.name}, age ${existing.player.age}, ${existing.player.position}\nClub: ${existing.club}\nConcept: ${existing.save_concept || '—'}`
       : '';
     const msg = `User direction: "${direction || 'surprise me'}"\n\nDesign a complete FC 25 player career mode save concept.${prevBlock}`;
-    return call(SYSTEM_PLAYER_CONCEPT, msg, 1024);
+    return call(SYSTEM_PLAYER_CONCEPT, msg, 1024, PLAYER_CONCEPT_SCHEMA);
   }
 
   async function generatePlayerChallenges() {
     const context = buildPlayerContext();
     const msg = `Generate 3 player challenges for this save:\n\n${context}`;
-    const result = await call(SYSTEM_PLAYER_CHALLENGE, msg, 2048);
+    const result = await call(SYSTEM_PLAYER_CHALLENGE, msg, 2048, PLAYER_CHALLENGES_SCHEMA);
+    if (Array.isArray(result?.challenges)) return result.challenges;
     return Array.isArray(result) ? result : [];
   }
 
@@ -1262,7 +1378,7 @@ Return ONLY valid JSON (no markdown fences):
     const msg = `Generate ONE player challenge of type "${type}" for this save:\n\n${context}` +
       (existing ? `\n\nEXISTING ACTIVE CHALLENGES — do not repeat these:\n${existing}` : '') +
       `\n\nReturn a single JSON object (NOT an array):\n{ "title":..., "type":..., "description":..., "duration":..., "stakes":..., "difficulty":..., "hub_line":... }`;
-    return call(SYSTEM_PLAYER_CHALLENGE, msg, 1024);
+    return call(SYSTEM_PLAYER_CHALLENGE, msg, 1024, CHALLENGE_SCHEMA);
   }
 
   // ── Fiction Mode ─────────────────────────────────────────────
@@ -1394,7 +1510,7 @@ Return ONLY the JSON. No preamble, no markdown fences.`;
       ? `\n\nPREVIOUS CONCEPT — create something meaningfully different. Do NOT reuse the same club, league, nationality, or concept:\nPlayer: ${existing.player.name}, ${existing.player.position}, ${existing.player.nationality || '—'}\nClub: ${existing.club} | League: ${existing.league || '—'}\nConcept: ${existing.save_concept || '—'}`
       : '';
     const msg = `User concept/vibe: "${direction || 'surprise me'}"\n\nDesign a fictional FC 25 player concept.${prevBlock}`;
-    return call(SYSTEM_FICTION_CONCEPT, msg, 512);
+    return call(SYSTEM_FICTION_CONCEPT, msg, 1024, FICTION_CONCEPT_SCHEMA);
   }
 
   async function updateFictionPlayer() {
@@ -1472,6 +1588,8 @@ Return ONLY the JSON. No preamble, no markdown fences.`;
 
   return {
     getKey,
+    getModel,
+    setModel,
     call,
     chatCall,
     buildContext,

@@ -163,6 +163,14 @@ const App = (() => {
     document.getElementById('settings-close-btn').addEventListener('click', closeSettings);
     document.getElementById('settings-backdrop').addEventListener('click', closeSettings);
 
+    // Settings: model selection
+    const modelSel = document.getElementById('settings-model');
+    modelSel.value = API.getModel();
+    modelSel.addEventListener('change', () => {
+      API.setModel(modelSel.value);
+      showToast('Model updated');
+    });
+
     // Settings: update key
     document.getElementById('settings-key-save').addEventListener('click', () => {
       const val = document.getElementById('settings-api-key').value.trim();
@@ -176,7 +184,7 @@ const App = (() => {
     // Settings: export career
     document.getElementById('export-data-btn').addEventListener('click', () => {
       const data = {};
-      const skip = new Set([Storage.KEYS.API_KEY]);
+      const skip = new Set([Storage.KEYS.API_KEY, Storage.KEYS.MODEL]);
       Object.entries(Storage.KEYS).forEach(([, v]) => {
         if (!skip.has(v)) {
           const val = Storage.get(v);

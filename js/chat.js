@@ -181,11 +181,16 @@ const ChatModule = (() => {
     applyBtn.textContent = 'Apply';
     applyBtn.addEventListener('click', () => {
       try {
-        _applyActions(actions);
+        const undoFn = _applyActions(actions);
         applyBtn.textContent = 'Applied';
         applyBtn.disabled = true;
         card.classList.add('chat-action-applied');
-        App.showToast('Changes applied');
+        App.showToast('Changes applied', () => {
+          undoFn();
+          applyBtn.textContent = 'Apply';
+          applyBtn.disabled = false;
+          card.classList.remove('chat-action-applied');
+        });
       } catch (err) {
         App.showError(err.message);
       }
@@ -216,6 +221,10 @@ const ChatModule = (() => {
 
   function _applyActions(actions) {
     const touched = new Set();
+    const prev = {};   // storageKey -> value before this batch (null = key absent)
+    const snapshot = key => {
+      if (!(key in prev)) prev[key] = Storage.get(key);
+    };
 
     actions.forEach(a => {
       const segs = _parsePath(a.target);
@@ -223,6 +232,7 @@ const ChatModule = (() => {
       const keyFn = ROOT_KEYS[root];
       if (!keyFn) throw new Error('Cannot edit "' + root + '" from chat.');
       const key = keyFn();
+      snapshot(key);
 
       let data = Storage.get(key);
       if (segs.length === 0) {
@@ -254,6 +264,7 @@ const ChatModule = (() => {
     actions.forEach(a => {
       const m = String(a.target).trim().match(/^challenges\[(\d+)\]\.(title|description)$/);
       if (m && !hubLineSet.has(m[1])) {
+        snapshot(Storage.KEYS.CHALLENGES);
         const chs = Storage.get(Storage.KEYS.CHALLENGES) || [];
         if (chs[m[1]]) {
           delete chs[m[1]].hub_line;
@@ -265,6 +276,17 @@ const ChatModule = (() => {
     touched.forEach(root => {
       try { RENDERERS[root](); } catch { /* module not mounted */ }
     });
+
+    // Undo: restore every touched storage key to its pre-batch value
+    return function undo() {
+      Object.entries(prev).forEach(([key, value]) => {
+        if (value === null) Storage.remove(key);
+        else Storage.set(key, value);
+      });
+      touched.forEach(root => {
+        try { RENDERERS[root](); } catch { /* module not mounted */ }
+      });
+    };
   }
 
   return { init, open };

@@ -1,6 +1,7 @@
 const Storage = (() => {
   const KEYS = {
     API_KEY:        'cg_api_key',
+    MODEL:          'cg_model',
     SETUP:          'cg_setup',
     NARRATIVE:      'cg_narrative',
     CHALLENGES:     'cg_challenges',
@@ -62,8 +63,9 @@ const Storage = (() => {
   }
 
   function clearAll() {
+    const keep = new Set([KEYS.API_KEY, KEYS.MODEL]);
     Object.values(KEYS).forEach(k => {
-      if (k !== KEYS.API_KEY) remove(k);
+      if (!keep.has(k)) remove(k);
     });
   }
 

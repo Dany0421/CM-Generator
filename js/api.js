@@ -177,70 +177,15 @@ Return ONLY the JSON object. No preamble, no explanation, no markdown fences.`;
 
   const SYSTEM_SAVE_CONCEPT = `You are an FC 25 career mode save architect. Design compelling, narratively rich career mode save concepts for serious players with hundreds of hours in the game.
 
-ALLOWED LEAGUES — EXACT LIST. These are the ONLY leagues that exist in FC 25. Any club not in one of these leagues is a hard failure. No exceptions.
+${Leagues.promptBlock()}
 
-ENGLAND (4 leagues):
-  Premier League        → 1st Division
-  Championship          → 2nd Division
-  League One            → 3rd Division
-  League Two            → 4th Division
-
-SPAIN (2 leagues):
-  La Liga               → 1st Division
-  La Liga 2             → 2nd Division
-
-GERMANY (3 leagues):
-  Bundesliga            → 1st Division
-  2. Bundesliga         → 2nd Division
-  3. Liga               → 3rd Division
-
-FRANCE (2 leagues):
-  Ligue 1               → 1st Division
-  Ligue 2               → 2nd Division
-
-ITALY (2 leagues):
-  Serie A               → 1st Division
-  Serie B               → 2nd Division
-
-PORTUGAL (1 league only — FC 25 has NO Portuguese second division):
-  Liga Portugal Bwin    → 1st Division
-
-NETHERLANDS:
-  Eredivisie            → 1st Division
-
-BELGIUM:
-  Pro League            → 1st Division
-
-TURKEY:
-  Süper Lig             → 1st Division
-
-SAUDI ARABIA:
-  Saudi Pro League      → 1st Division
-
-USA:
-  MLS                   → 1st Division
-
-NOT IN FC 25 — HARD FAILURE if used:
-- Japan (J1 League / J.League) — NOT in FC 25. Clubs like Gamba Osaka, Urawa Red Diamonds, Vissel Kobe, Kashima Antlers — NONE are in FC 25.
-- China (CSL) — NOT in FC 25
-- South Korea (K League) — NOT in FC 25
-- Brazil (Brasileirão) — NOT in FC 25
-- Argentina (Liga Profesional) — NOT in FC 25
-- Mexico (Liga MX) — NOT in FC 25
-- Any other league not listed above
-
-"league" in your output MUST be copied EXACTLY from this list. "division" must match the tier shown above.
-
-DIVISION ACCURACY IS NON-NEGOTIABLE:
-- You must know with 100% certainty which league a club is in for FC 25 (2024/25 season) before picking it.
-- If you are not certain, pick a DIFFERENT club you ARE certain about. A wrong division is an automatic failure.
-- Do not guess. Do not estimate. Do not pick a club because it "sounds right" — only pick clubs you are certain about.
+"club" and "league" in your output MUST be copied EXACTLY from the list above, and "division" must match that league's division label. There is nothing to guess — every playable club is written above.
 
 MANDATORY QUALITY RULES — break any of these and the response is a failure:
 - "manager" MUST be a realistic coaching name — a gaffer, a manager, NOT a player. Culturally plausible for the club's country. Examples: Nuno Espírito Santo, Slaviša Jokanović, Artur Jorge, Hansi Flick, Paulo Fonseca, Julen Lopetegui, Roberto De Zerbi. NEVER a player name.
 - NEVER generate: Man City, Liverpool, Arsenal, Chelsea, Manchester United, Tottenham, Bayern Munich, Real Madrid, Barcelona — unless the user EXPLICITLY names them.
 - ALWAYS choose clubs with story potential: fallen giants, clubs under financial or sporting pressure, unstable fanbases, underdogs with a real identity. Avoid safe, stable, already-successful clubs.
-- Explore lower divisions — Championship, League One, League Two, Serie B, 2. Bundesliga, 3. Liga, Ligue 2, La Liga 2 — they have the richest career mode stories.
+- Explore lower divisions — Championship, League One, League Two, La Liga 2, Serie B, 2. Bundesliga — they have the richest career mode stories.
 - "save_concept" = ONE sentence only. A movie logline. Specific, punchy, impossible to confuse with any other save. BANNED phrases: "prove the doubters wrong", "restore former glory", "rise from the ashes", "journey of a lifetime", "new era", "turning point". If it could describe any generic save, rewrite it.
 - "era" MUST be EXACTLY one of (copy verbatim): Rebuild Era | Golden Gen | Fallen Giant | Underdog Run | Dynasty Mode | Mid-Table Crisis | Promotion Push | Survival Mode
 - "difficulty" MUST be EXACTLY one of: Legendary | Ultimate | Custom
@@ -725,6 +670,29 @@ Return ONLY the JSON object. No preamble, no explanation, no markdown fences.`;
     return call(SYSTEM_RULESET, msg, 4096, RULESET_SCHEMA);
   }
 
+
+  // Hallucination guard for concept generation: the club must exist in the
+  // FC 25 dataset. When it does, league/division are ALWAYS overwritten from
+  // data — the AI's own league/division are never trusted. Unknown club →
+  // one corrective retry, then fail loudly.
+  async function _ensureRealClub(concept, system, msg, schema, maxTokens) {
+    const fix = c => {
+      const info = Leagues.findClub(c?.club);
+      if (!info) return false;
+      c.club     = info.club;
+      c.league   = info.league;
+      c.division = info.division;
+      return true;
+    };
+    if (fix(concept)) return concept;
+
+    console.warn('[Leagues] AI picked unknown club, retrying:', concept?.club);
+    const retryMsg = `${msg}\n\nYOUR PREVIOUS ATTEMPT WAS REJECTED: "${concept?.club}" is NOT a club in FC 25. Generate a fresh concept using a club copied EXACTLY from the ALLOWED LEAGUES & CLUBS list.`;
+    const retry = await call(system, retryMsg, maxTokens, schema);
+    if (fix(retry)) return retry;
+    throw new Error(`AI picked "${retry?.club}" — not an FC 25 club. Try generating again.`);
+  }
+
   async function generateSaveConcept(direction) {
     const existing = Storage.get(Storage.KEYS.SETUP);
     const prevBlock = existing?.club
@@ -732,7 +700,8 @@ Return ONLY the JSON object. No preamble, no explanation, no markdown fences.`;
       : '';
 
     const msg = `User's direction: "${direction || 'surprise me'}"\n\nDesign a complete FC 25 career mode save concept. If the direction is vague or says "surprise me", be bold and unexpected — pick something a serious career mode player would find genuinely compelling, not the obvious first choice.${prevBlock}`;
-    return call(SYSTEM_SAVE_CONCEPT, msg, 2048, SAVE_CONCEPT_SCHEMA);
+    const concept = await call(SYSTEM_SAVE_CONCEPT, msg, 2048, SAVE_CONCEPT_SCHEMA);
+    return _ensureRealClub(concept, SYSTEM_SAVE_CONCEPT, msg, SAVE_CONCEPT_SCHEMA, 2048);
   }
 
   const SYSTEM_EVENTS = `You generate 10 random season events for a FC 25 career mode save. These are one-time bombshell moments — not ongoing rules, not challenges. The player must act on each one immediately when it is rolled.
@@ -782,7 +751,6 @@ The real career is the narrative context — the weight of what ACTUALLY happene
 GOOD Rewind (interesting divergence angle):
 → Robben at 17 in Groningen: the injury curse hasn't started yet. Can you build the career without it?
 → Xabi Alonso at Real Sociedad at 17: what if he never went to Liverpool and built everything in Spain instead?
-→ Cavani at Danubio at 18: what if he never took the path to Europe's giants and stayed to build a legacy in South America first?
 → Van Persie at Feyenoord at 18: a generational striker who spent his best years on a broken team — what does the alternative look like?
 
 BAD Rewind (just recreates real career, no divergence):
@@ -807,64 +775,11 @@ LICENSED PLAYERS ONLY — CRITICAL:
 - For a Rewind, pick a CURRENT active player who IS in FC 25, and imagine them at an earlier age/club. Example: Lewandowski at Borussia Dortmund at 22, not at some club from when he was unlicensed. The player must exist in the FC 25 database right now.
 - If you are not 100% certain a player is in FC 25, pick someone you ARE certain about.
 
-ALLOWED LEAGUES — EXACT LIST. These are the ONLY leagues that exist in FC 25. Any club not in one of these leagues is a hard failure. No exceptions.
+${Leagues.promptBlock()}
 
-ENGLAND (4 leagues):
-  Premier League        → 1st Division
-  Championship          → 2nd Division
-  League One            → 3rd Division
-  League Two            → 4th Division
+IMPORTANT: A player's nationality does NOT determine their league. A Japanese player can play in the Premier League, Bundesliga, or any allowed league. Never pick a league based on the player's nationality — only pick from the list above.
 
-SPAIN (2 leagues):
-  La Liga               → 1st Division
-  La Liga 2             → 2nd Division
-
-GERMANY (3 leagues):
-  Bundesliga            → 1st Division
-  2. Bundesliga         → 2nd Division
-  3. Liga               → 3rd Division
-
-FRANCE (2 leagues):
-  Ligue 1               → 1st Division
-  Ligue 2               → 2nd Division
-
-ITALY (2 leagues):
-  Serie A               → 1st Division
-  Serie B               → 2nd Division
-
-PORTUGAL (1 league only — FC 25 has NO Portuguese second division):
-  Liga Portugal Bwin    → 1st Division
-
-NETHERLANDS:
-  Eredivisie            → 1st Division
-
-BELGIUM:
-  Pro League            → 1st Division
-
-TURKEY:
-  Süper Lig             → 1st Division
-
-SAUDI ARABIA:
-  Saudi Pro League      → 1st Division
-
-USA:
-  MLS                   → 1st Division
-
-NOT IN FC 25 — HARD FAILURE if used:
-- Japan (J1 League / J.League) — NOT in FC 25. Clubs like Gamba Osaka, Urawa Red Diamonds, Vissel Kobe, Kashima Antlers, FC Tokyo — NONE of them are in FC 25. Do not use any Japanese club.
-- China (CSL) — NOT in FC 25
-- South Korea (K League) — NOT in FC 25
-- Brazil (Brasileirão) — NOT in FC 25
-- Argentina (Liga Profesional) — NOT in FC 25
-- Mexico (Liga MX) — NOT in FC 25
-- Any other league not listed above
-
-IMPORTANT: A player's nationality does NOT determine their league. A Japanese player can play in the Premier League, Bundesliga, or any allowed league. Never pick a league based on the player's nationality — only pick from the allowed list above.
-
-DIVISION ACCURACY IS NON-NEGOTIABLE:
-- You must know with 100% certainty which league a club is in for FC 25 (2024/25 season) before picking it.
-- If you are not certain, pick a DIFFERENT club you ARE certain about. A wrong division is an automatic failure.
-- Do not guess. Do not pick a club because it "sounds right" — only pick clubs you are certain about.
+"club" and "league" MUST be copied EXACTLY from the list above, and "division" must match that league's division label. For a REWIND, the starting club must also be in the list — if the player's real early club is not in FC 25, use their earliest club that IS.
 
 Output format (strict JSON):
 {
@@ -1375,7 +1290,8 @@ Return ONLY valid JSON (no markdown fences):
       ? `\n\nPREVIOUS CONCEPT — pick something meaningfully different:\nPlayer: ${existing.player.name}, age ${existing.player.age}, ${existing.player.position}\nClub: ${existing.club}\nConcept: ${existing.save_concept || '—'}`
       : '';
     const msg = `User direction: "${direction || 'surprise me'}"\n\nDesign a complete FC 25 player career mode save concept.${prevBlock}`;
-    return call(SYSTEM_PLAYER_CONCEPT, msg, 1024, PLAYER_CONCEPT_SCHEMA);
+    const concept = await call(SYSTEM_PLAYER_CONCEPT, msg, 1024, PLAYER_CONCEPT_SCHEMA);
+    return _ensureRealClub(concept, SYSTEM_PLAYER_CONCEPT, msg, PLAYER_CONCEPT_SCHEMA, 1024);
   }
 
   async function generatePlayerChallenges() {
@@ -1404,30 +1320,12 @@ RULES:
 - The player must be ENTIRELY FICTIONAL. No real player should share their name, background, or career arc.
 - Draw from the user's concept/vibe: the archetype, the emotional tone, the context. This is the soul of the character.
 - The concept_hook is the character's core identity in one sentence — their defining tension, drive, or contradiction.
-- Club and league must be from the FC 25 allowed list below. No exceptions.
+- The club must be a REAL FC 25 club copied EXACTLY from the list below — the save is played in the real game, so a fictional club is unplayable.
 - Age 16-22 for a starting save (unless the concept suggests otherwise).
 
-ALLOWED LEAGUES — FC 25 only. Pick ONLY from this list:
-  Premier League | Championship | League One | League Two (England)
-  La Liga | La Liga 2 (Spain)
-  Bundesliga | 2. Bundesliga | 3. Liga (Germany)
-  Ligue 1 | Ligue 2 (France)
-  Serie A | Serie B (Italy)
-  Liga Portugal Bwin (Portugal)
-  Eredivisie (Netherlands)
-  Jupiler Pro League (Belgium)
-  Süper Lig (Turkey)
-  Saudi Pro League (Saudi Arabia)
-  MLS (USA)
+${Leagues.promptBlock()}
 
-Do NOT use any league outside this list. Any other league is a hard failure.
-
-BANNED LEAGUES — using these is an automatic failure regardless of the character concept:
-- Japan: J1 League / J.League (Gamba Osaka, Urawa Red Diamonds, Vissel Kobe, Kashima Antlers, FC Tokyo — ALL banned)
-- China: CSL — Brazil: Brasileirão — Argentina: Liga Profesional — Mexico: Liga MX — South Korea: K League
-- ANY league not in the allowed list above
-
-CRITICAL: A character's nationality, aesthetic, or inspiration (e.g. anime, Japanese culture) does NOT mean they play in a Japanese league. A Japanese-inspired character plays in the Premier League, Bundesliga, Eredivisie, or another allowed league. Never match league to nationality.
+CRITICAL: A character's nationality, aesthetic, or inspiration (e.g. anime, Japanese culture) does NOT determine their league. A Japanese-inspired character plays in the Premier League, Bundesliga, Eredivisie, or any other league from the list. Never match league to nationality.
 
 OUTPUT FORMAT (strict JSON):
 {
@@ -1436,7 +1334,7 @@ OUTPUT FORMAT (strict JSON):
   "player_position": "string (main position — ST, CAM, CB, GK, etc.)",
   "player_nationality": "string",
   "manager": "string",
-  "club": "string — a plausible fictional or real club name from that league",
+  "club": "string — a real FC 25 club copied EXACTLY from the allowed list",
   "league": "string — exact name from the allowed list",
   "division": "string — e.g. 1st Division, 2nd Division",
   "difficulty": "Legendary | Ultimate | Custom",
@@ -1525,7 +1423,8 @@ Return ONLY the JSON. No preamble, no markdown fences.`;
       ? `\n\nPREVIOUS CONCEPT — create something meaningfully different. Do NOT reuse the same club, league, nationality, or concept:\nPlayer: ${existing.player.name}, ${existing.player.position}, ${existing.player.nationality || '—'}\nClub: ${existing.club} | League: ${existing.league || '—'}\nConcept: ${existing.save_concept || '—'}`
       : '';
     const msg = `User concept/vibe: "${direction || 'surprise me'}"\n\nDesign a fictional FC 25 player concept.${prevBlock}`;
-    return call(SYSTEM_FICTION_CONCEPT, msg, 1024, FICTION_CONCEPT_SCHEMA);
+    const concept = await call(SYSTEM_FICTION_CONCEPT, msg, 1024, FICTION_CONCEPT_SCHEMA);
+    return _ensureRealClub(concept, SYSTEM_FICTION_CONCEPT, msg, FICTION_CONCEPT_SCHEMA, 1024);
   }
 
   async function updateFictionPlayer() {

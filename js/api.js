@@ -400,7 +400,7 @@ Return ONLY the JSON object. No preamble, no explanation, no markdown fences.`;
         (linked.bond ? `Bond: ${linked.bond}\n` : '') +
         `LINK RULES:\n` +
         `- The duo is a core thread of this save: challenges, narrative, events and career moves must regularly involve ${linked.name}.\n` +
-        `- Duo consequences may target EITHER player via Live Editor — the linked player's attributes are editable too.\n` +
+        `- Live Editor consequences (attribute/OVR/potential changes) apply ONLY to the user's player — NEVER raise or lower the linked player's ratings. His OVR/potential are managed by the user alone; challenges may DEPEND on his numbers but must not CHANGE them.\n` +
         `- The link survives transfers: if either player moves, the follow-or-stay tension IS the story.`
       );
     }
@@ -858,10 +858,10 @@ ATTRIBUTE CONSEQUENCES — MANDATORY:
 At least 2 of the 3 challenges must have a consequence on SPECIFIC individual attributes (e.g. Finishing -2, Composure +3, Sprint Speed frozen, Weak Foot +1★) — NOT just OVR or potential. Pick attributes that match the player's position and the story of the challenge (a striker's confidence crisis hits Finishing and Composure; a winger forced to defend gains Def. Awareness but loses Flair-adjacent stats). OVR/potential consequences are still allowed, but attribute-level consequences are the core currency.
 
 LINKED PLAYER — MANDATORY SPLIT WHEN THE CONTEXT INCLUDES ONE:
-If the context includes a LINKED PLAYER, exactly 2 of the 3 challenges must be DUO challenges built around the link, and only 1 stays purely personal. A duo challenge ties the user's output to the linked player's outcomes, respecting the user's position (a CAM feeds his goals, a ST finishes his crosses, a CB protects his keeper's clean sheets). Consequences can hit EITHER side of the duo via Live Editor — his attributes are editable too. Duo targets follow the CALIBRATION rule using BOTH players' ratings — the example numbers below must be rescaled to the actual OVRs in context.
+If the context includes a LINKED PLAYER, exactly 2 of the 3 challenges must be DUO challenges built around the link, and only 1 stays purely personal. A duo challenge ties the user's output to the linked player's outcomes, respecting the user's position (a CAM feeds his goals, a ST finishes his crosses, a CB protects his keeper's clean sheets). The linked player's numbers define the TARGET — but every Live Editor consequence lands on the USER's player only. NEVER change the linked player's attributes, OVR or potential. Duo targets follow the CALIBRATION rule using BOTH players' ratings — the example numbers below must be rescaled to the actual OVRs in context.
 Good duo shapes:
-→ "Your assists must produce 8 of his goals by March. Miss it → HIS Finishing -2 and the manager splits you across the pitch. Deliver → his Finishing +2, your Vision +1."
-→ "He's on a cold streak and the press blame your service. No assist to him in the next 3 games → his Composure -3 and your Crossing -2."
+→ "Your assists must produce 8 of his goals by March. Miss it → your Vision -2 and the manager splits you across the pitch for 5 games. Deliver → your Vision +2."
+→ "He's on a cold streak and the press blame your service. No assist to him in the next 3 games → your Crossing -2 and Composure -1. Feed him twice → your Composure +2."
 → "The club listed him in January. Combine for 6 goal contributions before the window closes → listing withdrawn; fail → he's sold and the follow-or-stay clause activates."
 
 CORE RULE — how a challenge must read:
@@ -928,7 +928,7 @@ RULES:
 - Example positive: "Breakthrough performance catches eye — boost his highest attribute by 2 pts (Live Editor)"
 - Example positive: "International call-up reward — add any one playstyle (Live Editor)"
 - Do NOT repeat any past event (list provided if applicable)
-- If the context includes a LINKED PLAYER, 2-3 of the 10 events must involve the duo (his form, injury, contract, or the bond itself)
+- If the context includes a LINKED PLAYER, 2-3 of the 10 events must involve the duo (his form, injury, contract, or the bond itself) — but any Live Editor change in those events applies to the USER's player only, never to the linked player's attributes
 
 Return ONLY valid JSON (no markdown fences):
 { "events": [{ "text": "string", "type": "positive" }, ...] }`;

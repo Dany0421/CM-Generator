@@ -205,7 +205,7 @@ const ChatModule = (() => {
 
   function _parsePath(target) {
     const out = [];
-    target.split('.').forEach(part => {
+    String(target).trim().split('.').forEach(part => {
       const m = part.match(/^([^[\]]+)((?:\[\d+\])*)$/);
       if (!m) throw new Error('Invalid target: ' + target);
       out.push(m[1]);
@@ -244,6 +244,22 @@ const ChatModule = (() => {
 
       Storage.set(key, data);
       touched.add(root);
+    });
+
+    // Editing a challenge's title/description without a new hub_line invalidates
+    // the old one (same behaviour as manual edits in ChallengesModule)
+    const hubLineSet = new Set(actions
+      .map(a => (String(a.target).trim().match(/^challenges\[(\d+)\]\.hub_line$/) || [])[1])
+      .filter(Boolean));
+    actions.forEach(a => {
+      const m = String(a.target).trim().match(/^challenges\[(\d+)\]\.(title|description)$/);
+      if (m && !hubLineSet.has(m[1])) {
+        const chs = Storage.get(Storage.KEYS.CHALLENGES) || [];
+        if (chs[m[1]]) {
+          delete chs[m[1]].hub_line;
+          Storage.set(Storage.KEYS.CHALLENGES, chs);
+        }
+      }
     });
 
     touched.forEach(root => {

@@ -360,7 +360,142 @@ const SetupModule = (() => {
       posNatRow.appendChild(pNatGroup);
       playerSection.appendChild(posNatRow);
 
+      // Current OVR + Potential — updated by the user as the save progresses
+      // (player mode only; fiction mode edits these on the Player tab card)
+      if (isPlayer) {
+        const ratingRow = document.createElement('div');
+        ratingRow.className = 'form-row two-col';
+
+        [
+          { id: 'setup-player-ovr',       label: 'Current OVR', value: saved?.player?.ovr,       placeholder: 'e.g. 72' },
+          { id: 'setup-player-potential', label: 'Potential',   value: saved?.player?.potential, placeholder: 'e.g. 88' },
+        ].forEach(({ id, label, value, placeholder }) => {
+          const grp = document.createElement('div');
+          grp.className = 'form-group';
+          const lbl = document.createElement('label');
+          lbl.className = 'form-label';
+          lbl.textContent = label;
+          const inp = document.createElement('input');
+          inp.className = 'form-input';
+          inp.id = id;
+          inp.type = 'number';
+          inp.min = '1';
+          inp.max = '99';
+          inp.placeholder = placeholder;
+          inp.value = value || '';
+          grp.appendChild(lbl);
+          grp.appendChild(inp);
+          ratingRow.appendChild(grp);
+        });
+        playerSection.appendChild(ratingRow);
+      }
+
       card.appendChild(playerSection);
+
+      // ── Linked Player (optional) ──
+      const linked = saved?.player?.linked || {};
+      const linkedSection = document.createElement('div');
+      linkedSection.className = 'setup-player-section';
+
+      const linkedLabel = document.createElement('p');
+      linkedLabel.className = 'setup-player-section-label';
+      linkedLabel.textContent = 'Linked Player (optional)';
+      linkedSection.appendChild(linkedLabel);
+
+      const linkedHint = document.createElement('p');
+      linkedHint.className = 'setup-generate-sub';
+      linkedHint.textContent = 'A teammate your career is tied to — challenges, narrative and career moves will revolve around the duo. Leave the name empty for none.';
+      linkedSection.appendChild(linkedHint);
+
+      const linkedRow = document.createElement('div');
+      linkedRow.className = 'form-row two-col';
+
+      const lNameGroup = document.createElement('div');
+      lNameGroup.className = 'form-group';
+      const lNameLabel = document.createElement('label');
+      lNameLabel.className = 'form-label';
+      lNameLabel.textContent = 'Teammate Name';
+      const lNameInput = document.createElement('input');
+      lNameInput.className = 'form-input';
+      lNameInput.id = 'setup-linked-name';
+      lNameInput.type = 'text';
+      lNameInput.placeholder = 'e.g. Viktor Gyökeres';
+      lNameInput.autocomplete = 'off';
+      lNameInput.value = linked.name || '';
+      lNameGroup.appendChild(lNameLabel);
+      lNameGroup.appendChild(lNameInput);
+      linkedRow.appendChild(lNameGroup);
+
+      const lPosGroup = document.createElement('div');
+      lPosGroup.className = 'form-group';
+      const lPosLabel = document.createElement('label');
+      lPosLabel.className = 'form-label';
+      lPosLabel.textContent = 'Position';
+      const lPosInput = document.createElement('input');
+      lPosInput.className = 'form-input';
+      lPosInput.id = 'setup-linked-position';
+      lPosInput.type = 'text';
+      lPosInput.placeholder = 'e.g. ST';
+      lPosInput.value = linked.position || '';
+      lPosGroup.appendChild(lPosLabel);
+      lPosGroup.appendChild(lPosInput);
+      linkedRow.appendChild(lPosGroup);
+      linkedSection.appendChild(linkedRow);
+
+      // Linked player ratings — upgraded by the user over the save, same as their own
+      const lRatingRow = document.createElement('div');
+      lRatingRow.className = 'form-row two-col';
+      [
+        { id: 'setup-linked-ovr',       label: 'His Current OVR', value: linked.ovr,       placeholder: 'e.g. 78' },
+        { id: 'setup-linked-potential', label: 'His Potential',   value: linked.potential, placeholder: 'e.g. 86' },
+      ].forEach(({ id, label, value, placeholder }) => {
+        const grp = document.createElement('div');
+        grp.className = 'form-group';
+        const lbl = document.createElement('label');
+        lbl.className = 'form-label';
+        lbl.textContent = label;
+        const inp = document.createElement('input');
+        inp.className = 'form-input';
+        inp.id = id;
+        inp.type = 'number';
+        inp.min = '1';
+        inp.max = '99';
+        inp.placeholder = placeholder;
+        inp.value = value || '';
+        grp.appendChild(lbl);
+        grp.appendChild(inp);
+        lRatingRow.appendChild(grp);
+      });
+      linkedSection.appendChild(lRatingRow);
+
+      const bondGroup = document.createElement('div');
+      bondGroup.className = 'form-group';
+      const bondLabel = document.createElement('label');
+      bondLabel.className = 'form-label';
+      bondLabel.textContent = 'The Bond';
+      const bondRow = document.createElement('div');
+      bondRow.className = 'key-input-row';
+      const bondInput = document.createElement('input');
+      bondInput.className = 'form-input';
+      bondInput.id = 'setup-linked-bond';
+      bondInput.type = 'text';
+      bondInput.placeholder = 'Why are your careers tied? Write it or generate it';
+      bondInput.autocomplete = 'off';
+      bondInput.value = linked.bond || '';
+      bondRow.appendChild(bondInput);
+      const bondBtn = document.createElement('button');
+      bondBtn.className = 'btn-secondary';
+      bondBtn.id = 'setup-linked-bond-btn';
+      const bondIcon = document.createElement('i');
+      bondIcon.setAttribute('data-lucide', 'sparkles');
+      bondBtn.appendChild(bondIcon);
+      bondBtn.addEventListener('click', _generateBond);
+      bondRow.appendChild(bondBtn);
+      bondGroup.appendChild(bondLabel);
+      bondGroup.appendChild(bondRow);
+      linkedSection.appendChild(bondGroup);
+
+      card.appendChild(linkedSection);
     }
 
     // Club group
@@ -526,7 +661,19 @@ const SetupModule = (() => {
         age:         parseInt(_container.querySelector('#setup-player-age')?.value) || prevPlayer.age || 0,
         position:    _container.querySelector('#setup-player-position')?.value.trim() || prevPlayer.position || '',
         nationality: _container.querySelector('#setup-player-nationality')?.value.trim() || prevPlayer.nationality || '',
+        linked: {
+          name:      _container.querySelector('#setup-linked-name')?.value.trim() || '',
+          position:  _container.querySelector('#setup-linked-position')?.value.trim() || '',
+          bond:      _container.querySelector('#setup-linked-bond')?.value.trim() || '',
+          ovr:       parseInt(_container.querySelector('#setup-linked-ovr')?.value) || 0,
+          potential: parseInt(_container.querySelector('#setup-linked-potential')?.value) || 0,
+        },
       };
+      // Player-mode-only rating inputs (fiction edits these on the Player tab)
+      const ovrEl = _container.querySelector('#setup-player-ovr');
+      const potEl = _container.querySelector('#setup-player-potential');
+      if (ovrEl) data.player.ovr       = parseInt(ovrEl.value) || 0;
+      if (potEl) data.player.potential = parseInt(potEl.value) || 0;
     }
 
     Storage.set(Storage.KEYS.SETUP, data);
@@ -645,6 +792,23 @@ const SetupModule = (() => {
         lucide.createIcons();
       }
       if (rerollBtn) rerollBtn.disabled = false;
+    }
+  }
+
+  async function _generateBond() {
+    save(); // persist linked name/position before the call
+    const btn   = _container.querySelector('#setup-linked-bond-btn');
+    const input = _container.querySelector('#setup-linked-bond');
+    if (btn) btn.disabled = true;
+    try {
+      const result = await API.generateLinkedBond();
+      if (input) input.value = result.bond || '';
+      save();
+      App.showToast('Bond written');
+    } catch (err) {
+      App.showError(err.message);
+    } finally {
+      if (btn) btn.disabled = false;
     }
   }
 

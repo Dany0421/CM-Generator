@@ -983,6 +983,7 @@ const HubModule = (() => {
     big_club_interest:     'Big Club Interest',
     loan_decision:         'Loan Decision',
     media_storm:           'Media Storm',
+    linked_fate:           'Linked Fate',
   };
 
   function _getCareerMoves() {

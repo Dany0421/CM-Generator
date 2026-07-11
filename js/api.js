@@ -101,6 +101,8 @@ const API = (() => {
     chaos_wheel: S.str, protected_player: S.str, academy_tracker: S.str,
   });
 
+  const BOND_SCHEMA = S.obj({ bond: S.str });
+
   const VALUE_SCHEMA = S.obj({ value: S.str });
   const RULE_SCHEMA  = S.obj({ rule: S.str });
 
@@ -225,6 +227,7 @@ IF THE CONTEXT SAYS "PLAYER CAREER SAVE" OR "FICTION PLAYER CAREER SAVE":
 - gameplay_rules → personal performance standards: minimum avg rating, stats targets per season that trigger Live Editor consequences, play style restrictions
 - special_mechanics → tied to the player's personal concept and arc, not the club's finances
 - NO rules about squad composition, signing players, board decisions, or budget — the player doesn't control those
+- If the context includes a LINKED PLAYER: one transfer_rule MUST encode the link loyalty law — the duo stays together; if the linked player is transferred away, the user follows him within one window (Live Editor forced transfer), or pays a defined, painful cost for breaking the link.
 - In FICTION MODE specifically: every rule must feel like it belongs to this character's story and identity
 
 OUTPUT FORMAT (strict JSON):
@@ -387,6 +390,19 @@ Return ONLY the JSON object. No preamble, no explanation, no markdown fences.`;
           `PlayStyles: ${psLine} | PS+: ${pspLine}`
         );
       }
+    }
+
+    const linked = player.linked;
+    if (linked?.name) {
+      parts.push(
+        `LINKED PLAYER — the user's career is deliberately tied to this teammate:\n` +
+        `${linked.name} | ${linked.position || '—'} | OVR ${linked.ovr || '—'} | Potential ${linked.potential || '—'} | same club as the user\n` +
+        (linked.bond ? `Bond: ${linked.bond}\n` : '') +
+        `LINK RULES:\n` +
+        `- The duo is a core thread of this save: challenges, narrative, events and career moves must regularly involve ${linked.name}.\n` +
+        `- Duo consequences may target EITHER player via Live Editor — the linked player's attributes are editable too.\n` +
+        `- The link survives transfers: if either player moves, the follow-or-stay tension IS the story.`
+      );
     }
 
     if (pastSeasons.length > 0) {
@@ -812,6 +828,7 @@ RULES:
 - season_framing = what THIS season means for the player's career. Name the stakes. What decision or outcome defines it? 2-4 sentences.
 - narrative_events = two ticking time bombs specific to THIS player. Moments that will force a choice before the season ends. Not background flavour. Specific, datable, consequential.
 - If this is a REWIND save: the real career is narrative shadow, not a roadmap. Reference what actually happened in real life (what defined him, what he failed to achieve, what hurt him) as the weight this save is DIVERGING from — NOT as a path to follow. The player_backstory should name the real career's defining tension. The season_framing should make clear this save is going somewhere different. Never write as if the player will simply replicate real history.
+- If the context includes a LINKED PLAYER: the bond is a core narrative thread — at least one narrative_event must involve the linked player (his form, his future, or the link itself under strain).
 - Season 1: raw, uncertain, proving ground. Season 3+: a player mid-story with history behind him.
 - Never use: "prove the doubters wrong", "fulfil potential", "journey", "turning point", or any phrase that could apply to any player.
 - If the context says FICTION MODE: the club is backdrop. manager_backstory and club_situation must still be written from the player's perspective — how THEY experience the club, not what the club is doing. No board politics, no budget talk, no team results as the main driver. Everything must trace back to the player's fictional identity and concept.
@@ -834,8 +851,18 @@ The user has Live Editor:
 
 DESCRIPTION LENGTH: MAX 4 LINES per challenge. Tight, direct, specific. No walls of text.
 
+CALIBRATION — NUMBERS MUST BE REALISTIC FOR THE RATINGS IN CONTEXT:
+Every stat target must be calibrated to the player's OVR, potential and league level — and for duo challenges, to the LINKED PLAYER's OVR too (both are in context). A 64 OVR winger in the 4th division does not get "15 goal contributions by January"; an 86 OVR striker in a title side does not get "score 4 goals this season". If a duo target needs the linked player to finish, his OVR decides how many chances he realistically converts. Attribute rewards/punishments scale the same way: ±1-3 pts normally, bigger swings ONLY for season-defining outcomes. Unrealistic numbers — too easy or impossible — are a failure.
+
 ATTRIBUTE CONSEQUENCES — MANDATORY:
 At least 2 of the 3 challenges must have a consequence on SPECIFIC individual attributes (e.g. Finishing -2, Composure +3, Sprint Speed frozen, Weak Foot +1★) — NOT just OVR or potential. Pick attributes that match the player's position and the story of the challenge (a striker's confidence crisis hits Finishing and Composure; a winger forced to defend gains Def. Awareness but loses Flair-adjacent stats). OVR/potential consequences are still allowed, but attribute-level consequences are the core currency.
+
+LINKED PLAYER — MANDATORY SPLIT WHEN THE CONTEXT INCLUDES ONE:
+If the context includes a LINKED PLAYER, exactly 2 of the 3 challenges must be DUO challenges built around the link, and only 1 stays purely personal. A duo challenge ties the user's output to the linked player's outcomes, respecting the user's position (a CAM feeds his goals, a ST finishes his crosses, a CB protects his keeper's clean sheets). Consequences can hit EITHER side of the duo via Live Editor — his attributes are editable too. Duo targets follow the CALIBRATION rule using BOTH players' ratings — the example numbers below must be rescaled to the actual OVRs in context.
+Good duo shapes:
+→ "Your assists must produce 8 of his goals by March. Miss it → HIS Finishing -2 and the manager splits you across the pitch. Deliver → his Finishing +2, your Vision +1."
+→ "He's on a cold streak and the press blame your service. No assist to him in the next 3 games → his Composure -3 and your Crossing -2."
+→ "The club listed him in January. Combine for 6 goal contributions before the window closes → listing withdrawn; fail → he's sold and the follow-or-stay clause activates."
 
 CORE RULE — how a challenge must read:
 One sentence of context. Then condition → consequence. That's it.
@@ -901,6 +928,7 @@ RULES:
 - Example positive: "Breakthrough performance catches eye — boost his highest attribute by 2 pts (Live Editor)"
 - Example positive: "International call-up reward — add any one playstyle (Live Editor)"
 - Do NOT repeat any past event (list provided if applicable)
+- If the context includes a LINKED PLAYER, 2-3 of the 10 events must involve the duo (his form, injury, contract, or the bond itself)
 
 Return ONLY valid JSON (no markdown fences):
 { "events": [{ "text": "string", "type": "positive" }, ...] }`;
@@ -919,6 +947,7 @@ TYPES — pick the most narratively compelling given the current context:
 - big_club_interest: A significantly bigger club is circling. Dream move vs comfort zone.
 - loan_decision: He needs game time. A loan arrives — but at what cost to his future here?
 - media_storm: The player becomes a story for the wrong reasons. Pressure from outside the club.
+- linked_fate: (ONLY if the context includes a LINKED PLAYER) The linked player's future is in play — he's listed, wants out, or a club bids for him. The follow-or-stay fork: both paths cost something, and Live Editor forced transfers make either path real. Prefer this type when the context has a linked player and the situation fits.
 
 OUTPUT LENGTH — MAX 4 LINES TOTAL across narrative + stakes + mechanic. This is non-negotiable.
 The right tone reads like this:
@@ -936,7 +965,7 @@ QUALITY RULES:
 
 Return strict JSON:
 {
-  "type": "transfer_saga | contract_standoff | manager_conflict | big_club_interest | loan_decision | media_storm",
+  "type": "transfer_saga | contract_standoff | manager_conflict | big_club_interest | loan_decision | media_storm | linked_fate",
   "title": "string — 4-6 words, punchy",
   "narrative": "string — 1-2 sentences. The situation. Specific.",
   "stakes": "string — 1-2 sentences. Condition → consequence. Must sting.",
@@ -963,7 +992,7 @@ When the user asks you to change something concrete, explain the change in one s
 The app renders this as a preview card with an Apply button — the user confirms before anything is saved. Do not repeat the JSON content in prose.
 
 TARGETS — dot/bracket paths rooted at one of:
-- setup — {manager, club, league, division, season, difficulty, era, save_concept, player:{name, age, position, nationality, ovr, potential, weakFoot, skillMoves, concept_hook}}
+- setup — {manager, club, league, division, season, difficulty, era, save_concept, player:{name, age, position, nationality, ovr, potential, weakFoot, skillMoves, concept_hook, linked:{name, position, bond, ovr, potential}}}
 - narrative — {manager_backstory, club_situation, season_framing, narrative_events:[2 strings]}
 - challenges — array of {title, type, description, duration, stakes, difficulty, hub_line}
 - ruleset — {squad_rules:[], transfer_rules:[], gameplay_rules:[], special_mechanics:{chaos_wheel, protected_player, academy_tracker}}
@@ -1246,6 +1275,14 @@ Return ONLY valid JSON (no markdown fences):
       `Season: ${setup.season || 1} | Difficulty: ${setup.difficulty || '—'}`
     );
 
+    if (player.linked?.name) {
+      parts.push(
+        `LINKED PLAYER: ${player.linked.name} (${player.linked.position || '—'})` +
+        (player.linked.bond ? ` — ${player.linked.bond}` : '') +
+        `\nDid the linked player come along or stay behind? The new narrative must address the state of the link after this move.`
+      );
+    }
+
     if (pastSeasons.length > 0) {
       const lines = pastSeasons.map(s => {
         const ps = s.playerStats || {};
@@ -1310,6 +1347,23 @@ Return ONLY valid JSON (no markdown fences):
       (existing ? `\n\nEXISTING ACTIVE CHALLENGES — do not repeat these:\n${existing}` : '') +
       `\n\nReturn a single JSON object (NOT an array):\n{ "title":..., "type":..., "description":..., "duration":..., "stakes":..., "difficulty":..., "hub_line":... }`;
     return call(SYSTEM_PLAYER_CHALLENGE, msg, 1024, CHALLENGE_SCHEMA);
+  }
+
+  const SYSTEM_LINKED_BOND = `You write the bond between two players in an FC 25 player career save — the user's player and their linked teammate, whose careers are deliberately tied together. One to two sentences, specific and emotional. BANNED: "brothers in arms", "partners in crime", "dynamic duo", "telepathic connection" or any phrase that could describe any duo. The bond must imply WHY their careers are tied and what breaking the link would cost.
+Return ONLY: { "bond": "string" }`;
+
+  async function generateLinkedBond() {
+    const setup = Storage.get(Storage.KEYS.SETUP) || {};
+    const p = setup.player || {};
+    const l = p.linked || {};
+    if (!l.name) throw new Error('Fill in the linked player name first.');
+    const msg =
+      `User's player: ${p.name || '—'} (${p.position || '—'}, age ${p.age || '—'})\n` +
+      `Linked teammate: ${l.name} (${l.position || '—'}, OVR ${l.ovr || '—'}, potential ${l.potential || '—'})\n` +
+      `Club: ${setup.club || '—'} | ${setup.league || '—'}\n` +
+      `Save concept: ${p.concept_hook || setup.save_concept || '—'}` +
+      (l.bond ? `\nCurrent bond (write a sharper one): ${l.bond}` : '');
+    return call(SYSTEM_LINKED_BOND, msg, 512, BOND_SCHEMA);
   }
 
   // ── Fiction Mode ─────────────────────────────────────────────
@@ -1524,6 +1578,7 @@ Return ONLY the JSON. No preamble, no markdown fences.`;
     generateEvents,
     generateSeasonSummary,
     advanceSeason,
+    generateLinkedBond,
     generateFictionConcept,
     generateFictionPlayer,
     updateFictionPlayer,

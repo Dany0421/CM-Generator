@@ -139,9 +139,81 @@ const World = (() => {
     _canvas.height = window.innerHeight;
   }
 
-  // Task 7 replaces these stubs with the real overlay logic.
-  function openBuilding(id) { console.log('enter', id); }
-  function closeOverlay() {}
+  // Fase 1 mapping: which modules open inside each building (rest = placeholder).
+  const MAPPING = {
+    casa:          { panels: [['narrative', 'Narrativa', () => NarrativeModule.render()]] },
+    'club-office': { panels: [['hub', 'Season Log', () => HubModule.render()],
+                              ['challenges', 'Challenges', () => ChallengesModule.render()]] },
+    boardroom:     { panels: [['ruleset', 'Ruleset', () => RulesetModule.render()],
+                              ['hub', 'Boardroom', () => HubModule.render()]] },
+  };
+  let _returnPos = null;
+
+  function _clearPanels() {
+    document.querySelectorAll('#world-overlay .module-panel')
+      .forEach(p => p.classList.remove('active'));
+  }
+
+  function _showPanel(name, renderFn) {
+    _clearPanels();
+    const panel = document.getElementById(`module-${name}`);
+    panel.classList.add('active');
+    renderFn();
+    if (window.lucide) lucide.createIcons();
+    document.getElementById('world-overlay').scrollTop = 0;
+  }
+
+  function _showConstruction(label) {
+    const panel = document.getElementById('world-generic');
+    while (panel.firstChild) panel.removeChild(panel.firstChild);
+    const wrap = document.createElement('div');
+    wrap.className = 'world-construction';
+    const h = document.createElement('h2');
+    h.textContent = label;
+    const p = document.createElement('p');
+    p.textContent = 'Em construção — chega numa fase seguinte.';
+    wrap.append(h, p);
+    panel.appendChild(wrap);
+    _clearPanels();
+    panel.classList.add('active');
+  }
+
+  function _showChooser(label, panels) {
+    const panel = document.getElementById('world-generic');
+    while (panel.firstChild) panel.removeChild(panel.firstChild);
+    const wrap = document.createElement('div');
+    wrap.className = 'world-chooser';
+    for (const [name, title, renderFn] of panels) {
+      const btn = document.createElement('button');
+      btn.className = 'btn-primary';
+      btn.textContent = title;
+      btn.addEventListener('click', () => _showPanel(name, renderFn));
+      wrap.appendChild(btn);
+    }
+    panel.appendChild(wrap);
+    _clearPanels();
+    panel.classList.add('active');
+  }
+
+  function openBuilding(id) {
+    const b = WorldMap.buildings.find(b => b.id === id);
+    _returnPos = { x: b.door.x + b.door.w / 2, y: b.door.y + b.door.h + 18 };
+    _inOverlay = true;
+    document.getElementById('world-overlay').classList.add('open');
+    document.getElementById('world-back-btn').classList.remove('world-hidden');
+    const m = MAPPING[id];
+    if (!m) _showConstruction(b.label);
+    else if (m.panels.length === 1) _showPanel(m.panels[0][0], m.panels[0][2]);
+    else _showChooser(b.label, m.panels);
+  }
+
+  function closeOverlay() {
+    _inOverlay = false;
+    document.getElementById('world-overlay').classList.remove('open');
+    document.getElementById('world-back-btn').classList.add('world-hidden');
+    if (_returnPos) { _px = _returnPos.x; _py = _returnPos.y; _persist(); }
+    _doorZone = null;
+  }
 
   async function init() {
     _canvas = document.getElementById('world-canvas');
@@ -154,6 +226,14 @@ const World = (() => {
     hud.textContent = 'WASD / setas para andar';
     _ground = WorldGround.build();
     WorldInput.attach(_canvas);
+    // Existing modules render into the overlay panels (app.js does this in index.html).
+    SetupModule.init(document.getElementById('module-setup'));
+    FictionModule.init(document.getElementById('module-fiction'));
+    NarrativeModule.init(document.getElementById('module-narrative'));
+    ChallengesModule.init(document.getElementById('module-challenges'));
+    RulesetModule.init(document.getElementById('module-ruleset'));
+    HubModule.init(document.getElementById('module-hub'));
+    document.getElementById('world-back-btn').addEventListener('click', closeOverlay);
     _restore();
     window.addEventListener('beforeunload', _persist);
     requestAnimationFrame(ts => { _last = ts; _frame(ts); });

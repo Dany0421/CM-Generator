@@ -9,6 +9,7 @@ const Storage = (() => {
     HUB:            'cg_hub',
     SEASONS:        'cg_seasons',
     FICTION_PLAYER: 'cg_fiction_player',
+    WORLD:          'cg_world',
   };
 
   // { [storageKey]: { prev: any, onUndo: fn, timerId: id } }

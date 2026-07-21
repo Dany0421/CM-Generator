@@ -54,7 +54,8 @@ const WorldMap = (() => {
   // under the sprite — touching the building is enough, never crossing it
   // (door positions vary per art, a door-anchored path can cut through the sprite).
   const plaza = [800, 420]; // central square in front of the Estádio
-  const paths = buildings.map(b => {
+  // Imprensa has no own path — the Sponsors path runs right past it and doubles up.
+  const paths = buildings.filter(b => b.id !== 'imprensa').map(b => {
     const ex = Math.max(b.x, Math.min(plaza[0], b.x + b.w));
     const ey = Math.max(b.y, Math.min(plaza[1], b.y + b.h));
     const cx = b.x + b.w / 2, cy = b.y + b.h / 2;

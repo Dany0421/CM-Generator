@@ -11,12 +11,18 @@ const World = (() => {
   let _inOverlay = false;
   let _doorZone = null;
 
-  const _solids = () => WorldMap.buildings.map(b => b.solid);
+  const _solids = () => [
+    ...WorldMap.buildings.map(b => b.solid),
+    ...WorldMap.props.filter(p => p.solid).map(p => p.solid),
+  ];
   const _doors = () => WorldMap.buildings.map(b => ({ ...b.door, id: b.id, label: b.label }));
 
   function _restore() {
     const s = Storage.get(Storage.KEYS.WORLD);
     if (s && typeof s.x === 'number') { _px = s.x; _py = s.y; _face = s.face || 'down'; }
+    // saved position may sit inside a solid added later — would lock movement forever
+    const box = { w: PLAYER.feetW, h: PLAYER.feetH };
+    if (WorldLogic.hitZone(_px, _py, box, _solids())) { _px = 800; _py = 500; }
   }
   function _persist() {
     Storage.set(Storage.KEYS.WORLD, { x: _px, y: _py, face: _face });

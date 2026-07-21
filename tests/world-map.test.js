@@ -19,11 +19,14 @@ test('door zone touches or overlaps its solid box', () => {
   }
 });
 test('no two solid boxes overlap', () => {
-  const S = M.buildings.map(b => b.solid);
+  const S = [
+    ...M.buildings.map(b => ({ id: b.id, s: b.solid })),
+    ...M.props.filter(p => p.solid).map(p => ({ id: p.sprite, s: p.solid })),
+  ];
   for (let i = 0; i < S.length; i++)
     for (let j = i + 1; j < S.length; j++) {
-      const a = S[i], c = S[j];
+      const a = S[i].s, c = S[j].s;
       const sep = a.x + a.w <= c.x || c.x + c.w <= a.x || a.y + a.h <= c.y || c.y + c.h <= a.y;
-      assert.ok(sep, `${M.buildings[i].id} vs ${M.buildings[j].id}`);
+      assert.ok(sep, `${S[i].id} vs ${S[j].id}`);
     }
 });

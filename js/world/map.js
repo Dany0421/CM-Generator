@@ -26,9 +26,13 @@ const WorldMap = (() => {
     return { ...d, sprite: `buildings/${d.id}`, solid, door };
   });
 
+  // Props with a `solid` box block movement (campo + estátua); the rest are walk-through.
+  // Estátua is centered on the plaza circle (800,420 r70) — statue base sits in the circle.
   const props = [
-    { sprite: 'props/estatua',   x: 780, y: 300, w: 90 },
-    { sprite: 'props/campo',     x: 120, y: 480, w: 280 },
+    { sprite: 'props/estatua',   x: 755, y: 334, w: 90,
+      solid: { x: 762, y: 414, w: 76, h: 46 } },
+    { sprite: 'props/campo',     x: 120, y: 480, w: 280,
+      solid: { x: 128, y: 496, w: 264, h: 130 } },
     { sprite: 'props/arvore',    x:  60, y: 150, w: 100 },
     { sprite: 'props/arvore',    x: 1050, y: 140, w: 100 },
     { sprite: 'props/arvore',    x: 1420, y: 900, w: 100 },
@@ -45,15 +49,19 @@ const WorldMap = (() => {
     { sprite: 'props/candeeiro', x: 300, y: 1000, w: 50 },
   ];
 
-  // Stone paths door-to-door (drawn by ground renderer as wide stone strokes).
-  const doorAnchor = id => {
-    const b = buildings.find(b => b.id === id);
-    return [b.door.x + b.door.w / 2, b.door.y + b.door.h / 2];
-  };
+  // Stone paths plaza-to-building (drawn by ground renderer as wide stone strokes).
+  // Each path ends at the closest point on the building's rect, tucked slightly
+  // under the sprite — touching the building is enough, never crossing it
+  // (door positions vary per art, a door-anchored path can cut through the sprite).
   const plaza = [800, 420]; // central square in front of the Estádio
-  const paths = [
-    ...buildings.map(b => ({ from: doorAnchor(b.id), to: plaza })),
-  ];
+  const paths = buildings.map(b => {
+    const ex = Math.max(b.x, Math.min(plaza[0], b.x + b.w));
+    const ey = Math.max(b.y, Math.min(plaza[1], b.y + b.h));
+    const cx = b.x + b.w / 2, cy = b.y + b.h / 2;
+    const m = Math.hypot(cx - ex, cy - ey) || 1;
+    const tuck = 18;
+    return { from: [ex + (cx - ex) / m * tuck, ey + (cy - ey) / m * tuck], to: plaza };
+  });
 
   return { W, H, buildings, props, paths };
 })();

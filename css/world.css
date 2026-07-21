@@ -1,0 +1,33 @@
+/* Career World dev entry — canvas fills the viewport, overlays reuse app styles */
+html, body { margin: 0; height: 100%; overflow: hidden; background: #4a7a34; }
+#world-canvas { display: block; width: 100vw; height: 100vh; touch-action: none; }
+
+#world-hud {
+  position: fixed; top: 12px; left: 12px; z-index: 5;
+  font-family: 'Inter', sans-serif; color: #fff;
+  background: rgba(0, 0, 0, 0.45); border-radius: 10px;
+  padding: 6px 12px; font-size: 13px; pointer-events: none;
+}
+
+#world-door-prompt {
+  position: fixed; bottom: 96px; left: 50%; transform: translateX(-50%);
+  z-index: 5; font-family: 'Inter', sans-serif; color: #fff;
+  background: rgba(0, 0, 0, 0.6); border-radius: 12px;
+  padding: 10px 18px; font-size: 15px; font-weight: 600; pointer-events: none;
+}
+
+#world-overlay {
+  position: fixed; inset: 0; z-index: 10; background: var(--bg, #0f1115);
+  overflow-y: auto; display: none;
+}
+#world-overlay.open { display: block; }
+#world-back-btn {
+  position: fixed; top: 14px; right: 14px; z-index: 12;
+  font-family: 'Inter', sans-serif; font-weight: 700;
+}
+.world-hidden { display: none !important; }
+
+.world-chooser { display: flex; gap: 16px; justify-content: center; padding: 80px 20px; flex-wrap: wrap; }
+.world-chooser button { min-width: 200px; min-height: 90px; font-size: 17px; }
+.world-construction { text-align: center; padding: 120px 20px; font-family: 'Inter', sans-serif; color: #ccc; }
+.world-construction h2 { color: #fff; margin-bottom: 8px; }

@@ -581,10 +581,27 @@ Return ONLY the JSON object. No preamble, no explanation, no markdown fences.`;
       parts.push(`KEY MOMENTS FROM LAST SEASON (use as context — reference these events, do not ignore them):\n${lines}`);
     }
 
+    const npcBlock = _npcContextBlock();
+    if (npcBlock) parts.push(npcBlock);
+
     return parts.join('\n\n');
   }
 
   // Build context string from all saved modules for chaining
+  // Fase 3: relationships color every generation (narrative, challenges,
+  // match reports, hangouts, news) — low ones read as tension, never as a
+  // mechanical penalty. Live Editor consequences stay on the USER's player.
+  function _npcContextBlock() {
+    const list = Storage.get(Storage.KEYS.NPCS)?.list || [];
+    if (!list.length) return '';
+    const lines = list.map(n => {
+      const tag = n.value < 30 ? ' — LOW, there is real tension here'
+        : n.value >= 70 ? ' — strong bond' : '';
+      return `- ${n.name} (${n.role}): ${n.value}/100${tag}${n.personality ? ` · ${n.personality}` : ''}`;
+    });
+    return 'RELATIONSHIPS (0-100 — weave the low and the strong ones into the story when natural):\n' + lines.join('\n');
+  }
+
   function buildContext() {
     const setup      = Storage.get(Storage.KEYS.SETUP);
     const narrative  = Storage.get(Storage.KEYS.NARRATIVE);
@@ -688,6 +705,9 @@ Return ONLY the JSON object. No preamble, no explanation, no markdown fences.`;
       }).join('\n');
       parts.push(`KEY MOMENTS FROM LAST SEASON (use as context — reference these events, do not ignore them):\n${lines}`);
     }
+
+    const npcBlock = _npcContextBlock();
+    if (npcBlock) parts.push(npcBlock);
 
     return parts.join('\n\n');
   }

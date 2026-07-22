@@ -91,6 +91,28 @@ const WorldNPCs = (() => {
     save(data);
   }
 
+  // Duo/teammate challenge outcome weighs more than a loose check-in (spec).
+  // Applies to roster members whose name appears in the challenge text; delta
+  // is f(to)-f(from) so toggling the tracker status never double-counts.
+  function applyChallengeOutcome(ch, fromStatus, toStatus) {
+    const f = s => s === 'Completed' ? 5 : s === 'Failed' ? -5 : 0;
+    const delta = f(toStatus) - f(fromStatus);
+    if (!delta) return;
+    const season = Storage.get(Storage.KEYS.SETUP)?.season || 1;
+    const text = `${ch.title} ${ch.description} ${ch.hub_line || ''}`.toLowerCase();
+    const data = load();
+    let changed = false;
+    for (const npc of data.list) {
+      const involved = npc.category === 'teammate' ||
+        (npc.category === 'professional' && npc.role === 'Treinador');
+      if (!involved || !text.includes(npc.name.trim().toLowerCase())) continue;
+      addEvent(npc, `${delta > 0 ? 'Challenge cumprido' : 'Challenge falhado'}: ${ch.title}`, delta, season);
+      if (delta > 0) { npc.streak = 0; npc.interacted = true; }
+      changed = true;
+    }
+    if (changed) save(data);
+  }
+
   // ── shared card UI (Casa + Balneário) ──────────────────────
   function buildCard(npc, onHangout) {
     const card = document.createElement('div');
@@ -191,7 +213,8 @@ const WorldNPCs = (() => {
   }
 
   const api = { TUNING, makeNpc, addEvent, interact, beat, fansDelta,
-    load, save, byCategory, fans, processMatchBeat, buildCard, hangout, clamp };
+    load, save, byCategory, fans, processMatchBeat, applyChallengeOutcome,
+    buildCard, hangout, clamp };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   return api;
 })();

@@ -145,7 +145,8 @@ const WorldOffice = (() => {
     chBtn.className = 'btn-primary';
     chBtn.textContent = 'Challenges';
     chBtn.addEventListener('click', () => {
-      ChallengesModule.render();
+      // balneário-type challenges (duo / Player Challenge) edit at the Balneário
+      ChallengesModule.render({ title: 'Challenges', only: 'rest' });
       App.navigate('challenges');
     });
     nav.append(logBtn, chBtn);

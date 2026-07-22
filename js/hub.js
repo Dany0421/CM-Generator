@@ -977,8 +977,15 @@ const HubModule = (() => {
   function _setTrackerStatus(index, status) {
     const hub = _getHub();
     if (!hub.tracker) hub.tracker = {};
+    const prev = hub.tracker[index] || 'Active';
     hub.tracker[index] = status;
     _saveHub(hub);
+    // Fase 3 (Career World only): duo/teammate challenge outcomes move the
+    // involved NPC's relation. Delta is prev→next so re-cycling never stacks.
+    if (typeof WorldNPCs !== 'undefined') {
+      const ch = (Storage.get(Storage.KEYS.CHALLENGES) || [])[index];
+      if (ch) WorldNPCs.applyChallengeOutcome(ch, prev, status);
+    }
   }
 
   // ── Career Moves (player mode only) ─────────────────────────

@@ -102,6 +102,14 @@ const WorldBalneario = (() => {
       App.navigate('hub');
     });
     nav.appendChild(playersBtn);
+    const chBtn = document.createElement('button');
+    chBtn.className = 'btn-primary';
+    chBtn.textContent = 'Challenges';
+    chBtn.addEventListener('click', () => {
+      ChallengesModule.render({ title: 'Challenges do Balneário', only: 'balneario' });
+      App.navigate('challenges');
+    });
+    nav.appendChild(chBtn);
     const cardEnabled = setup.mode === 'fiction' ||
       (setup.mode === 'player' && setup.player?.statsCard);
     if (cardEnabled) {
@@ -140,8 +148,47 @@ const WorldBalneario = (() => {
         wrap.appendChild(WorldNPCs.buildCard(npc, (n, btn, card) =>
           WorldNPCs.hangout(n, btn, card, () => render(_panel))));
       }
+      wrap.appendChild(_addColegaForm());
     }
     panel.appendChild(wrap);
+  }
+
+  // Emergent NPCs (spec): someone outside the squad can join the roster —
+  // e.g. a teammate the narrative keeps mentioning. Manual fix-as-NPC for now.
+  function _addColegaForm() {
+    const row = document.createElement('div');
+    row.className = 'npc-add-row';
+    const nameIn = document.createElement('input');
+    nameIn.type = 'text';
+    nameIn.className = 'form-input';
+    nameIn.placeholder = 'Nome do colega';
+    const roleIn = document.createElement('input');
+    roleIn.type = 'text';
+    roleIn.className = 'form-input';
+    roleIn.placeholder = 'Posição/papel';
+    const btn = document.createElement('button');
+    btn.className = 'btn-ghost';
+    btn.textContent = 'Adicionar colega';
+    btn.addEventListener('click', async () => {
+      const name = nameIn.value.trim();
+      if (!name) { App.showError('Escreve o nome do colega.'); return; }
+      btn.disabled = true;
+      btn.textContent = 'A gerar…';
+      try {
+        const result = await API.generateNpcs([{ name, role: roleIn.value.trim() || 'Colega' }], 'lockerroom');
+        const m = (result.members || [])[0] || {};
+        const data = WorldNPCs.load();
+        data.list.push(WorldNPCs.makeNpc(name, 'teammate', roleIn.value.trim() || m.role || 'Colega', m.personality));
+        WorldNPCs.save(data);
+        render(_panel);
+      } catch (err) {
+        App.showError(err.message);
+        btn.disabled = false;
+        btn.textContent = 'Adicionar colega';
+      }
+    });
+    row.append(nameIn, roleIn, btn);
+    return row;
   }
 
   return { render };

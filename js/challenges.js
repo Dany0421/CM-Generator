@@ -58,23 +58,58 @@ const ChallengesModule = (() => {
       .filter(e => e && !e.isDivider && e.match?.outcome && e.match.season === season);
   }
 
+  // Career World view filter (Fase 3): 'balneario' = duo challenges (player
+  // mode, linked name in the text) / player_challenge (team mode); 'rest' =
+  // everything else (Club Office). null (index.html) shows all.
+  let _view = null;
+
+  function isBalnearioChallenge(ch, setup) {
+    if (setup?.mode === 'player' || setup?.mode === 'fiction') {
+      const linked = setup?.player?.linked?.name;
+      if (!linked) return false;
+      return `${ch.title} ${ch.description} ${ch.hub_line || ''}`
+        .toLowerCase().includes(linked.trim().toLowerCase());
+    }
+    return ch.type === 'player_challenge';
+  }
+
+  function _inView(ch) {
+    if (!_view || !_view.only) return true;
+    const setup = Storage.get(Storage.KEYS.SETUP);
+    const isBaln = isBalnearioChallenge(ch, setup);
+    return _view.only === 'balneario' ? isBaln : !isBaln;
+  }
+
   function init(container) {
     _container = container;
     render();
   }
 
-  function render() {
+  function render(view) {
+    if (view !== undefined) _view = view;
     _container.replaceChildren();
     _container.appendChild(_buildHeader());
 
     const challenges = Storage.get(Storage.KEYS.CHALLENGES);
     if (!challenges || challenges.length === 0) {
-      _container.appendChild(_buildEmpty());
+      _container.appendChild(_view?.only === 'balneario' ? _buildViewEmpty() : _buildEmpty());
     } else {
-      _container.appendChild(_buildGrid(challenges));
+      const grid = _buildGrid(challenges);
+      _container.appendChild(grid.childElementCount ? grid : _buildViewEmpty());
     }
 
     lucide.createIcons();
+  }
+
+  function _buildViewEmpty() {
+    const wrap = document.createElement('div');
+    wrap.className = 'card challenge-empty';
+    const p = document.createElement('p');
+    p.textContent = _view?.only === 'balneario'
+      ? 'Sem challenges do balneário nesta época — os duo challenges (e o Player Challenge em team mode) aparecem aqui quando gerados no Club Office.'
+      : 'Sem challenges desta location.';
+    wrap.appendChild(p);
+    return wrap;
   }
 
   function _buildHeader() {
@@ -93,7 +128,11 @@ const ChallengesModule = (() => {
       </div>
     `);
 
-    frag.querySelector('#challenges-regen-all').addEventListener('click', _generateAll);
+    // Regenerate All rewrites the whole set — Club Office/index only
+    if (_view?.only === 'balneario') frag.querySelector('#challenges-regen-all').remove();
+    else frag.querySelector('#challenges-regen-all').addEventListener('click', _generateAll);
+    const titleEl = frag.querySelector('.module-title');
+    if (_view?.title) titleEl.textContent = _view.title;
     return frag;
   }
 
@@ -143,6 +182,7 @@ const ChallengesModule = (() => {
     grid.id = 'challenges-grid';
 
     challenges.forEach((ch, index) => {
+      if (!_inView(ch)) return; // index into storage stays the original one
       grid.appendChild(_buildCard(ch, index));
     });
 
@@ -485,7 +525,7 @@ const ChallengesModule = (() => {
   }
 
   if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { computeProgress };
+    module.exports = { computeProgress, isBalnearioChallenge };
   }
-  return { init, render };
+  return { init, render, isBalnearioChallenge };
 })();

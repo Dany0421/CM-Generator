@@ -1,13 +1,19 @@
-// Sponsors (Fase 4) — brand deals with metric/target like season challenges,
-// progress fed by the Estádio match entries, rewards applied by the user via
-// Live Editor (the app never touches the game). Standing with sponsors is a
-// collective NPC (professional, role 'Sponsors') — affects generosity.
+// Sponsors (Fase 4) — real football money, scaled to the division by the
+// prompt. Each negotiation brings 5 OFFERS across tiers; the user accepts at
+// most 2 ACTIVE deals at a time (choice is the game). Progress fed by the
+// Estádio match entries; rewards applied by the user via Live Editor. Standing
+// is a collective NPC (professional, role 'Sponsors') — affects generosity.
 const WorldSponsors = (() => {
+  const MAX_ACTIVE = 2;
   let _panel = null;
 
   function _data() {
-    const d = Storage.get(Storage.KEYS.SPONSORS);
-    return d && Array.isArray(d.deals) ? d : { deals: [], season: 0 };
+    const d = Storage.get(Storage.KEYS.SPONSORS) || {};
+    return {
+      offers: Array.isArray(d.offers) ? d.offers : [],
+      deals:  Array.isArray(d.deals) ? d.deals : [],
+      season: d.season || 0,
+    };
   }
   function _save(d) { Storage.set(Storage.KEYS.SPONSORS, d); }
 
@@ -28,6 +34,8 @@ const WorldSponsors = (() => {
       .filter(e => e && !e.isDivider && e.match?.outcome && e.match.season === season);
   }
 
+  function _money(v) { return Number(v).toLocaleString('en-US'); }
+
   async function _generate(btn) {
     btn.disabled = true;
     btn.textContent = 'A negociar…';
@@ -36,12 +44,10 @@ const WorldSponsors = (() => {
       const result = await API.generateSponsorDeals();
       const setup = Storage.get(Storage.KEYS.SETUP) || {};
       const data = _data();
-      // paid deals stay as history; open ones are replaced by the new offers
-      data.deals = data.deals.filter(d => d.status === 'Paid');
-      for (const d of (result.deals || [])) {
-        data.deals.push({ ...d, id: 's' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-          season: setup.season || 1, status: 'Active' });
-      }
+      data.offers = (result.deals || []).map(d => ({
+        ...d, id: 's' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+        season: setup.season || 1,
+      }));
       data.season = setup.season || 1;
       _save(data);
       render(_panel);
@@ -52,12 +58,7 @@ const WorldSponsors = (() => {
     }
   }
 
-  function _dealCard(deal) {
-    const setup = Storage.get(Storage.KEYS.SETUP) || {};
-    const solo = setup.mode === 'player' || setup.mode === 'fiction';
-    const card = document.createElement('div');
-    card.className = 'card sponsor-card' + (deal.status === 'Paid' ? ' paid' : '');
-
+  function _head(deal) {
     const head = document.createElement('div');
     head.className = 'sponsor-head';
     const brand = document.createElement('span');
@@ -67,8 +68,10 @@ const WorldSponsors = (() => {
     tier.className = `sponsor-tier tier-${(deal.tier || 'Normal').toLowerCase()}`;
     tier.textContent = deal.tier;
     head.append(brand, tier);
-    card.appendChild(head);
+    return head;
+  }
 
+  function _body(card, deal) {
     const title = document.createElement('p');
     title.className = 'sponsor-title';
     title.textContent = deal.title;
@@ -77,6 +80,49 @@ const WorldSponsors = (() => {
     desc.className = 'sponsor-desc';
     desc.textContent = deal.description;
     card.appendChild(desc);
+    const reward = document.createElement('p');
+    reward.className = 'sponsor-reward';
+    reward.textContent = `Reward: ${_money(deal.reward)} (aplicar via Live Editor)`;
+    card.appendChild(reward);
+  }
+
+  function _offerCard(offer, activeCount) {
+    const card = document.createElement('div');
+    card.className = 'card sponsor-card';
+    card.appendChild(_head(offer));
+    _body(card, offer);
+    const cond = document.createElement('p');
+    cond.className = 'sponsor-desc';
+    cond.textContent = `Condição: ${offer.target} ${String(offer.metric).replace('_', ' ')} esta época.`;
+    card.appendChild(cond);
+    const btn = document.createElement('button');
+    btn.className = 'btn-primary';
+    if (activeCount >= MAX_ACTIVE) {
+      btn.textContent = `Máx. ${MAX_ACTIVE} deals ativos`;
+      btn.disabled = true;
+    } else {
+      btn.textContent = 'Aceitar deal';
+      btn.addEventListener('click', () => {
+        const data = _data();
+        const idx = data.offers.findIndex(o => o.id === offer.id);
+        if (idx === -1) return;
+        const [accepted] = data.offers.splice(idx, 1);
+        data.deals.push({ ...accepted, status: 'Active' });
+        _save(data);
+        render(_panel);
+      });
+    }
+    card.appendChild(btn);
+    return card;
+  }
+
+  function _dealCard(deal) {
+    const setup = Storage.get(Storage.KEYS.SETUP) || {};
+    const solo = setup.mode === 'player' || setup.mode === 'fiction';
+    const card = document.createElement('div');
+    card.className = 'card sponsor-card' + (deal.status === 'Paid' ? ' paid' : '');
+    card.appendChild(_head(deal));
+    _body(card, deal);
 
     const value = ChallengesModule.computeProgress(deal.metric, _seasonEntries(deal.season), solo);
     const done = value >= deal.target;
@@ -94,11 +140,6 @@ const WorldSponsors = (() => {
     lbl.textContent = `${value} / ${deal.target} ${String(deal.metric).replace('_', ' ')}`;
     prog.appendChild(lbl);
     card.appendChild(prog);
-
-    const reward = document.createElement('p');
-    reward.className = 'sponsor-reward';
-    reward.textContent = `Reward: ${Number(deal.reward).toLocaleString('en-US')} (aplicar via Live Editor)`;
-    card.appendChild(reward);
 
     if (deal.status === 'Paid') {
       const tag = document.createElement('span');
@@ -120,12 +161,37 @@ const WorldSponsors = (() => {
             Storage.get(Storage.KEYS.SETUP)?.season || 1, 2);
           WorldNPCs.save(npcData);
         }
-        App.showToast(`Aplica ${Number(deal.reward).toLocaleString('en-US')} no save via Live Editor.`);
+        App.showToast(`Aplica ${_money(deal.reward)} no save via Live Editor.`);
         render(_panel);
       });
       card.appendChild(btn);
+    } else {
+      const drop = document.createElement('button');
+      drop.className = 'btn-ghost npc-regen';
+      drop.textContent = 'Rescindir deal';
+      drop.addEventListener('click', () => {
+        const data = _data();
+        data.deals = data.deals.filter(x => x.id !== deal.id);
+        _save(data);
+        const npcData = WorldNPCs.load();
+        const n = npcData.list.find(x => x.role === 'Sponsors');
+        if (n) {
+          WorldNPCs.addEvent(n, `Rescindiste com ${deal.sponsor}`, -3,
+            Storage.get(Storage.KEYS.SETUP)?.season || 1);
+          WorldNPCs.save(npcData);
+        }
+        render(_panel);
+      });
+      card.appendChild(drop);
     }
     return card;
+  }
+
+  function _section(wrap, label) {
+    const ht = document.createElement('p');
+    ht.className = 'stadium-section-title stadium-history-title';
+    ht.textContent = label;
+    wrap.appendChild(ht);
   }
 
   function render(panel) {
@@ -141,7 +207,7 @@ const WorldSponsors = (() => {
     const standing = _npc();
     const hint = document.createElement('p');
     hint.className = 'npc-hint';
-    hint.textContent = `Standing com sponsors: ${standing.value}/100 — entrega deals e as propostas engordam.`;
+    hint.textContent = `Standing: ${standing.value}/100 — entrega deals e as propostas engordam. Máximo ${MAX_ACTIVE} deals ativos: escolhe bem.`;
     wrap.appendChild(hint);
 
     const genBtn = document.createElement('button');
@@ -151,14 +217,19 @@ const WorldSponsors = (() => {
     wrap.appendChild(genBtn);
 
     const data = _data();
-    const open = data.deals.filter(d => d.status !== 'Paid');
+    const active = data.deals.filter(d => d.status === 'Active');
     const paid = data.deals.filter(d => d.status === 'Paid');
-    for (const d of open) wrap.appendChild(_dealCard(d));
+
+    if (active.length) {
+      _section(wrap, 'Deals ativos');
+      for (const d of active) wrap.appendChild(_dealCard(d));
+    }
+    if (data.offers.length) {
+      _section(wrap, 'Propostas na mesa');
+      for (const o of data.offers) wrap.appendChild(_offerCard(o, active.length));
+    }
     if (paid.length) {
-      const ht = document.createElement('p');
-      ht.className = 'stadium-section-title stadium-history-title';
-      ht.textContent = 'Deals pagos';
-      wrap.appendChild(ht);
+      _section(wrap, 'Deals pagos');
       for (const d of [...paid].reverse()) wrap.appendChild(_dealCard(d));
     }
     panel.appendChild(wrap);

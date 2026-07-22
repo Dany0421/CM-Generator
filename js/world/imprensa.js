@@ -56,6 +56,14 @@ const WorldImprensa = (() => {
   function _newsCard(item) {
     const card = document.createElement('div');
     card.className = 'card news-card' + (item.manual ? ' manual' : '');
+
+    if (item.author) {
+      const author = document.createElement('p');
+      author.className = 'news-author';
+      author.textContent = item.author;
+      card.appendChild(author);
+    }
+
     const head = document.createElement('p');
     head.className = 'news-headline';
     head.textContent = item.headline;
@@ -70,6 +78,23 @@ const WorldImprensa = (() => {
     meta.className = 'news-meta';
     meta.textContent = `Época ${item.season}` + (item.manual ? ' · nota tua' : '');
     card.appendChild(meta);
+
+    if (Array.isArray(item.comments) && item.comments.length) {
+      const box = document.createElement('div');
+      box.className = 'news-comments';
+      for (const c of item.comments) {
+        const line = document.createElement('p');
+        line.className = 'news-comment';
+        const user = document.createElement('span');
+        user.className = 'news-comment-user' +
+          (c.username === 'Fabrizio Romano' ? ' verified' : '');
+        user.textContent = c.username;
+        line.appendChild(user);
+        line.appendChild(document.createTextNode(` ${c.text}`));
+        box.appendChild(line);
+      }
+      card.appendChild(box);
+    }
     return card;
   }
 

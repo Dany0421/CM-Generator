@@ -120,6 +120,11 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #4a7a34; }
 .news-headline { font-weight: 800; color: #fff; margin: 0 0 6px; font-size: 15px; }
 .news-snippet { font-size: 14px; color: #b9c0cc; margin: 0 0 8px; line-height: 1.5; }
 .news-meta { font-size: 11px; color: #6f7a8c; }
+.news-author { font-size: 13px; font-weight: 800; color: #9fb4d8; margin: 0 0 6px; }
+.news-comments { border-top: 1px solid #232a36; margin-top: 10px; padding-top: 8px; }
+.news-comment { font-size: 13px; color: #b9c0cc; margin: 0 0 6px; line-height: 1.45; }
+.news-comment-user { font-weight: 700; color: #8b95a5; margin-right: 4px; }
+.news-comment-user.verified { color: #9fb4d8; }
 .news-manual { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
 .news-manual .form-input { flex: 1; min-width: 200px; }
 .agency-opp { margin-top: 14px; }

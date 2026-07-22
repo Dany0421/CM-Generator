@@ -1380,23 +1380,33 @@ Return ONLY valid JSON (no markdown fences):
   });
 
   const SYSTEM_SPONSORS =
-    'You are the sponsorship desk of a FIFA/FC career mode companion app. Generate exactly 3 ' +
-    'brand deals: one Easy, one Normal or Hard, one Hard or Insane. Invent FICTIONAL brand ' +
-    'names (never real brands). Each deal has a measurable season condition via metric/target: ' +
-    'player careers use goals/assists/rating_avg, team careers use wins/clean_sheets. CALIBRATE ' +
-    'targets to the ratings and league level in context — Easy should be very reachable, Insane ' +
-    'a season-defining ask. Rewards in in-game currency scale with tier: Easy ~50k, Normal ' +
-    '~150k, Hard ~400k, Insane 1M+. The user\'s standing with sponsors (0-100, in the message) ' +
-    'sets generosity: high standing = richer rewards and friendlier copy, low standing = stingy ' +
-    'offers. The reward is applied manually by the user via Live Editor — never pretend the app ' +
-    'moves money itself.';
+    'You are the sponsorship desk of a FIFA/FC career mode companion app. Generate exactly 5 ' +
+    'brand offers spanning the tiers: at least one Easy, at least one Insane, the rest ' +
+    'Normal/Hard — the user picks a limited number, so make the choice genuinely hard ' +
+    '(different metrics, different risk/reward profiles). Invent FICTIONAL brand names (never ' +
+    'real brands). Each deal has a measurable season condition via metric/target: player ' +
+    'careers use goals/assists/rating_avg, team careers use wins/clean_sheets. CALIBRATE ' +
+    'targets to the ratings and league level in context — Easy very reachable, Insane a ' +
+    'season-defining ask.\n\n' +
+    'MONEY IS REAL FOOTBALL MONEY — scale rewards to the DIVISION in context:\n' +
+    '- Top flight of a major league (Premier League, La Liga, Serie A, Bundesliga, Ligue 1): ' +
+    'Easy 2-5M, Normal 8-15M, Hard 20-40M, Insane 60-90M\n' +
+    '- Other first divisions / second tiers of major leagues (Championship, La Liga 2…): ' +
+    'Easy 500k-1M, Normal 2-5M, Hard 8-15M, Insane 20-35M\n' +
+    '- Lower divisions and small leagues: Easy 100-300k, Normal 500k-1.5M, Hard 2-5M, ' +
+    'Insane 8-15M\n' +
+    'In player careers, the player\'s profile scales it further — a star in a title side earns ' +
+    'brand money a 4th-division kid never sees. The user\'s standing with sponsors (0-100, in ' +
+    'the message) sets generosity within these ranges: high standing = the top of the range ' +
+    'and friendlier copy, low standing = the bottom and stingier terms. The reward is applied ' +
+    'manually by the user via Live Editor — never pretend the app moves money itself.';
 
   async function generateSponsorDeals() {
     const setup   = Storage.get(Storage.KEYS.SETUP) || {};
     const context = setup.mode === 'player' || setup.mode === 'fiction' ? buildPlayerContext() : buildContext();
     const rel = (Storage.get(Storage.KEYS.NPCS)?.list || []).find(n => n.role === 'Sponsors');
-    const msg = `${context}\n\nSponsor standing: ${rel ? rel.value : 50}/100.\nGenerate the 3 deals.`;
-    return call(SYSTEM_SPONSORS, msg, 1536, SPONSOR_DEALS_SCHEMA);
+    const msg = `${context}\n\nSponsor standing: ${rel ? rel.value : 50}/100.\nGenerate the 5 offers.`;
+    return call(SYSTEM_SPONSORS, msg, 2048, SPONSOR_DEALS_SCHEMA);
   }
 
   const NEWS_SCHEMA = S.obj({
@@ -1404,19 +1414,31 @@ Return ONLY valid JSON (no markdown fences):
       headline: S.str,
       snippet:  S.str,
       is_rumor: { type: 'boolean' },
+      author:   S.str,
+      comments: S.arr(S.obj({ username: S.str, text: S.str })),
     })),
   });
 
   const SYSTEM_NEWS =
-    'You are the sports desk covering ONE career in a FIFA/FC career mode companion app. ' +
-    'From the structured FACTS given (results, form, rival, revealed season events, deals), ' +
-    'write 1-3 news pieces: headline (max 12 words, punchy) + snippet (1-2 sentences). ' +
-    'CONSEQUENT, never random: every number and result must come from the facts — you write ' +
-    'the reaction, not the truth. At most ONE piece may be a transfer/interest rumor ' +
-    '(is_rumor: true) — rumors are plausible but NOT necessarily true, and the user never ' +
-    'sees the flag, so write it exactly like real news. Rumors about the user or the rival ' +
-    'are the juiciest. TONE follows the press relationship given: 50+ fair and lively, below ' +
-    '30 openly hostile and petty. No real journalist names.';
+    'You are a football social feed covering ONE career in a FIFA/FC career mode companion ' +
+    'app — every piece is a POST from an account, with fan comments under it. From the ' +
+    'structured FACTS given, write 2-3 posts: headline (max 12 words, punchy) + snippet ' +
+    '(1-2 sentences). CONSEQUENT, never random: every number and result must come from the ' +
+    'facts — you write the reaction, not the truth.\n\n' +
+    'AUTHORS: a CONFIRMED transfer/done deal is ALWAYS posted by "Fabrizio Romano" (with his ' +
+    'trademark style — "Here we go!"). Everything else is posted by well-known football media ' +
+    'channels/brands (e.g. Sky Sports, ESPN FC, GOAL, 433, the league\'s own account — pick ' +
+    'what fits the story and league). At most ONE post may be a transfer/interest RUMOR ' +
+    '(is_rumor: true): rumors are plausible but NOT necessarily true, the user never sees the ' +
+    'flag — and a rumor is NEVER posted by Fabrizio Romano; instead he shows up IN THE ' +
+    'COMMENTS of that post teasing or tempering it ("no agreement yet", "talks at early ' +
+    'stage…", "wait and see").\n\n' +
+    'COMMENTS: 2-4 per post from random fan accounts. Usernames must look like real handles — ' +
+    'lowercase, numbers, club abbreviations, underscores (e.g. "cfc_joao07", "la_masia_kid", ' +
+    '"utdtillidie99", "mister_tatico"). Voices vary: hype, doubt, banter, rival fans stirring ' +
+    '(especially on derby posts). Comments react to THIS post only, grounded in the facts.\n\n' +
+    'TONE of the posts follows the press relationship given: 50+ fair and lively, below 30 ' +
+    'openly hostile and petty (comments can pile on).';
 
   async function generateNews() {
     const setup   = Storage.get(Storage.KEYS.SETUP) || {};

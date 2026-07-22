@@ -3,6 +3,7 @@ const World = (() => {
   const SPEED = 220;              // world units / second
   const PLAYER = { w: 64, h: 96, feetW: 28, feetH: 14 };
   const FRAME = { w: 128, h: 192, order: { down: 0, left: 1, right: 2, up: 3 } };
+  const DAY_MS = 8 * 60 * 1000;   // full day+night cycle; world clock, not FIFA's
 
   let _canvas, _ctx, _assets, _ground;
   let _px = 800, _py = 500;       // player world position (feet center)
@@ -68,9 +69,15 @@ const World = (() => {
     items.push({ y: _py, draw: () => _drawPlayer(ts, cam) });
     items.sort((a, b) => a.y - b.y).forEach(i => i.draw());
 
-    // evening tint + vignette
-    g.fillStyle = 'rgba(255,180,90,0.06)';
-    g.fillRect(0, 0, vw, vh);
+    // day/night: warm tint peaks at dawn/dusk, darkness + lights at night
+    const n = _night(Date.now());
+    const dusk = Math.max(0, 1 - Math.abs(n - 0.5) * 2.5);
+    if (dusk > 0.01) {
+      g.fillStyle = `rgba(255,150,70,${0.13 * dusk})`;
+      g.fillRect(0, 0, vw, vh);
+    }
+    if (n > 0.02) _drawNight(g, vw, vh, cam, n);
+
     const vg = g.createRadialGradient(vw/2, vh/2, Math.min(vw,vh)/2.6, vw/2, vh/2, Math.max(vw,vh)/1.1);
     vg.addColorStop(0, 'rgba(0,0,0,0)');
     vg.addColorStop(1, 'rgba(0,0,0,0.22)');
@@ -128,6 +135,66 @@ const World = (() => {
     g.beginPath(); g.arc(sx, sy, 60, 0, Math.PI * 2); g.fill();
     g.fillStyle = 'rgba(255,255,255,0.4)';
     g.beginPath(); g.arc(kx, ky, 26, 0, Math.PI * 2); g.fill();
+  }
+
+  // 0 = midday, 1 = deep night; smoothstep keeps day/night plateaus long
+  // and the transitions short. Based on wall-clock so it survives reloads.
+  function _night(now) {
+    const phase = (now % DAY_MS) / DAY_MS;
+    const raw = 1 - (Math.cos(phase * Math.PI * 2) + 1) / 2;
+    return raw * raw * (3 - 2 * raw);
+  }
+
+  let _nightCv = null;
+  function _lights() {
+    const out = [];
+    for (const p of WorldMap.props) {
+      if (p.sprite !== 'props/candeeiro') continue;
+      const img = _assets.img(p.sprite);
+      const h = img ? Math.round(p.w * img.height / img.width) : p.w * 2;
+      out.push({ x: p.x + p.w / 2, y: p.y + h * 0.18, r: 130 });
+    }
+    for (const b of WorldMap.buildings)
+      out.push({ x: b.door.x + b.door.w / 2, y: b.door.y, r: 80 });
+    return out;
+  }
+
+  function _drawNight(g, vw, vh, cam, n) {
+    if (!_nightCv) _nightCv = document.createElement('canvas');
+    if (_nightCv.width !== vw || _nightCv.height !== vh) { _nightCv.width = vw; _nightCv.height = vh; }
+    const d = _nightCv.getContext('2d');
+    d.globalCompositeOperation = 'source-over';
+    d.clearRect(0, 0, vw, vh);
+    d.fillStyle = `rgba(10,16,42,${0.55 * n})`;
+    d.fillRect(0, 0, vw, vh);
+
+    // punch light pools out of the darkness (lamps + door spill)
+    d.globalCompositeOperation = 'destination-out';
+    const lights = _lights();
+    for (const l of lights) {
+      const x = l.x - cam.x, y = l.y - cam.y;
+      if (x < -l.r || y < -l.r || x > vw + l.r || y > vh + l.r) continue;
+      const hole = d.createRadialGradient(x, y, 0, x, y, l.r);
+      hole.addColorStop(0, `rgba(0,0,0,${0.9 * n})`);
+      hole.addColorStop(1, 'rgba(0,0,0,0)');
+      d.fillStyle = hole;
+      d.beginPath(); d.arc(x, y, l.r, 0, Math.PI * 2); d.fill();
+    }
+    g.drawImage(_nightCv, 0, 0);
+
+    // warm additive glow on top of each light source
+    g.save();
+    g.globalCompositeOperation = 'lighter';
+    for (const l of lights) {
+      const x = l.x - cam.x, y = l.y - cam.y, r = l.r * 0.7;
+      if (x < -r || y < -r || x > vw + r || y > vh + r) continue;
+      const glow = g.createRadialGradient(x, y, 0, x, y, r);
+      glow.addColorStop(0, `rgba(255,190,90,${0.3 * n})`);
+      glow.addColorStop(1, 'rgba(255,190,90,0)');
+      g.fillStyle = glow;
+      g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill();
+    }
+    g.restore();
   }
 
   function _updatePrompt() {

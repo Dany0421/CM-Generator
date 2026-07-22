@@ -17,6 +17,42 @@ const SetupModule = (() => {
 
   const DIFFICULTY_OPTIONS = ['Legendary', 'Ultimate', 'Custom'];
 
+  // ── Squad (Setup extension) ──────────────────────────────────
+  const SQUAD_FORMATIONS = [
+    '4-3-3', '4-2-3-1', '4-4-2', '4-1-2-1-2', '4-4-1-1', '4-5-1',
+    '4-3-2-1', '4-2-2-2', '3-5-2', '3-4-3', '5-3-2', '5-2-1-2',
+  ];
+
+  function emptySquad() {
+    return { formation: '4-3-3', starters: [], bench: [], reserves: [] };
+  }
+
+  // Storage-boundary cleaner: in-memory rows may be half-filled; only named
+  // players persist. ovr 0 = "unset" and survives as 0.
+  function normalizeSquad(raw) {
+    if (!raw || typeof raw !== 'object') return null;
+    const player = p => {
+      const n = parseInt(p?.ovr, 10) || 0;
+      return {
+        name:     String(p?.name || '').trim(),
+        position: String(p?.position || '').trim().toUpperCase(),
+        ovr:      n ? Math.max(1, Math.min(99, n)) : 0,
+      };
+    };
+    const list = a => (Array.isArray(a) ? a : []).map(player).filter(p => p.name);
+    const squad = {
+      formation: String(raw.formation || '').trim() || '4-3-3',
+      starters:  list(raw.starters),
+      bench:     list(raw.bench),
+      reserves:  list(raw.reserves),
+    };
+    if (squad.starters.length > 11) {
+      squad.bench    = squad.starters.slice(11).concat(squad.bench);
+      squad.starters = squad.starters.slice(0, 11);
+    }
+    return squad;
+  }
+
   function init(container) {
     _container = container;
     render();
@@ -810,6 +846,11 @@ const SetupModule = (() => {
     } finally {
       if (btn) btn.disabled = false;
     }
+  }
+
+  // Node test export (browser ignores this) — same UMD-lite pattern as js/world/logic.js
+  if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { SQUAD_FORMATIONS, emptySquad, normalizeSquad };
   }
 
   return { init, render };

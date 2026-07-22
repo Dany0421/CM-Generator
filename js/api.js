@@ -106,48 +106,53 @@ const API = (() => {
   const VALUE_SCHEMA = S.obj({ value: S.str });
   const RULE_SCHEMA  = S.obj({ rule: S.str });
 
-  // All card stat fields optional (GK cards carry a different subset than field players)
-  const CARD_STATS_SCHEMA = {
-    type: 'object',
-    properties: {
-      acceleration: S.int, sprint_speed: S.int,
-      agility: S.int, balance: S.int, reactions: S.int,
-      ball_control: S.int, dribbling: S.int, composure: S.int,
-      finishing: S.int, heading_accuracy: S.int,
-      short_passing: S.int, long_passing: S.int,
-      curve: S.int, free_kick_accuracy: S.int, crossing: S.int,
-      shot_power: S.int, long_shots: S.int, volleys: S.int, penalties: S.int,
-      attacking_positioning: S.int, vision: S.int,
-      jumping: S.int, stamina: S.int, strength: S.int,
-      aggression: S.int, interceptions: S.int,
-      defensive_awareness: S.int, standing_tackle: S.int, sliding_tackle: S.int,
-      diving: S.int, handling: S.int, kicking: S.int, gk_positioning: S.int, reflexes: S.int,
-    },
-    required: [],
-    additionalProperties: false,
-  };
-
-  const CARD_PLAYER_SCHEMA = S.obj({
-    name: S.str, nationality: S.str, age: S.int, position: S.str,
-    overall: S.int, potential: S.int, height: S.int, weight: S.int,
-    preferred_foot:  { type: 'string', enum: ['Right', 'Left'] },
-    weak_foot: S.int, skill_moves: S.int,
-    work_rate_att: { type: 'string', enum: ['High', 'Medium', 'Low'] },
-    work_rate_def: { type: 'string', enum: ['High', 'Medium', 'Low'] },
-    alt_positions: S.strArr,
-    is_gk: { type: 'boolean' },
-    stats: CARD_STATS_SCHEMA,
-    play_styles: S.strArr, play_styles_plus: S.strArr,
-    possible_play_styles: S.strArr, possible_play_styles_plus: S.strArr,
+  // Card stats: the API caps optional schema params at 24, so no single schema
+  // can hold field + GK stats as optionals — pick the right variant per position.
+  const CARD_FIELD_STATS = S.obj({
+    acceleration: S.int, sprint_speed: S.int,
+    agility: S.int, balance: S.int, reactions: S.int,
+    ball_control: S.int, dribbling: S.int, composure: S.int,
+    finishing: S.int, heading_accuracy: S.int,
+    short_passing: S.int, long_passing: S.int,
+    curve: S.int, free_kick_accuracy: S.int, crossing: S.int,
+    shot_power: S.int, long_shots: S.int, volleys: S.int, penalties: S.int,
+    attacking_positioning: S.int, vision: S.int,
+    jumping: S.int, stamina: S.int, strength: S.int,
+    aggression: S.int, interceptions: S.int,
+    defensive_awareness: S.int, standing_tackle: S.int, sliding_tackle: S.int,
   });
+
+  const CARD_GK_STATS = S.obj({
+    diving: S.int, handling: S.int, kicking: S.int,
+    gk_positioning: S.int, reflexes: S.int,
+    acceleration: S.int, sprint_speed: S.int,
+  });
+
+  function cardPlayerSchema(isGk) {
+    return S.obj({
+      name: S.str, nationality: S.str, age: S.int, position: S.str,
+      overall: S.int, potential: S.int, height: S.int, weight: S.int,
+      preferred_foot:  { type: 'string', enum: ['Right', 'Left'] },
+      weak_foot: S.int, skill_moves: S.int,
+      work_rate_att: { type: 'string', enum: ['High', 'Medium', 'Low'] },
+      work_rate_def: { type: 'string', enum: ['High', 'Medium', 'Low'] },
+      alt_positions: S.strArr,
+      is_gk: { type: 'boolean' },
+      stats: isGk ? CARD_GK_STATS : CARD_FIELD_STATS,
+      play_styles: S.strArr, play_styles_plus: S.strArr,
+      possible_play_styles: S.strArr, possible_play_styles_plus: S.strArr,
+    });
+  }
 
   // Season update returns ONLY the evolving fields (identity/potential stay untouched)
-  const CARD_UPDATE_SCHEMA = S.obj({
-    overall: S.int,
-    stats: CARD_STATS_SCHEMA,
-    play_styles: S.strArr, play_styles_plus: S.strArr,
-    possible_play_styles: S.strArr, possible_play_styles_plus: S.strArr,
-  });
+  function cardUpdateSchema(isGk) {
+    return S.obj({
+      overall: S.int,
+      stats: isGk ? CARD_GK_STATS : CARD_FIELD_STATS,
+      play_styles: S.strArr, play_styles_plus: S.strArr,
+      possible_play_styles: S.strArr, possible_play_styles_plus: S.strArr,
+    });
+  }
 
   const SQUAD_PLAYER_SCHEMA = S.obj({ name: S.str, position: S.str, ovr: S.int });
   const SQUAD_SCHEMA = S.obj({
@@ -1629,7 +1634,8 @@ Return ONLY the JSON. No preamble, no markdown fences.`;
       `Do NOT return identity fields (name, height, etc.) or "potential" — potential is managed separately. ` +
       `Apply the same age-based playstyle limits as defined in the system prompt.`;
 
-    return call(isReal ? SYSTEM_REAL_PLAYER_CARD : SYSTEM_FICTION_PLAYER, msg, 2048, CARD_UPDATE_SCHEMA);
+    const isGk = fp.is_gk === true || String(player.position || '').trim().toUpperCase() === 'GK';
+    return call(isReal ? SYSTEM_REAL_PLAYER_CARD : SYSTEM_FICTION_PLAYER, msg, 2048, cardUpdateSchema(isGk));
   }
 
   async function generateFictionPlayer() {
@@ -1657,7 +1663,8 @@ Return ONLY the JSON. No preamble, no markdown fences.`;
       `Character concept: ${player.concept_hook || setup.save_concept || 'surprise me'}` +
       calibration + narrBlock +
       `\n\nGenerate a complete FC25 card that embodies this concept. Stats must reflect who this ${isReal ? 'player really was at this moment' : 'character IS'}.`;
-    return call(isReal ? SYSTEM_REAL_PLAYER_CARD : SYSTEM_FICTION_PLAYER, msg, 2048, CARD_PLAYER_SCHEMA);
+    const isGk = String(player.position || '').trim().toUpperCase() === 'GK';
+    return call(isReal ? SYSTEM_REAL_PLAYER_CARD : SYSTEM_FICTION_PLAYER, msg, 2048, cardPlayerSchema(isGk));
   }
 
   return {

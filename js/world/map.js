@@ -40,6 +40,25 @@ const WorldMap = (() => {
     { sprite: 'props/arbusto',   x: 540, y: 350, w: 60 },
     { sprite: 'props/arbusto',   x: 1150, y: 520, w: 60 },
     { sprite: 'props/arbusto',   x: 850, y: 1080, w: 60 },
+    // vegetation pass — clusters in the empty pockets, sizes varied on purpose
+    { sprite: 'props/arvore',    x: 1250, y:  80, w: 110 },  // top-right grove
+    { sprite: 'props/arvore',    x: 1350, y: 160, w: 85 },
+    { sprite: 'props/arbusto',   x: 1300, y: 240, w: 60 },
+    { sprite: 'props/arbusto',   x: 1180, y: 120, w: 50 },
+    { sprite: 'props/arvore',    x: 1500, y: 400, w: 95 },   // east edge
+    { sprite: 'props/arbusto',   x: 1510, y: 510, w: 60 },
+    { sprite: 'props/arvore',    x: 520, y:  90, w: 95 },    // balneário/estádio gap
+    { sprite: 'props/arbusto',   x: 990, y: 230, w: 55 },
+    { sprite: 'props/arvore',    x:  30, y: 320, w: 90 },    // west edge, above campo
+    { sprite: 'props/arbusto',   x: 100, y: 410, w: 55 },
+    { sprite: 'props/arvore',    x:  20, y: 540, w: 90 },
+    { sprite: 'props/arbusto',   x: 150, y: 680, w: 60 },    // below campo
+    { sprite: 'props/arvore',    x:  60, y: 1050, w: 105 },  // bottom-left corner
+    { sprite: 'props/arbusto',   x: 175, y: 1110, w: 60 },
+    { sprite: 'props/arbusto',   x: 790, y: 1140, w: 65 },   // south strip
+    { sprite: 'props/arvore',    x: 1290, y: 1080, w: 95 },  // bottom-right grove
+    { sprite: 'props/arbusto',   x: 1400, y: 1040, w: 60 },
+    { sprite: 'props/arvore',    x: 1495, y: 1090, w: 100 },
     { sprite: 'props/banco',     x: 700, y: 400, w: 70 },
     { sprite: 'props/banco',     x: 1300, y: 850, w: 70 },
     { sprite: 'props/candeeiro', x: 410, y: 480, w: 50 },

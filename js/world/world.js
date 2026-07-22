@@ -215,7 +215,7 @@ const World = (() => {
     const est = WorldMap.buildings.find(b => b.id === 'estadio');
     if (est) {
       for (const fx of [0.10, 0.26, 0.43, 0.62, 0.79, 0.93]) {
-        out.push({ x: est.x + fx * est.w, y: est.y + 0.10 * est.h, r: 110, cool: true });
+        out.push({ x: est.x + fx * est.w, y: est.y + 0.10 * est.h, r: 140, cool: true });
       }
     }
     return out;

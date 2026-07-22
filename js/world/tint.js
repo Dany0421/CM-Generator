@@ -91,19 +91,9 @@ const WorldTint = (() => {
     }
     g.globalCompositeOperation = 'destination-in';
     g.drawImage(img, 0, 0);
-    // floodlight towers — AFTER the clip so the dark contour also shows on
-    // the sky side: dark-gray outline stamped around the silhouette, pole
-    // gray fill on top (never club colors)
-    if (mask3) {
-      g.globalCompositeOperation = 'source-over';
-      const dark = _coloredMask(mask3, '#23262b');
-      const O = [[-2, 0], [2, 0], [0, -2], [0, 2], [-1, -1], [1, -1],
-        [-1, 1], [1, 1], [-1, 0], [1, 0], [0, -1], [0, 1]];
-      for (const [dx, dy] of O) g.drawImage(dark, dx, dy);
-      g.globalAlpha = 0.85;
-      g.drawImage(_coloredMask(mask3, '#565b62'), 0, 0);
-      g.globalAlpha = 1;
-    }
+    // floodlight towers (mask3 zone): left completely UNPAINTED — the original
+    // art's own gray reads best (Dany, 2026-07-22). The mask still matters:
+    // mask/mask2 exclude these pixels so club colors never touch them.
     return c;
   }
 

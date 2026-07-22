@@ -2,169 +2,130 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>CM Generator</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="css/world.css">
 </head>
 <body>
-  <div id="app">
+  <canvas id="world-canvas"></canvas>
+  <div id="world-hud"></div>
+  <div id="world-door-prompt" class="world-hidden"></div>
 
-    <!-- API Key Setup Screen -->
-    <div id="api-setup-screen" class="hidden">
-      <div class="key-setup-wrap">
-        <div class="key-setup-logo">
-          <i data-lucide="shield-check"></i>
-        </div>
-        <h1>CM Generator</h1>
-        <p class="key-setup-sub">FC 25 Career Mode Companion</p>
-        <p class="key-setup-desc">Enter your Anthropic API key to power the narrative engine. Stored only in your browser — never sent anywhere except Anthropic's API.</p>
-        <div class="key-input-row">
-          <input type="password" id="api-key-input" placeholder="sk-ant-api03-..." autocomplete="off" spellcheck="false">
-          <button class="btn-primary" id="api-key-save-btn">
-            <i data-lucide="key-round"></i>
-            Activate
-          </button>
-        </div>
-        <p class="key-hint">Get your key at <strong>console.anthropic.com</strong></p>
-      </div>
+  <div id="world-overlay">
+    <div id="world-overlay-inner">
+      <div id="module-setup"      class="module-panel"></div>
+      <div id="module-fiction"    class="module-panel"></div>
+      <div id="module-narrative"  class="module-panel"></div>
+      <div id="module-challenges" class="module-panel"></div>
+      <div id="module-ruleset"    class="module-panel"></div>
+      <div id="module-hub"        class="module-panel"></div>
+      <div id="world-generic"     class="module-panel"></div>
     </div>
-
-    <!-- Main App -->
-    <div id="main-app" class="hidden">
-
-      <header class="app-header">
-        <div class="header-brand">
-          <i data-lucide="shield-check"></i>
-          <span>CM Generator</span>
-        </div>
-        <button class="icon-btn header-settings" id="open-settings-btn" title="Settings">
-          <i data-lucide="settings-2"></i>
-        </button>
-      </header>
-
-      <main class="app-main" id="app-main">
-        <div id="module-setup"      class="module-panel active"></div>
-        <div id="module-fiction"    class="module-panel"></div>
-        <div id="module-narrative"  class="module-panel"></div>
-        <div id="module-challenges" class="module-panel"></div>
-        <div id="module-ruleset"    class="module-panel"></div>
-        <div id="module-hub"        class="module-panel"></div>
-      </main>
-
-      <nav class="bottom-nav" id="bottom-nav">
-        <button class="nav-tab active" data-module="setup">
-          <i data-lucide="sliders-horizontal"></i>
-          <span>Setup</span>
-        </button>
-        <button class="nav-tab nav-tab-fiction hidden" data-module="fiction">
-          <i data-lucide="user-round-pen"></i>
-          <span>Player</span>
-        </button>
-        <button class="nav-tab" data-module="narrative">
-          <i data-lucide="book-open"></i>
-          <span>Story</span>
-        </button>
-        <button class="nav-tab" data-module="challenges">
-          <i data-lucide="crosshair"></i>
-          <span>Challenges</span>
-        </button>
-        <button class="nav-tab" data-module="ruleset">
-          <i data-lucide="scale"></i>
-          <span>Ruleset</span>
-        </button>
-        <button class="nav-tab" data-module="hub">
-          <i data-lucide="layout-dashboard"></i>
-          <span>Hub</span>
-        </button>
-      </nav>
-
-      <button id="chat-fab" class="chat-fab" title="Save Assistant">
-        <i data-lucide="message-circle"></i>
-      </button>
-
-    </div>
-
-    <!-- Chat Modal -->
-    <div id="chat-modal" class="modal hidden">
-      <div class="modal-backdrop" id="chat-backdrop"></div>
-      <div class="modal-sheet chat-sheet">
-        <div class="modal-handle"></div>
-        <div class="modal-header">
-          <h2>Save Assistant</h2>
-          <button class="icon-btn" id="chat-close-btn"><i data-lucide="x"></i></button>
-        </div>
-        <div class="chat-messages" id="chat-messages"></div>
-        <div class="chat-input-row">
-          <textarea id="chat-input" class="chat-input" rows="1" placeholder="Ajusta narrative, challenges, rules, stats…"></textarea>
-          <button class="btn-primary chat-send-btn" id="chat-send-btn" title="Send">
-            <i data-lucide="send"></i>
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Settings Modal -->
-    <div id="settings-modal" class="modal hidden">
-      <div class="modal-backdrop" id="settings-backdrop"></div>
-      <div class="modal-sheet">
-        <div class="modal-handle"></div>
-        <div class="modal-header">
-          <h2>Settings</h2>
-          <button class="icon-btn" id="settings-close-btn"><i data-lucide="x"></i></button>
-        </div>
-        <div class="modal-body">
-          <div class="form-group">
-            <label class="form-label">Anthropic API Key</label>
-            <div class="key-input-row">
-              <input type="password" id="settings-api-key" placeholder="sk-ant-..." autocomplete="off">
-              <button class="btn-secondary" id="settings-key-save">Update</button>
-            </div>
-          </div>
-          <div class="form-group">
-            <label class="form-label">AI Model</label>
-            <select id="settings-model" class="form-select">
-              <option value="claude-sonnet-4-6">Sonnet 4.6 — fast, cheaper</option>
-              <option value="claude-opus-4-8">Opus 4.8 — great quality, higher cost</option>
-              <option value="claude-fable-5">Fable 5 — best writing, 2x Opus cost</option>
-            </select>
-          </div>
-          <div class="settings-section">
-            <p class="settings-section-label">Career Data</p>
-            <div class="settings-row">
-              <button class="btn-secondary" id="export-data-btn">
-                <i data-lucide="download"></i>
-                Export Career
-              </button>
-              <button class="btn-secondary" id="import-data-btn">
-                <i data-lucide="upload"></i>
-                Import Career
-              </button>
-              <input type="file" id="import-file-input" accept=".json" style="display:none">
-            </div>
-          </div>
-          <div class="settings-danger-zone">
-            <p class="danger-label">Danger Zone</p>
-            <button class="btn-danger" id="clear-data-btn">
-              <i data-lucide="trash-2"></i>
-              Clear All Save Data
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
+  </div>
+  <button id="world-back-btn" class="btn-primary world-hidden">Voltar à cidade</button>
+  <button id="world-menu-btn" class="btn-ghost world-hidden"></button>
+  <div id="world-actions">
+    <button id="world-setup-btn" class="world-icon-btn" title="Setup"><i data-lucide="sliders-horizontal"></i></button>
+    <button id="chat-fab" class="world-icon-btn" title="Save Assistant"><i data-lucide="message-circle"></i></button>
+    <button id="world-settings-btn" class="world-icon-btn" title="Settings"><i data-lucide="settings-2"></i></button>
   </div>
 
-  <!-- Toast Container -->
-  <div id="toast-container" aria-live="polite"></div>
+  <!-- Chat Modal (same ids as index.html — chat.js reused untouched) -->
+  <div id="chat-modal" class="modal hidden">
+    <div class="modal-backdrop" id="chat-backdrop"></div>
+    <div class="modal-sheet chat-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-header">
+        <h2>Save Assistant</h2>
+        <button class="icon-btn" id="chat-close-btn"><i data-lucide="x"></i></button>
+      </div>
+      <div class="chat-messages" id="chat-messages"></div>
+      <div class="chat-input-row">
+        <textarea id="chat-input" class="chat-input" rows="1" placeholder="Ajusta narrative, challenges, rules, stats…"></textarea>
+        <button class="btn-primary chat-send-btn" id="chat-send-btn" title="Send">
+          <i data-lucide="send"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings Modal (same ids as index.html) -->
+  <div id="settings-modal" class="modal hidden">
+    <div class="modal-backdrop" id="settings-backdrop"></div>
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-header">
+        <h2>Settings</h2>
+        <button class="icon-btn" id="settings-close-btn"><i data-lucide="x"></i></button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Anthropic API Key</label>
+          <div class="key-input-row">
+            <input type="password" id="settings-api-key" placeholder="sk-ant-..." autocomplete="off">
+            <button class="btn-secondary" id="settings-key-save">Update</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">AI Model</label>
+          <select id="settings-model" class="form-select">
+            <option value="claude-sonnet-4-6">Sonnet 4.6 — fast, cheaper</option>
+            <option value="claude-opus-4-8">Opus 4.8 — great quality, higher cost</option>
+            <option value="claude-fable-5">Fable 5 — best writing, 2x Opus cost</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Velocidade do character</label>
+          <select id="settings-world-speed" class="form-select">
+            <option value="220">Normal</option>
+            <option value="300">Rápido</option>
+            <option value="380">Muito rápido</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Cores do clube</label>
+          <div class="settings-club-colors">
+            <input type="color" id="settings-club-primary" value="#888888" title="Cor primária">
+            <input type="color" id="settings-club-secondary" value="#dddddd" title="Cor secundária">
+            <button class="btn-secondary" id="settings-club-refresh">Pedir à AI de novo</button>
+          </div>
+        </div>
+        <div class="settings-section">
+          <p class="settings-section-label">Career Data</p>
+          <div class="settings-row">
+            <button class="btn-secondary" id="export-data-btn">
+              <i data-lucide="download"></i>
+              Export Career
+            </button>
+            <button class="btn-secondary" id="import-data-btn">
+              <i data-lucide="upload"></i>
+              Import Career
+            </button>
+            <input type="file" id="import-file-input" accept=".json" style="display:none">
+          </div>
+        </div>
+        <div class="settings-danger-zone">
+          <p class="danger-label">Danger Zone</p>
+          <button class="btn-danger" id="clear-data-btn">
+            <i data-lucide="trash-2"></i>
+            Clear All Save Data
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
 
   <script src="https://unpkg.com/lucide@0.525.0/dist/umd/lucide.min.js" integrity="sha384-66NqpHvGmecggY2LhO9Ztqgej60hUyqKWmlIKtarVSeGDlB8gLpO7W8OvPODOql7" crossorigin="anonymous"></script>
   <script src="js/storage.js"></script>
   <script src="data/leagues.js"></script>
   <script src="js/api.js"></script>
+  <script src="js/world/appshim.js"></script>
   <script src="js/setup.js"></script>
   <script src="js/fiction.js"></script>
   <script src="js/narrative.js"></script>
@@ -172,6 +133,21 @@
   <script src="js/ruleset.js"></script>
   <script src="js/hub.js"></script>
   <script src="js/chat.js"></script>
-  <script src="js/app.js"></script>
+  <script src="js/world/logic.js"></script>
+  <script src="js/world/map.js"></script>
+  <script src="js/world/assets.js"></script>
+  <script src="js/world/tint.js"></script>
+  <script src="js/world/ground.js"></script>
+  <script src="js/world/input.js"></script>
+  <script src="js/world/npcs.js"></script>
+  <script src="js/world/board.js"></script>
+  <script src="js/world/stadium.js"></script>
+  <script src="js/world/office.js"></script>
+  <script src="js/world/casa.js"></script>
+  <script src="js/world/balneario.js"></script>
+  <script src="js/world/sponsors.js"></script>
+  <script src="js/world/imprensa.js"></script>
+  <script src="js/world/agencia.js"></script>
+  <script src="js/world/world.js"></script>
 </body>
 </html>

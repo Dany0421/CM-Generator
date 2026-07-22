@@ -441,6 +441,9 @@ const World = (() => {
     _restore();
     window.addEventListener('beforeunload', _persist);
     requestAnimationFrame(ts => { _last = ts; _frame(ts); });
+    // pre-world gate (spec): the city only makes sense with a save — a fresh
+    // browser lands straight in Setup (API key lives in Settings, top-right)
+    if (!Storage.get(Storage.KEYS.SETUP)?.club) openSetup();
   }
 
   const api = { init, openBuilding, openSetup, closeOverlay,

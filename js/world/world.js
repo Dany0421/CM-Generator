@@ -215,7 +215,7 @@ const World = (() => {
     const est = WorldMap.buildings.find(b => b.id === 'estadio');
     if (est) {
       for (const fx of [0.10, 0.26, 0.43, 0.62, 0.79, 0.93]) {
-        out.push({ x: est.x + fx * est.w, y: est.y + 0.10 * est.h, r: 140, cool: true });
+        out.push({ x: est.x + fx * est.w, y: est.y + 0.10 * est.h, r: 90, cool: true });
       }
     }
     return out;
@@ -252,7 +252,7 @@ const World = (() => {
       if (x < -r || y < -r || x > vw + r || y > vh + r) continue;
       const col = l.cool ? '235,244,255' : '255,190,90'; // floodlights vs candeeiros
       const glow = g.createRadialGradient(x, y, 0, x, y, r);
-      glow.addColorStop(0, `rgba(${col},${0.3 * n})`);
+      glow.addColorStop(0, `rgba(${col},${(l.cool ? 0.16 : 0.3) * n})`);
       glow.addColorStop(1, `rgba(${col},0)`);
       g.fillStyle = glow;
       g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill();

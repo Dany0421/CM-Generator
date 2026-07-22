@@ -1436,10 +1436,17 @@ OUTPUT FORMAT (strict JSON):
 
 Return ONLY the JSON. No preamble, no markdown fences.`;
 
-  const SYSTEM_FICTION_PLAYER = `You are a FIFA card generator for fictional FC 25 players. Given a character concept, you generate their complete FIFA card — identity, attributes, and PlayStyles.
+  const CARD_PREAMBLE_FICTION = `You are a FIFA card generator for fictional FC 25 players. Given a character concept, you generate their complete FIFA card — identity, attributes, and PlayStyles.
 
 RULES — NON-NEGOTIABLE:
-1. PURELY FICTIONAL. The player does not exist. No real player should inspire the numbers directly.
+1. PURELY FICTIONAL. The player does not exist. No real player should inspire the numbers directly.`;
+
+  const CARD_PREAMBLE_REAL = `You are a FIFA card generator for REAL players in FC 25 career saves — usually rewind saves that start at an earlier point of the player's real career. You generate their complete FIFA card — identity, attributes, and PlayStyles.
+
+RULES — NON-NEGOTIABLE:
+1. REAL PLAYER, RIGHT MOMENT. Ground every number in who this player actually was AT THE SAVE'S STARTING POINT (per the concept and narrative given) — their real strengths, weaknesses and playing style at that age. NOT their current-day card, NOT their peak card.`;
+
+  const CARD_RULES = `
 2. STATS TELL THE STORY. A technically obsessed player has 90+ ball control and dribbling but maybe 60 stamina. A raw physical beast has pace and strength but low composure. An anime-style prodigy might have elite reactions and agility but weak defending. Stats are character writing.
 3. REALISTIC DISTRIBUTION. No player has 99 in everything. Every concept has strengths AND weaknesses that define them. Total stat floor/ceiling should reflect the age and concept (a 17-year-old raw talent isn't 90+ across the board).
 4. PLAYSTYLES from FC25 only. Field players: Finesse Shot, Power Header, Dead Ball, Power Shot, Chip Shot, Long Ball Pass, Whipped Pass, Incisive Pass, Trickster, Rapid, Flair, First Touch, Technical, Block, Intercept, Jockey, Slide Tackle, Bruiser, Long Throw, Aerial, Acrobatic, Bicycle Kick. GK: Far Reach, Cross Claimer, Footwork, Rush Out, Far Throw.
@@ -1510,6 +1517,9 @@ OUTPUT FORMAT (strict JSON):
 
 Return ONLY the JSON. No preamble, no markdown fences.`;
 
+  const SYSTEM_FICTION_PLAYER   = CARD_PREAMBLE_FICTION + CARD_RULES;
+  const SYSTEM_REAL_PLAYER_CARD = CARD_PREAMBLE_REAL + CARD_RULES;
+
   async function generateFictionConcept(direction) {
     const existing = Storage.get(Storage.KEYS.SETUP);
     const prevBlock = existing?.player?.name
@@ -1523,6 +1533,7 @@ Return ONLY the JSON. No preamble, no markdown fences.`;
   async function updateFictionPlayer() {
     const setup       = Storage.get(Storage.KEYS.SETUP) || {};
     const player      = setup.player || {};
+    const isReal      = setup.mode === 'player';
     const fp          = Storage.get(Storage.KEYS.FICTION_PLAYER) || {};
     const pastSeasons = Storage.get(Storage.KEYS.SEASONS) || [];
 
@@ -1560,7 +1571,7 @@ Return ONLY the JSON. No preamble, no markdown fences.`;
       : 'No past seasons yet';
 
     const msg =
-      `Update the FIFA stats for this fictional player based on their career progression:\n\n` +
+      `Update the FIFA stats for this ${isReal ? 'real' : 'fictional'} player based on their career progression:\n\n` +
       `Player: ${player.name || '—'} | Age: ${player.age || '—'} | ${player.position || '—'}\n` +
       `Current Season: ${setup.season || 1}\n` +
       `Concept: ${player.concept_hook || setup.save_concept || '—'}\n\n` +
@@ -1575,22 +1586,35 @@ Return ONLY the JSON. No preamble, no markdown fences.`;
       `Do NOT return identity fields (name, height, etc.) or "potential" — potential is managed separately. ` +
       `Apply the same age-based playstyle limits as defined in the system prompt.`;
 
-    return call(SYSTEM_FICTION_PLAYER, msg, 1024);
+    return call(isReal ? SYSTEM_REAL_PLAYER_CARD : SYSTEM_FICTION_PLAYER, msg, 1024);
   }
 
   async function generateFictionPlayer() {
     const setup  = Storage.get(Storage.KEYS.SETUP) || {};
     const player = setup.player || {};
+    const isReal = setup.mode === 'player';
+
+    const narrative = Storage.get(Storage.KEYS.NARRATIVE) || {};
+    const narrBlock = isReal
+      ? `\n\nSave narrative (ground the card's moment-in-time in this):\n` +
+        [narrative.manager_backstory, narrative.club_situation, narrative.season_framing]
+          .filter(Boolean).join('\n')
+      : '';
+    const calibration = isReal && player.ovr
+      ? `\n\nUser-set Current OVR: ${player.ovr}${player.potential ? ` | Potential: ${player.potential}` : ''} — keep the forward stats-to-OVR workflow, but the computed overall must land within 2 points of the user's number; if it does not, rework the stats, never the formula.`
+      : '';
+
     const msg =
-      `Create the full FIFA card for this fictional player:\n\n` +
+      `Create the full FIFA card for this ${isReal ? 'real' : 'fictional'} player:\n\n` +
       `Name: ${player.name || '—'}\n` +
       `Age: ${player.age || 17}\n` +
       `Position: ${player.position || '—'}\n` +
       `Nationality: ${player.nationality || '—'}\n` +
       `Club: ${setup.club || '—'} | ${setup.league || '—'}\n` +
-      `Character concept: ${player.concept_hook || setup.save_concept || 'surprise me'}\n\n` +
-      `Generate a complete FC25 card that embodies this concept. Stats must reflect who this character IS.`;
-    return call(SYSTEM_FICTION_PLAYER, msg, 1024);
+      `Character concept: ${player.concept_hook || setup.save_concept || 'surprise me'}` +
+      calibration + narrBlock +
+      `\n\nGenerate a complete FC25 card that embodies this concept. Stats must reflect who this ${isReal ? 'player really was at this moment' : 'character IS'}.`;
+    return call(isReal ? SYSTEM_REAL_PLAYER_CARD : SYSTEM_FICTION_PLAYER, msg, 1024);
   }
 
   return {

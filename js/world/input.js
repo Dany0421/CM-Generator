@@ -8,8 +8,16 @@ const WorldInput = (() => {
   const _keys = new Set();
   const _stick = { active: false, id: null, baseX: 0, baseY: 0, knobX: 0, knobY: 0 };
 
+  // typing in a form field must never be hijacked by movement keys (WASD…)
+  function _typing(e) {
+    const t = e.target;
+    return t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' ||
+      t.tagName === 'SELECT' || t.isContentEditable);
+  }
+
   function attach(canvas) {
     window.addEventListener('keydown', e => {
+      if (_typing(e)) return;
       const d = KEYMAP[e.code];
       if (d) { _keys.add(d); e.preventDefault(); }
     });

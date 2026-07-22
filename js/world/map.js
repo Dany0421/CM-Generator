@@ -27,10 +27,14 @@ const WorldMap = (() => {
   });
 
   // Props with a `solid` box block movement (campo + estátua); the rest are walk-through.
+  // Props with id/label/door are interactive — walking onto the door opens them.
   // Estátua is centered on the plaza circle (800,420 r70) — statue base sits in the circle.
   const props = [
     { sprite: 'props/estatua',   x: 755, y: 334, w: 90,
       solid: { x: 762, y: 414, w: 76, h: 46 } },
+    { sprite: 'props/quadro',    x: 880, y: 345, w: 80,
+      id: 'quadro', label: 'Quadro de Avisos',
+      door: { x: 872, y: 420, w: 96, h: 26 } },
     { sprite: 'props/campo',     x: 120, y: 480, w: 280,
       solid: { x: 128, y: 496, w: 264, h: 130 } },
     { sprite: 'props/arvore',    x:  60, y: 150, w: 100 },

@@ -16,7 +16,10 @@ const World = (() => {
     ...WorldMap.buildings.map(b => b.solid),
     ...WorldMap.props.filter(p => p.solid).map(p => p.solid),
   ];
-  const _doors = () => WorldMap.buildings.map(b => ({ ...b.door, id: b.id, label: b.label }));
+  const _doors = () => [
+    ...WorldMap.buildings.map(b => ({ ...b.door, id: b.id, label: b.label })),
+    ...WorldMap.props.filter(p => p.door).map(p => ({ ...p.door, id: p.id, label: p.label })),
+  ];
 
   function _restore() {
     const s = Storage.get(Storage.KEYS.WORLD);
@@ -64,7 +67,7 @@ const World = (() => {
     for (const p of WorldMap.props) {
       const img = _assets.img(p.sprite);
       const h = img ? Math.round(p.w * img.height / img.width) : p.w;
-      items.push({ y: p.y + h, draw: () => _drawSprite(p.sprite, p.x, p.y, p.w, h, null, cam) });
+      items.push({ y: p.y + h, draw: () => _drawSprite(p.sprite, p.x, p.y, p.w, h, p.label || null, cam) });
     }
     items.push({ y: _py, draw: () => _drawPlayer(ts, cam) });
     items.sort((a, b) => a.y - b.y).forEach(i => i.draw());
@@ -219,6 +222,7 @@ const World = (() => {
                               ['challenges', 'Challenges', () => ChallengesModule.render()]] },
     boardroom:     { panels: [['ruleset', 'Ruleset', () => RulesetModule.render()],
                               ['hub', 'Boardroom', () => HubModule.render()]] },
+    quadro:        { custom: () => WorldBoard.render(document.getElementById('world-generic')) },
   };
   let _returnPos = null;
 
@@ -269,13 +273,21 @@ const World = (() => {
   }
 
   function openBuilding(id) {
-    const b = WorldMap.buildings.find(b => b.id === id);
+    const b = WorldMap.buildings.find(x => x.id === id)
+      || WorldMap.props.find(p => p.id === id);
     _returnPos = { x: b.door.x + b.door.w / 2, y: b.door.y + b.door.h + 18 };
     _inOverlay = true;
     document.getElementById('world-overlay').classList.add('open');
     document.getElementById('world-back-btn').classList.remove('world-hidden');
     const m = MAPPING[id];
     if (!m) _showConstruction(b.label);
+    else if (m.custom) {
+      _clearPanels();
+      m.custom();
+      document.getElementById('world-generic').classList.add('active');
+      if (window.lucide) lucide.createIcons();
+      document.getElementById('world-overlay').scrollTop = 0;
+    }
     else if (m.panels.length === 1) _showPanel(m.panels[0][0], m.panels[0][2]);
     else _showChooser(b.label, m.panels);
   }

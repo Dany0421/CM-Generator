@@ -3,6 +3,7 @@ const SetupModule = (() => {
   let _saveTimer = null;
   let _lastDirection = '';
   let _mode = 'team'; // 'team' | 'player' | 'fiction'
+  let _squad = null; // working squad state (may hold unnamed rows; normalized only at storage boundary)
 
   const ERA_OPTIONS = [
     'Rebuild Era',
@@ -64,6 +65,7 @@ const SetupModule = (() => {
     const saved = Storage.get(Storage.KEYS.SETUP);
     // Sync _mode from saved data
     if (saved?.mode) _mode = saved.mode;
+    if (!_squad) _squad = normalizeSquad(saved?.squad);
 
     const headerFrag = document.createRange().createContextualFragment(`
       <div class="module-header">
@@ -634,6 +636,8 @@ const SetupModule = (() => {
 
     card.appendChild(diffEraRow);
 
+    if (!isFiction) card.appendChild(_buildSquadSection());
+
     // Save row
     const saveRow = document.createElement('div');
     saveRow.className = 'setup-save-row';
@@ -661,6 +665,158 @@ const SetupModule = (() => {
     });
 
     return card;
+  }
+
+  const SQUAD_GROUPS = [
+    { key: 'starters', label: 'Titulares', max: 11 },
+    { key: 'bench',    label: 'Banco',     max: 12 },
+    { key: 'reserves', label: 'Reservas',  max: 15 },
+  ];
+
+  function _buildSquadSection() {
+    const section = document.createElement('div');
+    section.className = 'setup-player-section';
+
+    const head = document.createElement('div');
+    head.className = 'setup-squad-head';
+    const label = document.createElement('p');
+    label.className = 'setup-player-section-label';
+    label.textContent = 'Squad (optional)';
+    head.appendChild(label);
+    section.appendChild(head);
+
+    const hint = document.createElement('p');
+    hint.className = 'setup-generate-sub';
+    hint.textContent = 'Your FC 25 squad — feeds the Club Office and future locations. Add players by hand or generate a plausible squad for your club.';
+    section.appendChild(hint);
+
+    // Formation dropdown + free-text fallback
+    const formGroup = document.createElement('div');
+    formGroup.className = 'form-group';
+    const formLabel = document.createElement('label');
+    formLabel.className = 'form-label';
+    formLabel.textContent = 'Formation';
+    const formSel = document.createElement('select');
+    formSel.className = 'form-select';
+    formSel.id = 'setup-squad-formation';
+    SQUAD_FORMATIONS.forEach(f => {
+      const o = document.createElement('option');
+      o.value = f;
+      o.textContent = f;
+      formSel.appendChild(o);
+    });
+    const custom = document.createElement('option');
+    custom.value = '__custom__';
+    custom.textContent = 'Custom...';
+    formSel.appendChild(custom);
+
+    const customInput = document.createElement('input');
+    customInput.className = 'form-input setup-squad-custom-formation';
+    customInput.id = 'setup-squad-formation-custom';
+    customInput.type = 'text';
+    customInput.placeholder = 'e.g. 4-2-4';
+    customInput.autocomplete = 'off';
+
+    const current = (_squad || emptySquad()).formation;
+    const isCustom = !SQUAD_FORMATIONS.includes(current);
+    formSel.value = isCustom ? '__custom__' : current;
+    customInput.value = isCustom ? current : '';
+    customInput.classList.toggle('hidden', !isCustom);
+
+    formSel.addEventListener('change', () => {
+      if (!_squad) _squad = emptySquad();
+      if (formSel.value === '__custom__') {
+        customInput.classList.remove('hidden');
+        customInput.focus();
+      } else {
+        customInput.classList.add('hidden');
+        _squad.formation = formSel.value;
+        scheduleSave();
+      }
+    });
+    customInput.addEventListener('input', () => {
+      if (!_squad) _squad = emptySquad();
+      _squad.formation = customInput.value.trim() || '4-3-3';
+      scheduleSave();
+    });
+
+    formGroup.appendChild(formLabel);
+    formGroup.appendChild(formSel);
+    formGroup.appendChild(customInput);
+    section.appendChild(formGroup);
+
+    for (const group of SQUAD_GROUPS) section.appendChild(_buildSquadGroup(group));
+    return section;
+  }
+
+  function _buildSquadGroup({ key, label, max }) {
+    const wrap = document.createElement('div');
+    const players = _squad ? _squad[key] : [];
+
+    const header = document.createElement('p');
+    header.className = 'setup-squad-group-label';
+    header.textContent = key === 'starters' ? `${label} (${players.length}/11)` : `${label} (${players.length})`;
+    wrap.appendChild(header);
+
+    players.forEach((p, i) => wrap.appendChild(_buildSquadRow(key, p, i)));
+
+    const addBtn = document.createElement('button');
+    addBtn.className = 'btn-secondary setup-squad-add';
+    addBtn.textContent = 'Add player';
+    addBtn.disabled = players.length >= max;
+    addBtn.addEventListener('click', () => {
+      if (!_squad) _squad = emptySquad();
+      _squad[key].push({ name: '', position: '', ovr: 0 });
+      render();
+    });
+    wrap.appendChild(addBtn);
+    return wrap;
+  }
+
+  function _buildSquadRow(key, p, i) {
+    const row = document.createElement('div');
+    row.className = 'setup-squad-row';
+
+    const name = document.createElement('input');
+    name.className = 'form-input squad-name';
+    name.type = 'text';
+    name.placeholder = 'Player name';
+    name.autocomplete = 'off';
+    name.value = p.name;
+    name.addEventListener('input', () => { p.name = name.value; scheduleSave(); });
+
+    const pos = document.createElement('input');
+    pos.className = 'form-input squad-pos';
+    pos.type = 'text';
+    pos.placeholder = 'POS';
+    pos.autocomplete = 'off';
+    pos.value = p.position;
+    pos.addEventListener('input', () => { p.position = pos.value; scheduleSave(); });
+
+    const ovr = document.createElement('input');
+    ovr.className = 'form-input squad-ovr';
+    ovr.type = 'number';
+    ovr.min = '1';
+    ovr.max = '99';
+    ovr.placeholder = 'OVR';
+    ovr.value = p.ovr || '';
+    ovr.addEventListener('input', () => { p.ovr = parseInt(ovr.value) || 0; scheduleSave(); });
+
+    const del = document.createElement('button');
+    del.className = 'setup-squad-remove';
+    del.title = 'Remove';
+    del.textContent = '×';
+    del.addEventListener('click', () => {
+      _squad[key].splice(i, 1);
+      scheduleSave();
+      render();
+    });
+
+    row.appendChild(name);
+    row.appendChild(pos);
+    row.appendChild(ovr);
+    row.appendChild(del);
+    return row;
   }
 
   function scheduleSave() {
@@ -710,6 +866,15 @@ const SetupModule = (() => {
       const potEl = _container.querySelector('#setup-player-potential');
       if (ovrEl) data.player.ovr       = parseInt(ovrEl.value) || 0;
       if (potEl) data.player.potential = parseInt(potEl.value) || 0;
+    }
+
+    // Squad: additive field. Fiction has no squad UI but must not delete a stored one.
+    if (isFiction) {
+      if (existing.squad) data.squad = existing.squad;
+    } else if (_squad) {
+      data.squad = normalizeSquad(_squad);
+    } else if (existing.squad) {
+      data.squad = existing.squad;
     }
 
     Storage.set(Storage.KEYS.SETUP, data);
@@ -806,6 +971,8 @@ const SetupModule = (() => {
           save_concept: concept.save_concept || '',
         };
       }
+
+      if (existing.squad) newData.squad = existing.squad; // concept reroll never wipes the squad
 
       Storage.set(Storage.KEYS.SETUP, newData);
       render();

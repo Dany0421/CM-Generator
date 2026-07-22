@@ -219,8 +219,9 @@ const World = (() => {
 
   // Fase 2 mapping: Hub tabs split by location (no more full-Hub duplicate).
   // Events tab lives at the plaza notice board; Players moves to Balneário in Fase 3.
+  // career tab moved to the Agência in Fase 4 (transfer/career territory)
   const HUB_VIEWS = {
-    board: { title: 'Boardroom', tabs: ['tracker', 'rulebook', 'career', 'archive'] },
+    board: { title: 'Boardroom', tabs: ['tracker', 'rulebook', 'archive'] },
   };
   const MAPPING = {
     casa:          { custom: () => WorldCasa.render(document.getElementById('world-generic')) },
@@ -230,6 +231,9 @@ const World = (() => {
                               ['hub', 'Boardroom', () => HubModule.render(HUB_VIEWS.board)]] },
     quadro:        { custom: () => WorldBoard.render(document.getElementById('world-generic')) },
     estadio:       { custom: () => WorldStadium.render(document.getElementById('world-generic')) },
+    sponsors:      { custom: () => WorldSponsors.render(document.getElementById('world-generic')) },
+    imprensa:      { custom: () => WorldImprensa.render(document.getElementById('world-generic')) },
+    agencia:       { custom: () => WorldAgencia.render(document.getElementById('world-generic')) },
   };
   let _returnPos = null;
   // Location home (chooser / custom front page) — lets sub-panels go back to

@@ -73,11 +73,20 @@ const ChallengesModule = (() => {
     return ch.type === 'player_challenge';
   }
 
+  // Agência types (Fase 4): Transfer Rule (team) / non-duo Career Decision (player)
+  function isAgenciaChallenge(ch, setup) {
+    if (setup?.mode === 'player' || setup?.mode === 'fiction') {
+      return ch.type === 'career_decision' && !isBalnearioChallenge(ch, setup);
+    }
+    return ch.type === 'transfer_rule';
+  }
+
   function _inView(ch) {
     if (!_view || !_view.only) return true;
     const setup = Storage.get(Storage.KEYS.SETUP);
-    const isBaln = isBalnearioChallenge(ch, setup);
-    return _view.only === 'balneario' ? isBaln : !isBaln;
+    if (_view.only === 'balneario') return isBalnearioChallenge(ch, setup);
+    if (_view.only === 'agencia')   return isAgenciaChallenge(ch, setup);
+    return !isBalnearioChallenge(ch, setup) && !isAgenciaChallenge(ch, setup);
   }
 
   function init(container) {
@@ -107,6 +116,8 @@ const ChallengesModule = (() => {
     const p = document.createElement('p');
     p.textContent = _view?.only === 'balneario'
       ? 'Sem challenges do balneário nesta época — os duo challenges (e o Player Challenge em team mode) aparecem aqui quando gerados no Club Office.'
+      : _view?.only === 'agencia'
+      ? 'Sem challenges da agência nesta época — Transfer Rules e Career Decisions aparecem aqui quando gerados no Club Office.'
       : 'Sem challenges desta location.';
     wrap.appendChild(p);
     return wrap;
@@ -129,7 +140,7 @@ const ChallengesModule = (() => {
     `);
 
     // Regenerate All rewrites the whole set — Club Office/index only
-    if (_view?.only === 'balneario') frag.querySelector('#challenges-regen-all').remove();
+    if (_view?.only === 'balneario' || _view?.only === 'agencia') frag.querySelector('#challenges-regen-all').remove();
     else frag.querySelector('#challenges-regen-all').addEventListener('click', _generateAll);
     const titleEl = frag.querySelector('.module-title');
     if (_view?.title) titleEl.textContent = _view.title;
@@ -525,7 +536,7 @@ const ChallengesModule = (() => {
   }
 
   if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { computeProgress, isBalnearioChallenge };
+    module.exports = { computeProgress, isBalnearioChallenge, isAgenciaChallenge };
   }
-  return { init, render, isBalnearioChallenge };
+  return { init, render, isBalnearioChallenge, isAgenciaChallenge, computeProgress };
 })();

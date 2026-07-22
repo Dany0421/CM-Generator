@@ -11,6 +11,9 @@ const Storage = (() => {
     FICTION_PLAYER: 'cg_fiction_player',
     WORLD:          'cg_world',
     NPCS:           'cg_npcs',
+    SPONSORS:       'cg_sponsors',
+    NEWS:           'cg_news',
+    AGENCY:         'cg_agency',
   };
 
   // { [storageKey]: { prev: any, onUndo: fn, timerId: id } }

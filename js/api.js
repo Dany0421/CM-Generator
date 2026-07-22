@@ -1351,6 +1351,112 @@ Return ONLY valid JSON (no markdown fences):
     return call(SYSTEM_HANGOUT, msg, 1024, HANGOUT_SCHEMA);
   }
 
+  // ── Fase 4: Sponsors, Imprensa, Agência ──────────────────────
+  const SPONSOR_DEALS_SCHEMA = S.obj({
+    deals: S.arr(S.obj({
+      sponsor:     S.str,
+      title:       S.str,
+      description: S.str,
+      metric:      { type: 'string', enum: ['goals', 'assists', 'wins', 'clean_sheets', 'rating_avg'] },
+      target:      S.int,
+      tier:        { type: 'string', enum: ['Easy', 'Normal', 'Hard', 'Insane'] },
+      reward:      S.int,
+    })),
+  });
+
+  const SYSTEM_SPONSORS =
+    'You are the sponsorship desk of a FIFA/FC career mode companion app. Generate exactly 3 ' +
+    'brand deals: one Easy, one Normal or Hard, one Hard or Insane. Invent FICTIONAL brand ' +
+    'names (never real brands). Each deal has a measurable season condition via metric/target: ' +
+    'player careers use goals/assists/rating_avg, team careers use wins/clean_sheets. CALIBRATE ' +
+    'targets to the ratings and league level in context — Easy should be very reachable, Insane ' +
+    'a season-defining ask. Rewards in in-game currency scale with tier: Easy ~50k, Normal ' +
+    '~150k, Hard ~400k, Insane 1M+. The user\'s standing with sponsors (0-100, in the message) ' +
+    'sets generosity: high standing = richer rewards and friendlier copy, low standing = stingy ' +
+    'offers. The reward is applied manually by the user via Live Editor — never pretend the app ' +
+    'moves money itself.';
+
+  async function generateSponsorDeals() {
+    const setup   = Storage.get(Storage.KEYS.SETUP) || {};
+    const context = setup.mode === 'player' || setup.mode === 'fiction' ? buildPlayerContext() : buildContext();
+    const rel = (Storage.get(Storage.KEYS.NPCS)?.list || []).find(n => n.role === 'Sponsors');
+    const msg = `${context}\n\nSponsor standing: ${rel ? rel.value : 50}/100.\nGenerate the 3 deals.`;
+    return call(SYSTEM_SPONSORS, msg, 1536, SPONSOR_DEALS_SCHEMA);
+  }
+
+  const NEWS_SCHEMA = S.obj({
+    items: S.arr(S.obj({
+      headline: S.str,
+      snippet:  S.str,
+      is_rumor: { type: 'boolean' },
+    })),
+  });
+
+  const SYSTEM_NEWS =
+    'You are the sports desk covering ONE career in a FIFA/FC career mode companion app. ' +
+    'From the structured FACTS given (results, form, rival, revealed season events, deals), ' +
+    'write 1-3 news pieces: headline (max 12 words, punchy) + snippet (1-2 sentences). ' +
+    'CONSEQUENT, never random: every number and result must come from the facts — you write ' +
+    'the reaction, not the truth. At most ONE piece may be a transfer/interest rumor ' +
+    '(is_rumor: true) — rumors are plausible but NOT necessarily true, and the user never ' +
+    'sees the flag, so write it exactly like real news. Rumors about the user or the rival ' +
+    'are the juiciest. TONE follows the press relationship given: 50+ fair and lively, below ' +
+    '30 openly hostile and petty. No real journalist names.';
+
+  async function generateNews() {
+    const setup   = Storage.get(Storage.KEYS.SETUP) || {};
+    const context = setup.mode === 'player' || setup.mode === 'fiction' ? buildPlayerContext() : buildContext();
+    const hub = Storage.get(Storage.KEYS.HUB) || {};
+    const season = setup.season || 1;
+    const matches = (hub.log || [])
+      .filter(e => e && !e.isDivider && e.match?.outcome && e.match.season === season)
+      .slice(-5)
+      .map(e => `- vs ${e.match.opponent} ${e.match.outcome.gf}-${e.match.outcome.ga} (${e.match.outcome.res})${e.match.isDerby ? ' DERBY' : ''}${e.match.challenge ? ` | match challenge: ${e.match.challenge.title} → ${e.match.challengeResult === true ? 'done' : e.match.challengeResult === false ? 'failed' : 'open'}` : ''}`);
+    const events = hub.events && hub.events.season === season
+      ? (hub.events.rolled || []).map(i => hub.events.pool[i]?.text).filter(Boolean).slice(-3)
+      : [];
+    const press = (Storage.get(Storage.KEYS.NPCS)?.list || []).find(n => n.category === 'press');
+    const facts = [
+      matches.length ? `RECENT MATCHES:\n${matches.join('\n')}` : 'No matches logged yet this season.',
+      hub.rival?.name ? `Rival: ${hub.rival.name} (since season ${hub.rival.since}).` : '',
+      events.length ? `SEASON EVENTS ALREADY REVEALED:\n${events.map(t => `- ${t}`).join('\n')}` : '',
+      `Press relationship: ${press ? press.value : 50}/100.`,
+    ].filter(Boolean).join('\n\n');
+    const msg = `${context}\n\nFACTS (the only source of truth for numbers):\n${facts}\n\nWrite the news.`;
+    return call(SYSTEM_NEWS, msg, 1536, NEWS_SCHEMA);
+  }
+
+  const AGENCY_OPP_SCHEMA = S.obj({
+    situation: S.str,
+    options: S.arr(S.obj({
+      label:       S.str,
+      consequence: S.str,
+      agent_pick:  { type: 'boolean' },
+    })),
+  });
+
+  const SYSTEM_AGENCY =
+    'You are the user\'s football agent in a FIFA/FC career mode companion app. Bring ONE ' +
+    'opportunity fitting the career right now: contract renewal, transfer interest from a REAL ' +
+    'club, or an image/endorsement situation. Write "situation" (2-4 sentences, in the agent\'s ' +
+    'voice and personality) and 2-3 options, each with a short label and a concrete consequence ' +
+    '(what changes narratively; any Live Editor effect lands ONLY on the user\'s own player). ' +
+    'Exactly ONE option has agent_pick: true — the one you, the agent, recommend. If the ' +
+    'TRANSFER RULES in context forbid or complicate an option, say so inside its consequence ' +
+    '(the rule is sacred, you flag conflicts). Interested clubs MUST be real clubs from the ' +
+    'league list, plausible for the user\'s level — never invent a club. The real decision ' +
+    'happens in FC 25; you only shape the story.';
+
+  async function generateAgencyOpportunity() {
+    const setup   = Storage.get(Storage.KEYS.SETUP) || {};
+    const context = setup.mode === 'player' || setup.mode === 'fiction' ? buildPlayerContext() : buildContext();
+    const rules = (Storage.get(Storage.KEYS.RULESET)?.transfer_rules || []).slice(0, 6);
+    const msg = `${context}\n\n${Leagues.promptBlock()}\n\nTRANSFER RULES (sacred, flag conflicts):\n` +
+      (rules.length ? rules.map(r => `- ${r}`).join('\n') : '- none set') +
+      '\n\nBring one opportunity.';
+    return call(SYSTEM_AGENCY, msg, 1536, AGENCY_OPP_SCHEMA);
+  }
+
   async function generateSeasonSummary() {
     const setup  = Storage.get(Storage.KEYS.SETUP);
     const mode   = setup?.mode;
@@ -1857,6 +1963,9 @@ Return ONLY the JSON. No preamble, no markdown fences.`;
     reactToCheckIn,
     generateNpcs,
     generateHangout,
+    generateSponsorDeals,
+    generateNews,
+    generateAgencyOpportunity,
     generateSeasonSummary,
     advanceSeason,
     generateLinkedBond,

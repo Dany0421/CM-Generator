@@ -88,6 +88,32 @@ const App = (() => {
       _toast('Model updated', null, false);
     });
 
+    // club colors: manual pickers apply on change, button re-asks the AI
+    const priIn = document.getElementById('settings-club-primary');
+    const secIn = document.getElementById('settings-club-secondary');
+    const cc = Storage.get(Storage.KEYS.WORLD)?.clubColors;
+    if (cc?.primary) priIn.value = cc.primary;
+    if (cc?.secondary) secIn.value = cc.secondary;
+    const applyColors = () => {
+      World.setClubColors(priIn.value, secIn.value);
+      _toast('Cores do clube atualizadas', null, false);
+    };
+    priIn.addEventListener('change', applyColors);
+    secIn.addEventListener('change', applyColors);
+    document.getElementById('settings-club-refresh').addEventListener('click', async e => {
+      const btn = e.currentTarget;
+      btn.disabled = true;
+      btn.textContent = 'A perguntar…';
+      try {
+        await World.refreshClubColors();
+        _toast('Cores do clube regeneradas', null, false);
+      } catch (err) {
+        _toast(err.message, null, true);
+      }
+      btn.disabled = false;
+      btn.textContent = 'Pedir à AI de novo';
+    });
+
     const speedSel = document.getElementById('settings-world-speed');
     speedSel.value = String(Storage.get(Storage.KEYS.WORLD)?.speed || 220);
     speedSel.addEventListener('change', () => {

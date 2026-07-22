@@ -31,8 +31,55 @@ const World = (() => {
     if (WorldLogic.hitZone(_px, _py, box, _solids())) { _px = 800; _py = 500; }
   }
   function _persist() {
-    Storage.set(Storage.KEYS.WORLD, { x: _px, y: _py, face: _face, speed: _speed });
+    // merge: cg_world also carries clubColors — never drop them on a move-save
+    Storage.set(Storage.KEYS.WORLD, {
+      ...(Storage.get(Storage.KEYS.WORLD) || {}),
+      x: _px, y: _py, face: _face, speed: _speed,
+    });
   }
+
+  // ── club-color tint ───────────────────────────────────────
+  let _tintedClub = null;
+
+  async function _applyClubTint(forceAsk) {
+    const club = (Storage.get(Storage.KEYS.SETUP)?.club || '').trim();
+    if (!club) { _assets.clearTint(); _tintedClub = ''; return; }
+    const w = Storage.get(Storage.KEYS.WORLD) || {};
+    let cc = w.clubColors;
+    if (forceAsk || !cc || cc.club !== club) {
+      try {
+        const res = await API.generateClubColors(club);
+        cc = { club, primary: res.primary, secondary: res.secondary };
+        const w2 = Storage.get(Storage.KEYS.WORLD) || {};
+        w2.clubColors = cc;
+        Storage.set(Storage.KEYS.WORLD, w2);
+      } catch (err) {
+        if (!cc) return; // sem cores e sem API — fica neutro
+      }
+    }
+    WorldTint.apply(_assets, cc.primary, cc.secondary);
+    _tintedClub = club;
+    _syncColorPickers(cc);
+  }
+
+  function _syncColorPickers(cc) {
+    const p = document.getElementById('settings-club-primary');
+    const s = document.getElementById('settings-club-secondary');
+    if (p && cc?.primary) p.value = cc.primary;
+    if (s && cc?.secondary) s.value = cc.secondary;
+  }
+
+  // manual override from Settings — for when the AI got the kit wrong
+  function setClubColors(primary, secondary) {
+    const club = (Storage.get(Storage.KEYS.SETUP)?.club || '').trim();
+    const w = Storage.get(Storage.KEYS.WORLD) || {};
+    w.clubColors = { club, primary, secondary };
+    Storage.set(Storage.KEYS.WORLD, w);
+    WorldTint.apply(_assets, primary, secondary);
+    _tintedClub = club;
+  }
+
+  function refreshClubColors() { return _applyClubTint(true); }
 
   function _frame(ts) {
     const dt = Math.min(0.05, (ts - _last) / 1000 || 0);
@@ -349,6 +396,9 @@ const World = (() => {
     _menuBtn(false);
     if (_returnPos) { _px = _returnPos.x; _py = _returnPos.y; _persist(); }
     _doorZone = null;
+    // club may have changed inside (Setup edit, transfer) — retint if so
+    const club = (Storage.get(Storage.KEYS.SETUP)?.club || '').trim();
+    if (_tintedClub !== null && club !== _tintedClub) _applyClubTint();
   }
 
   async function init() {
@@ -361,6 +411,7 @@ const World = (() => {
     _assets = await WorldAssets.load((d, t) => { hud.textContent = `A carregar ${d}/${t}`; });
     hud.textContent = 'WASD / setas para andar';
     _ground = WorldGround.build();
+    _applyClubTint();
     WorldInput.attach(_canvas);
     // Existing modules render into the overlay panels (app.js does this in index.html).
     SetupModule.init(document.getElementById('module-setup'));
@@ -382,6 +433,7 @@ const World = (() => {
   }
 
   const api = { init, openBuilding, openSetup, closeOverlay,
+    setClubColors, refreshClubColors,
     _navHook: () => _menuBtn(!!_locHome),
     setSpeed: v => { _speed = v || SPEED; _persist(); },
     _setOverlay: v => { _inOverlay = v; }, _pos: () => ({ x: _px, y: _py }),

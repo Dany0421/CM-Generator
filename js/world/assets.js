@@ -2,10 +2,12 @@
 const WorldAssets = (() => {
   const NAMES = [
     'player',
+    'player-mask', 'player-mask2',   // kit masks for club-color recolor
     ...WorldMap.buildings.map(b => b.sprite),
     ...new Set(WorldMap.props.map(p => p.sprite)),
   ];
   const _imgs = {};
+  const _tinted = {};                // club-colored canvases override originals
 
   function _one(name) {
     return new Promise(resolve => {
@@ -22,7 +24,12 @@ const WorldAssets = (() => {
       done++;
       if (onProgress) onProgress(done, NAMES.length);
     })));
-    return { img: name => _imgs[name] || null };
+    return {
+      img:  name => _tinted[name] || _imgs[name] || null,
+      orig: name => _imgs[name] || null,
+      setTint: (name, canvas) => { _tinted[name] = canvas; },
+      clearTint: () => { for (const k of Object.keys(_tinted)) delete _tinted[k]; },
+    };
   }
 
   return { load };

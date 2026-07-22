@@ -37,6 +37,11 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #4a7a34; }
   position: fixed; top: 14px; left: 14px; z-index: 12;
   font-family: 'Inter', sans-serif; font-weight: 600;
 }
+.settings-club-colors { display: flex; gap: 10px; align-items: center; }
+.settings-club-colors input[type="color"] {
+  width: 44px; height: 34px; padding: 2px; border: 1px solid var(--border-strong, #444);
+  border-radius: 8px; background: transparent; cursor: pointer;
+}
 .world-hidden { display: none !important; }
 
 .world-chooser { display: flex; gap: 16px; justify-content: center; padding: 80px 20px; flex-wrap: wrap; }

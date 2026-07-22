@@ -1366,6 +1366,18 @@ Return ONLY valid JSON (no markdown fences):
     return call(SYSTEM_HANGOUT, msg, 1024, HANGOUT_SCHEMA);
   }
 
+  // Club colors for the world tint (1 call per club, cached in cg_world)
+  const CLUB_COLORS_SCHEMA = S.obj({ primary: S.str, secondary: S.str });
+  const SYSTEM_CLUB_COLORS =
+    'Return the two iconic HOME KIT colors of the given real football club as hex codes ' +
+    '("#RRGGBB"). primary = the dominant shirt color, secondary = the classic accent ' +
+    '(shorts, trim or the second stripe color). Real kits only — e.g. Sunderland red/white, ' +
+    'Boca Juniors blue/yellow, Real Madrid white/gold.';
+
+  async function generateClubColors(club) {
+    return call(SYSTEM_CLUB_COLORS, `Club: ${club}`, 256, CLUB_COLORS_SCHEMA);
+  }
+
   // ── Fase 4: Sponsors, Imprensa, Agência ──────────────────────
   const SPONSOR_DEALS_SCHEMA = S.obj({
     deals: S.arr(S.obj({
@@ -2016,6 +2028,7 @@ Return ONLY the JSON. No preamble, no markdown fences.`;
     generateSponsorDeals,
     generateNews,
     generateAgencyOpportunity,
+    generateClubColors,
     generateSeasonSummary,
     advanceSeason,
     generateLinkedBond,

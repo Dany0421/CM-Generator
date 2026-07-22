@@ -72,7 +72,7 @@ const WorldMap = (() => {
     { sprite: 'props/pedra',     x: 1175, y: 1125, w: 80 },  // faixa sul
     { sprite: 'props/jardim',    x: 1445, y: 640, w: 115 },  // borda este
     { sprite: 'props/jardim',    x: 235, y: 1045, w: 110 },  // canto inf. esquerdo
-    { sprite: 'props/banco',     x: 700, y: 400, w: 70 },
+    { sprite: 'props/banco',     x: 625, y: 440, w: 70 },
     { sprite: 'props/banco',     x: 1300, y: 850, w: 70 },
     { sprite: 'props/candeeiro', x: 410, y: 480, w: 50 },
     { sprite: 'props/candeeiro', x: 70, y: 600, w: 50 },

@@ -6,14 +6,15 @@ const WorldCasa = (() => {
 
   function _seeds() {
     const fam = Storage.get(Storage.KEYS.SETUP)?.family || {};
+    // "ou" roles: a AI compromete-se com UM (nome/personalidade a condizer)
     const seeds = [
       { name: fam.pai || '', role: 'Pai' },
       { name: fam.mae || '', role: 'Mãe' },
-      { name: fam.irmao || '', role: 'Irmão/Irmã' },
+      { name: fam.irmao || '', role: 'Irmão ou Irmã' },
     ];
     // 2º irmão: sempre que nomeado; senão roll de 40% (spec: "às vezes")
-    if (fam.irmao2) seeds.push({ name: fam.irmao2, role: '2º Irmão/Irmã' });
-    else if (Math.random() < 0.4) seeds.push({ name: '', role: '2º Irmão/Irmã' });
+    if (fam.irmao2) seeds.push({ name: fam.irmao2, role: '2º Irmão ou 2ª Irmã' });
+    else if (Math.random() < 0.4) seeds.push({ name: '', role: '2º Irmão ou 2ª Irmã' });
     return seeds;
   }
 
@@ -26,8 +27,9 @@ const WorldCasa = (() => {
       const data = WorldNPCs.load();
       (result.members || []).forEach((m, i) => {
         const seed = seeds[i] || {};
+        // role da AI ganha: é ela que resolve "Irmão ou Irmã" num só
         data.list.push(WorldNPCs.makeNpc(
-          seed.name || m.name, 'family', seed.role || m.role, m.personality));
+          seed.name || m.name, 'family', m.role || seed.role, m.personality));
       });
       WorldNPCs.save(data);
       render(_panel);
@@ -83,6 +85,16 @@ const WorldCasa = (() => {
         wrap.appendChild(WorldNPCs.buildCard(npc, (n, btn, card) =>
           WorldNPCs.hangout(n, btn, card, () => render(_panel))));
       }
+      const regen = document.createElement('button');
+      regen.className = 'btn-ghost npc-regen';
+      regen.textContent = 'Regenerar família (perde o histórico)';
+      regen.addEventListener('click', () => {
+        const data = WorldNPCs.load();
+        data.list = data.list.filter(n => n.category !== 'family');
+        WorldNPCs.save(data);
+        render(_panel);
+      });
+      wrap.appendChild(regen);
     }
     panel.appendChild(wrap);
   }

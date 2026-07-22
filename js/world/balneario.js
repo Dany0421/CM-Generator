@@ -51,9 +51,39 @@ const WorldBalneario = (() => {
     }
   }
 
+  // The relation roster IS the Players view: every teammate NPC appears there
+  // automatically (additive — manual hub.players entries and journals untouched).
+  // The linked player carries a "Linked Player" tag and comes pinned.
+  function _syncPlayers() {
+    const teammates = WorldNPCs.byCategory(WorldNPCs.load(), 'teammate');
+    if (!teammates.length) return;
+    const hub = Storage.get(Storage.KEYS.HUB) || { log: [], tracker: {}, players: [], seasons: [] };
+    hub.players = hub.players || [];
+    const linkedName = (Storage.get(Storage.KEYS.SETUP)?.player?.linked?.name || '').trim().toLowerCase();
+    let changed = false;
+    for (const npc of teammates) {
+      const isLinked = !!linkedName && npc.name.trim().toLowerCase() === linkedName;
+      const entry = hub.players.find(p => (p.name || '').trim().toLowerCase() === npc.name.trim().toLowerCase());
+      if (!entry) {
+        hub.players.push({
+          id: 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+          name: npc.name, role: npc.role,
+          tags: isLinked ? ['Linked Player'] : [],
+          entries: [], appearances: 0, pinned: isLinked,
+        });
+        changed = true;
+      } else if (isLinked && !(entry.tags || []).includes('Linked Player')) {
+        entry.tags = [...(entry.tags || []), 'Linked Player'];
+        changed = true;
+      }
+    }
+    if (changed) Storage.set(Storage.KEYS.HUB, hub);
+  }
+
   function render(panel) {
     _panel = panel;
     panel.replaceChildren();
+    _syncPlayers();
     const setup = Storage.get(Storage.KEYS.SETUP) || {};
     const wrap = document.createElement('div');
     wrap.className = 'npc-wrap';

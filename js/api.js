@@ -1290,10 +1290,13 @@ Return ONLY valid JSON (no markdown fences):
   const SYSTEM_NPC_GEN =
     'You create supporting characters for a FIFA/FC career mode companion app. ' +
     'For each requested member, return name (invent a fitting one ONLY when none is given — ' +
-    'never change a provided name), the same role you were given, and a short personality: ' +
-    '3-8 words, concrete and playable (e.g. "old-school, hates social media", "jokes in the ' +
-    'worst moments, loyal"). Personalities must feel like real people around a footballer, ' +
-    'varied — never two alike. Ground them in the save context when it helps.';
+    'never change a provided name), the role, and a short personality: 3-8 words, concrete ' +
+    'and playable (e.g. "old-school, hates social media", "jokes in the worst moments, loyal"). ' +
+    'Return the exact role you were given — EXCEPT when the role offers alternatives ' +
+    '(e.g. "Irmão ou Irmã"): then COMMIT to exactly one of them, and make the name and ' +
+    'personality match that choice (a provided name decides it). Never output the "ou". ' +
+    'Personalities must feel like real people around a footballer, varied — never two alike. ' +
+    'Ground them in the save context when it helps.';
 
   const SYSTEM_HANGOUT =
     'You write tiny slice-of-life scenes for a FIFA/FC career mode companion app. The user ' +

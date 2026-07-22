@@ -176,8 +176,13 @@ const WorldNPCs = (() => {
         le.textContent = `Live Editor (o TEU jogador): ${result.live_editor_suggestion}`;
         card.insertBefore(le, btn);
       }
+      // a cena fica no ecrã até o user a fechar — só aí a lista atualiza
+      const closeBtn = document.createElement('button');
+      closeBtn.className = 'btn-ghost npc-hangout-btn';
+      closeBtn.textContent = 'Fechar';
+      closeBtn.addEventListener('click', () => { if (rerender) rerender(); });
+      card.appendChild(closeBtn);
       btn.remove();
-      if (rerender) setTimeout(rerender, 2600);
     } catch (err) {
       App.showError(err.message);
       btn.disabled = false;

@@ -95,6 +95,8 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #4a7a34; }
 .npc-scene { font-size: 14px; line-height: 1.5; color: #e6e9ee; margin: 10px 0 0; }
 .npc-le { font-size: 13px; color: #e0a94c; margin: 8px 0 0; }
 .npc-hangout-btn { margin-top: 10px; }
+.npc-regen { margin-top: 6px; font-size: 12px; opacity: 0.7; }
+.npc-regen:hover { opacity: 1; }
 .stadium-mural-fans { margin: 6px 0 0; font-size: 13px; color: #9fb4d8; }
 
 /* Club Office */

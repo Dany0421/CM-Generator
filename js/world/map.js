@@ -42,6 +42,8 @@ const WorldMap = (() => {
     { sprite: 'props/arbusto',   x: 850, y: 1080, w: 60 },
     { sprite: 'props/banco',     x: 700, y: 400, w: 70 },
     { sprite: 'props/banco',     x: 1300, y: 850, w: 70 },
+    { sprite: 'props/candeeiro', x: 410, y: 480, w: 50 },
+    { sprite: 'props/candeeiro', x: 70, y: 600, w: 50 },
     { sprite: 'props/candeeiro', x: 620, y: 330, w: 50 },
     { sprite: 'props/candeeiro', x: 980, y: 330, w: 50 },
     { sprite: 'props/candeeiro', x: 500, y: 700, w: 50 },
@@ -50,9 +52,10 @@ const WorldMap = (() => {
   ];
 
   // Stone paths plaza-to-building (drawn by ground renderer as wide stone strokes).
-  // Each path ends at the closest point on the building's rect, tucked slightly
-  // under the sprite — touching the building is enough, never crossing it
-  // (door positions vary per art, a door-anchored path can cut through the sprite).
+  // Each path ends at the closest point on the building's rect, tucked toward the
+  // center deep enough to sit under opaque art even when that point is a trimmed
+  // corner (roofs slope, corners are transparent) — but well short of the center,
+  // so a path never crosses the building and pokes out by the door on the far side.
   const plaza = [800, 420]; // central square in front of the Estádio
   // Imprensa has no own path — the Sponsors path runs right past it and doubles up.
   // BEND: perpendicular offset (px) of each path's curve control point — signs
@@ -67,7 +70,7 @@ const WorldMap = (() => {
     const ey = Math.max(b.y, Math.min(plaza[1], b.y + b.h));
     const cx = b.x + b.w / 2, cy = b.y + b.h / 2;
     const m = Math.hypot(cx - ex, cy - ey) || 1;
-    const tuck = 18;
+    const tuck = 55;
     const from = [ex + (cx - ex) / m * tuck, ey + (cy - ey) / m * tuck];
     const dx = plaza[0] - from[0], dy = plaza[1] - from[1];
     const len = Math.hypot(dx, dy) || 1;
@@ -82,11 +85,11 @@ const WorldMap = (() => {
   // Links between neighbouring buildings — a ring of detours/crossings so the
   // city isn't only radial paths out of the plaza. Endpoints tuck under sprites.
   paths.push(
-    { from: [470, 290],  via: [555, 215],  to: [650, 235] },   // balneário ↔ estádio
-    { from: [340, 940],  via: [460, 1010], to: [580, 990] },   // casa ↔ sponsors
-    { from: [740, 1010], via: [830, 1050], to: [920, 990] },   // sponsors ↔ agência
-    { from: [1080, 930], via: [1200, 890], to: [1270, 795] },  // agência ↔ club office
-    { from: [1340, 505], via: [1390, 580], to: [1310, 655] },  // boardroom ↔ club office
+    { from: [450, 300],  via: [555, 215],  to: [680, 225] },   // balneário ↔ estádio
+    { from: [320, 930],  via: [460, 1010], to: [600, 995] },   // casa ↔ sponsors
+    { from: [720, 1015], via: [830, 1050], to: [940, 985] },   // sponsors ↔ agência
+    { from: [1070, 935], via: [1200, 890], to: [1275, 780] },  // agência ↔ club office
+    { from: [1340, 490], via: [1390, 580], to: [1310, 670] },  // boardroom ↔ club office
   );
 
   return { W, H, buildings, props, paths };

@@ -1385,9 +1385,14 @@ Return ONLY valid JSON (no markdown fences):
     'Normal/Hard — the user picks a limited number, so make the choice genuinely hard ' +
     '(different metrics, different risk/reward profiles). Invent FICTIONAL brand names (never ' +
     'real brands). Each deal has a measurable season condition via metric/target: player ' +
-    'careers use goals/assists/rating_avg, team careers use wins/clean_sheets. CALIBRATE ' +
-    'targets to the ratings and league level in context — Easy very reachable, Insane a ' +
-    'season-defining ask.\n\n' +
+    'careers use goals/assists/rating_avg, team careers use wins/clean_sheets.\n\n' +
+    'TARGETS SCALE TO THE TEAM, NOT THE LEAGUE. The tier measures how hard the ask is FOR ' +
+    'THIS SQUAD (use the team level data in the message: club stature, average starter OVR, ' +
+    'table position). Easy for a newly-promoted or relegation-battling side is modest survival ' +
+    'stuff (e.g. a handful of wins); Easy for a title machine already assumes dominance (their ' +
+    '"easy" would be Insane elsewhere). The same tier at Sunderland and at Manchester City ' +
+    'must have COMPLETELY different numbers. Insane is always a season-defining ask relative ' +
+    'to what this exact squad can realistically dream of.\n\n' +
     'MONEY IS REAL FOOTBALL MONEY — scale rewards to the DIVISION in context:\n' +
     '- Top flight of a major league (Premier League, La Liga, Serie A, Bundesliga, Ligue 1): ' +
     'Easy 2-5M, Normal 8-15M, Hard 20-40M, Insane 60-90M\n' +
@@ -1405,7 +1410,15 @@ Return ONLY valid JSON (no markdown fences):
     const setup   = Storage.get(Storage.KEYS.SETUP) || {};
     const context = setup.mode === 'player' || setup.mode === 'fiction' ? buildPlayerContext() : buildContext();
     const rel = (Storage.get(Storage.KEYS.NPCS)?.list || []).find(n => n.role === 'Sponsors');
-    const msg = `${context}\n\nSponsor standing: ${rel ? rel.value : 50}/100.\nGenerate the 5 offers.`;
+    const starters = setup.squad?.starters || [];
+    const rated = starters.filter(p => p.ovr > 0);
+    const avgOvr = rated.length
+      ? Math.round(rated.reduce((s, p) => s + p.ovr, 0) / rated.length) : null;
+    const pos = Storage.get(Storage.KEYS.HUB)?.tablePosition;
+    const teamLine = `TEAM LEVEL: ${setup.club || '—'} (${setup.division || setup.league || '—'})` +
+      (avgOvr ? `, average starter OVR ${avgOvr}` : '') +
+      (pos ? `, currently ${pos} in the table` : '') + '.';
+    const msg = `${context}\n\n${teamLine}\nSponsor standing: ${rel ? rel.value : 50}/100.\nGenerate the 5 offers.`;
     return call(SYSTEM_SPONSORS, msg, 2048, SPONSOR_DEALS_SCHEMA);
   }
 

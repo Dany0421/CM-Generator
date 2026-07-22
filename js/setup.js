@@ -659,6 +659,7 @@ const SetupModule = (() => {
     card.appendChild(diffEraRow);
 
     card.appendChild(_buildSquadSection());
+    card.appendChild(_buildFamilySection());
 
     // Save row
     const saveRow = document.createElement('div');
@@ -855,6 +856,47 @@ const SetupModule = (() => {
     _saveTimer = setTimeout(save, 800);
   }
 
+  // Fase 3 seeds: optional names — anyone left blank is invented by the AI
+  // when the Casa first generates the family (hybrid flow, Dany 2026-07-22).
+  const FAMILY_FIELDS = [
+    { key: 'pai',    label: 'Pai' },
+    { key: 'mae',    label: 'Mãe' },
+    { key: 'irmao',  label: 'Irmão/Irmã' },
+    { key: 'irmao2', label: '2º Irmão/Irmã (opcional)' },
+  ];
+
+  function _buildFamilySection() {
+    const section = document.createElement('div');
+    section.className = 'setup-player-section';
+
+    const label = document.createElement('p');
+    label.className = 'setup-player-section-label';
+    label.textContent = 'Família (optional)';
+    section.appendChild(label);
+
+    const hint = document.createElement('p');
+    hint.className = 'setup-generate-sub';
+    hint.textContent = 'Nomeia quem quiseres — os vazios são inventados pela AI quando a Casa gerar a família.';
+    section.appendChild(hint);
+
+    const existing = Storage.get(Storage.KEYS.SETUP)?.family || {};
+    const row = document.createElement('div');
+    row.className = 'setup-family-row';
+    for (const f of FAMILY_FIELDS) {
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.className = 'form-input';
+      input.id = `setup-family-${f.key}`;
+      input.placeholder = f.label;
+      input.autocomplete = 'off';
+      input.value = existing[f.key] || '';
+      input.addEventListener('input', () => scheduleSave());
+      row.appendChild(input);
+    }
+    section.appendChild(row);
+    return section;
+  }
+
   function save() {
     clearTimeout(_saveTimer);
     const existing  = Storage.get(Storage.KEYS.SETUP) || {};
@@ -906,6 +948,18 @@ const SetupModule = (() => {
       data.squad = normalizeSquad(_squad);
     } else if (existing.squad) {
       data.squad = existing.squad;
+    }
+
+    // Family seeds: additive — kept as typed when the section rendered.
+    if (_container.querySelector('#setup-family-pai')) {
+      const fam = {};
+      for (const f of FAMILY_FIELDS) {
+        const v = _container.querySelector(`#setup-family-${f.key}`)?.value.trim();
+        if (v) fam[f.key] = v;
+      }
+      if (Object.keys(fam).length) data.family = fam;
+    } else if (existing.family) {
+      data.family = existing.family;
     }
 
     Storage.set(Storage.KEYS.SETUP, data);

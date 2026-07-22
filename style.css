@@ -2595,6 +2595,12 @@ a { color: var(--accent); text-decoration: none; }
 
 .setup-squad-custom-formation { margin-top: 8px; }
 
+.setup-family-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 8px;
+}
+
 .setup-statscard-toggle {
   display: flex;
   align-items: center;

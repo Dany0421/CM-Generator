@@ -1277,6 +1277,57 @@ Return ONLY valid JSON (no markdown fences):
     return call(SYSTEM_MATCH_REPORT, msg, 1024, MATCH_REPORT_SCHEMA);
   }
 
+  // ── Fase 3: NPCs & hangouts ──────────────────────────────────
+  const NPC_GEN_SCHEMA = S.obj({
+    members: S.arr(S.obj({ name: S.str, role: S.str, personality: S.str })),
+  });
+  const HANGOUT_SCHEMA = S.obj({
+    scene:   S.str,
+    summary: S.str,
+    live_editor_suggestion: S.str,
+  });
+
+  const SYSTEM_NPC_GEN =
+    'You create supporting characters for a FIFA/FC career mode companion app. ' +
+    'For each requested member, return name (invent a fitting one ONLY when none is given — ' +
+    'never change a provided name), the same role you were given, and a short personality: ' +
+    '3-8 words, concrete and playable (e.g. "old-school, hates social media", "jokes in the ' +
+    'worst moments, loyal"). Personalities must feel like real people around a footballer, ' +
+    'varied — never two alike. Ground them in the save context when it helps.';
+
+  const SYSTEM_HANGOUT =
+    'You write tiny slice-of-life scenes for a FIFA/FC career mode companion app. The user ' +
+    'spends a moment with one person from their world. Write: (1) "scene" — 2-4 sentences, ' +
+    'warm, specific, grounded in that person\'s personality and recent history with the user; ' +
+    'no melodrama, no inventing match results. (2) "summary" — max 8 words describing the ' +
+    'moment (for a history log). (3) "live_editor_suggestion" — normally an empty string; ' +
+    'ONLY when explicitly asked, suggest one small Live Editor attribute tweak on the USER\'S ' +
+    'OWN player (never the NPC), reflecting how this relationship is affecting them.';
+
+  async function generateNpcs(seeds, kind) {
+    const setup   = Storage.get(Storage.KEYS.SETUP) || {};
+    const context = setup.mode === 'player' || setup.mode === 'fiction' ? buildPlayerContext() : buildContext();
+    const lines = seeds.map(s => `- role: ${s.role}${s.name ? `, name (FIXED): ${s.name}` : ', name: invent one'}`);
+    const msg = `${context}\n\n${kind === 'family'
+      ? "Create the user's FAMILY members for this save:"
+      : "Create the LOCKER ROOM characters for this save (coach + teammates listed):"}\n${lines.join('\n')}\n\nReturn exactly ${seeds.length} members, same order.`;
+    return call(SYSTEM_NPC_GEN, msg, 1024, NPC_GEN_SCHEMA);
+  }
+
+  async function generateHangout(npc) {
+    const setup   = Storage.get(Storage.KEYS.SETUP) || {};
+    const context = setup.mode === 'player' || setup.mode === 'fiction' ? buildPlayerContext() : buildContext();
+    const hist = (npc.history || []).slice(-4).map(h => `- ${h.event} (${h.delta > 0 ? '+' : ''}${h.delta})`).join('\n');
+    const low = npc.value < 30;
+    const msg = `${context}\n\nHANG OUT WITH:\n` +
+      `${npc.name} — ${npc.role}${npc.personality ? ` (${npc.personality})` : ''}\n` +
+      `Relationship: ${npc.value}/100${npc.streak ? `, ${npc.streak} beats without interaction` : ''}\n` +
+      (hist ? `Recent history:\n${hist}\n` : '') +
+      (low ? '\nThe relationship is LOW — let the scene carry that tension, and include a live_editor_suggestion (one attribute on the USER\'S own player).'
+           : '\nlive_editor_suggestion must be an empty string.');
+    return call(SYSTEM_HANGOUT, msg, 1024, HANGOUT_SCHEMA);
+  }
+
   async function generateSeasonSummary() {
     const setup  = Storage.get(Storage.KEYS.SETUP);
     const mode   = setup?.mode;
@@ -1781,6 +1832,8 @@ Return ONLY the JSON. No preamble, no markdown fences.`;
     generateEvents,
     preMatch,
     reactToCheckIn,
+    generateNpcs,
+    generateHangout,
     generateSeasonSummary,
     advanceSeason,
     generateLinkedBond,

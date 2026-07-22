@@ -1437,11 +1437,14 @@ Return ONLY the JSON object. No preamble, no markdown fences.`;
     const setup = Storage.get(Storage.KEYS.SETUP) || {};
     if (!setup.club) throw new Error('Fill in the club first.');
     const p = setup.player || {};
+    const isSolo = setup.mode === 'player' || setup.mode === 'fiction';
+    // Fiction keeps the OVR on the generated card, not in setup
+    const fp = setup.mode === 'fiction' ? (Storage.get(Storage.KEYS.FICTION_PLAYER) || {}) : {};
     const mustInclude =
-      (setup.mode === 'player' && p.name
-        ? `\nUser's own player: ${p.name} (${p.position || '—'}, OVR ${p.ovr || '—'})`
+      (isSolo && p.name
+        ? `\nUser's own player: ${p.name} (${p.position || '—'}, OVR ${p.ovr || fp.overall || '—'})`
         : '') +
-      (setup.mode === 'player' && p.linked?.name
+      (isSolo && p.linked?.name
         ? `\nLinked teammate: ${p.linked.name} (${p.linked.position || '—'}, OVR ${p.linked.ovr || '—'})`
         : '');
     const msg =

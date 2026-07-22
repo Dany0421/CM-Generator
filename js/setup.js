@@ -658,7 +658,7 @@ const SetupModule = (() => {
 
     card.appendChild(diffEraRow);
 
-    if (!isFiction) card.appendChild(_buildSquadSection());
+    card.appendChild(_buildSquadSection());
 
     // Save row
     const saveRow = document.createElement('div');
@@ -901,10 +901,8 @@ const SetupModule = (() => {
       if (scEl) data.player.statsCard = scEl.checked;
     }
 
-    // Squad: additive field. Fiction has no squad UI but must not delete a stored one.
-    if (isFiction) {
-      if (existing.squad) data.squad = existing.squad;
-    } else if (_squad) {
+    // Squad: additive field — never dropped by a save that didn't touch it.
+    if (_squad) {
       data.squad = normalizeSquad(_squad);
     } else if (existing.squad) {
       data.squad = existing.squad;

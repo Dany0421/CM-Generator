@@ -4,10 +4,15 @@
 // Kit zones come from Python-built masks (player-mask = shirt, player-mask2 =
 // dark kit); skin/hair/boots are outside both masks and stay untouched.
 const WorldTint = (() => {
-  const HEX = /^#[0-9a-fA-F]{6}$/;
-
+  // Normalize ANY css color the AI might return ("#DA291C", "red", "rgb(…)")
+  // via the fillStyle round-trip — reading fillStyle back is allowed even on
+  // tainted canvases (it's not pixel data). Unparseable → fallback.
+  const _normCtx = document.createElement('canvas').getContext('2d');
   function _safe(color, fallback) {
-    return HEX.test(String(color || '').trim()) ? color.trim() : fallback;
+    _normCtx.fillStyle = '#010203'; // sentinel
+    _normCtx.fillStyle = String(color || '').trim();
+    const out = _normCtx.fillStyle;
+    return out === '#010203' && String(color).trim() !== '#010203' ? fallback : out;
   }
 
   // mix with white so multiply keeps the art readable (pure strong colors
@@ -32,10 +37,10 @@ const WorldTint = (() => {
     g.drawImage(img, 0, 0);
     g.globalCompositeOperation = 'multiply';
     const grad = g.createLinearGradient(0, 0, 0, c.height);
-    grad.addColorStop(0, _soften(secondary, 0.45));
-    grad.addColorStop(0.30, _soften(secondary, 0.45));
-    grad.addColorStop(0.34, _soften(primary, 0.45));
-    grad.addColorStop(1, _soften(primary, 0.45));
+    grad.addColorStop(0, _soften(secondary, 0.35));
+    grad.addColorStop(0.30, _soften(secondary, 0.35));
+    grad.addColorStop(0.34, _soften(primary, 0.35));
+    grad.addColorStop(1, _soften(primary, 0.35));
     g.fillStyle = grad;
     g.fillRect(0, 0, c.width, c.height);
     g.globalCompositeOperation = 'destination-in';

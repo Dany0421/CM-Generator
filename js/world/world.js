@@ -46,6 +46,9 @@ const World = (() => {
     if (!club) { _assets.clearTint(); _tintedClub = ''; return; }
     const w = Storage.get(Storage.KEYS.WORLD) || {};
     let cc = w.clubColors;
+    // neutral-gray cache = the picker defaults / a failed fetch, not a real
+    // kit — self-heal by asking the AI again
+    if (cc && (cc.primary === '#888888' || !cc.primary)) cc = null;
     if (forceAsk || !cc || cc.club !== club) {
       try {
         const res = await API.generateClubColors(club);

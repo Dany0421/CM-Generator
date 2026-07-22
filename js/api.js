@@ -106,6 +106,14 @@ const API = (() => {
   const VALUE_SCHEMA = S.obj({ value: S.str });
   const RULE_SCHEMA  = S.obj({ rule: S.str });
 
+  const SQUAD_PLAYER_SCHEMA = S.obj({ name: S.str, position: S.str, ovr: S.int });
+  const SQUAD_SCHEMA = S.obj({
+    formation: S.str,
+    starters:  S.arr(SQUAD_PLAYER_SCHEMA),
+    bench:     S.arr(SQUAD_PLAYER_SCHEMA),
+    reserves:  S.arr(SQUAD_PLAYER_SCHEMA),
+  });
+
   const SYSTEM_NARRATIVE = `You are a career mode narrative engine for FC 25. Your job is to generate deeply immersive, specific, and emotionally grounded storylines for a football manager career save.
 
 You will receive structured save data: club name, league, division, season number, manager name, difficulty, and era tag. Use ALL of this to generate content that is specific to that exact save — not generic football manager clichés.
@@ -1366,6 +1374,37 @@ Return ONLY: { "bond": "string" }`;
     return call(SYSTEM_LINKED_BOND, msg, 512, BOND_SCHEMA);
   }
 
+  const SYSTEM_SQUAD = `You build a plausible FC 25 squad for a specific real club. The user plays this save in the real game, so the squad must feel like that club's actual FC 25 squad — realistic player names for that club/league, sensible positions, coherent overalls.
+
+RULES:
+- EXACTLY 11 starters whose positions fit the requested formation (1 GK always), 7 bench players, 3 to 5 reserves.
+- Positions use FC 25 codes only: GK, CB, LB, RB, LWB, RWB, CDM, CM, CAM, LM, RM, LW, RW, CF, ST.
+- Overalls coherent with the club's real level and division — starters strongest, reserves weakest. Spread them; no flat squads.
+- If the user's own player or a linked teammate is listed below, they MUST appear in the squad (starters or bench, wherever their overall honestly puts them) with EXACTLY the given name/position/overall.
+- formation: echo the requested formation, or pick the club's most natural one if none requested.
+
+Return ONLY the JSON object. No preamble, no markdown fences.`;
+
+  async function generateSquad(formation) {
+    const setup = Storage.get(Storage.KEYS.SETUP) || {};
+    if (!setup.club) throw new Error('Fill in the club first.');
+    const p = setup.player || {};
+    const mustInclude =
+      (setup.mode === 'player' && p.name
+        ? `\nUser's own player: ${p.name} (${p.position || '—'}, OVR ${p.ovr || '—'})`
+        : '') +
+      (setup.mode === 'player' && p.linked?.name
+        ? `\nLinked teammate: ${p.linked.name} (${p.linked.position || '—'}, OVR ${p.linked.ovr || '—'})`
+        : '');
+    const msg =
+      `Club: ${setup.club}\n` +
+      `League: ${setup.league || '—'} (${setup.division || '—'})\n` +
+      `Season ${setup.season || 1} | Era: ${setup.era || '—'} | Mode: ${setup.mode || 'team'}\n` +
+      `Requested formation: ${formation || 'pick one'}${mustInclude}\n\n` +
+      `Generate the full squad.`;
+    return call(SYSTEM_SQUAD, msg, 4096, SQUAD_SCHEMA);
+  }
+
   // ── Fiction Mode ─────────────────────────────────────────────
 
   const SYSTEM_FICTION_CONCEPT = `You are a fiction player architect for FC 25 career mode. Your job is to design a compelling fictional player concept — a character that feels like they belong in a story, not a Wikipedia page.
@@ -1579,6 +1618,7 @@ Return ONLY the JSON. No preamble, no markdown fences.`;
     generateSeasonSummary,
     advanceSeason,
     generateLinkedBond,
+    generateSquad,
     generateFictionConcept,
     generateFictionPlayer,
     updateFictionPlayer,

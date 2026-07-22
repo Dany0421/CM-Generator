@@ -273,13 +273,25 @@ const World = (() => {
     panel.classList.add('active');
   }
 
+  function _openOverlayChrome() {
+    _inOverlay = true;
+    document.getElementById('world-overlay').classList.add('open');
+    document.getElementById('world-back-btn').classList.remove('world-hidden');
+    document.getElementById('world-setup-btn').classList.add('world-hidden');
+  }
+
+  // Setup lives outside the city (pre-world flow) — dedicated button, no door.
+  function openSetup() {
+    _returnPos = null;
+    _openOverlayChrome();
+    _showPanel('setup', () => SetupModule.render());
+  }
+
   function openBuilding(id) {
     const b = WorldMap.buildings.find(x => x.id === id)
       || WorldMap.props.find(p => p.id === id);
     _returnPos = { x: b.door.x + b.door.w / 2, y: b.door.y + b.door.h + 18 };
-    _inOverlay = true;
-    document.getElementById('world-overlay').classList.add('open');
-    document.getElementById('world-back-btn').classList.remove('world-hidden');
+    _openOverlayChrome();
     const m = MAPPING[id];
     if (!m) _showConstruction(b.label);
     else if (m.custom) {
@@ -297,6 +309,7 @@ const World = (() => {
     _inOverlay = false;
     document.getElementById('world-overlay').classList.remove('open');
     document.getElementById('world-back-btn').classList.add('world-hidden');
+    document.getElementById('world-setup-btn').classList.remove('world-hidden');
     if (_returnPos) { _px = _returnPos.x; _py = _returnPos.y; _persist(); }
     _doorZone = null;
   }
@@ -320,6 +333,7 @@ const World = (() => {
     RulesetModule.init(document.getElementById('module-ruleset'));
     HubModule.init(document.getElementById('module-hub'));
     document.getElementById('world-back-btn').addEventListener('click', closeOverlay);
+    document.getElementById('world-setup-btn').addEventListener('click', openSetup);
     _restore();
     window.addEventListener('beforeunload', _persist);
     requestAnimationFrame(ts => { _last = ts; _frame(ts); });

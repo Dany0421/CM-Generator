@@ -217,13 +217,18 @@ const World = (() => {
     _canvas.height = window.innerHeight;
   }
 
-  // Fase 1 mapping: which modules open inside each building (rest = placeholder).
+  // Fase 2 mapping: Hub tabs split by location (no more full-Hub duplicate).
+  // Events tab lives at the plaza notice board; Players moves to Balneário in Fase 3.
+  const HUB_VIEWS = {
+    office: { title: 'Club Office', tabs: ['log', 'trophies', 'players'] },
+    board:  { title: 'Boardroom',   tabs: ['tracker', 'rulebook', 'career', 'archive'] },
+  };
   const MAPPING = {
     casa:          { panels: [['narrative', 'Narrativa', () => NarrativeModule.render()]] },
-    'club-office': { panels: [['hub', 'Season Log', () => HubModule.render()],
+    'club-office': { panels: [['hub', 'Season Log', () => HubModule.render(HUB_VIEWS.office)],
                               ['challenges', 'Challenges', () => ChallengesModule.render()]] },
     boardroom:     { panels: [['ruleset', 'Ruleset', () => RulesetModule.render()],
-                              ['hub', 'Boardroom', () => HubModule.render()]] },
+                              ['hub', 'Boardroom', () => HubModule.render(HUB_VIEWS.board)]] },
     quadro:        { custom: () => WorldBoard.render(document.getElementById('world-generic')) },
     estadio:       { custom: () => WorldStadium.render(document.getElementById('world-generic')) },
   };

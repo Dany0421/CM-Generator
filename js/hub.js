@@ -1,6 +1,9 @@
 const HubModule = (() => {
   let _container = null;
   let _activeTab = 'log';
+  // Career World view filter: {title, tabs:[...]} — null shows every tab
+  // (index.html never sets it, so the classic full Hub is untouched).
+  let _view = null;
 
   const TABS = [
     { key: 'log',      label: 'Season Log'  },
@@ -51,7 +54,9 @@ const HubModule = (() => {
     render();
   }
 
-  function render() {
+  function render(view) {
+    if (view !== undefined) _view = view;
+    if (_view && !_view.tabs.includes(_activeTab)) _activeTab = _view.tabs[0];
     _ensureCurrentSeasonEntry();
     _container.replaceChildren();
     _container.appendChild(_buildHeader());
@@ -85,8 +90,8 @@ const HubModule = (() => {
     const frag = document.createRange().createContextualFragment(`
       <div class="module-header">
         <div class="module-title-group">
-          <span class="module-label">Module 5</span>
-          <h1 class="module-title">Season Hub</h1>
+          <span class="module-label">${_view ? 'Career World' : 'Module 5'}</span>
+          <h1 class="module-title">${_view ? _view.title : 'Season Hub'}</h1>
         </div>
         <span class="season-badge">Season ${season}</span>
       </div>
@@ -107,6 +112,7 @@ const HubModule = (() => {
 
     TABS.forEach(({ key, label, playerOnly }) => {
       if (playerOnly && !isPlayer) return;
+      if (_view && !_view.tabs.includes(key)) return;
       const btn = document.createElement('button');
       btn.className = 'hub-tab-btn';
       btn.dataset.tab = key;
@@ -125,6 +131,7 @@ const HubModule = (() => {
 
     TABS.forEach(({ key, playerOnly }) => {
       if (playerOnly && !isPlayer) return;
+      if (_view && !_view.tabs.includes(key)) return;
       const section = document.createElement('div');
       section.className = 'hub-section';
       section.id = `hub-section-${key}`;

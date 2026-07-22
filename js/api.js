@@ -1570,6 +1570,9 @@ Return ONLY valid JSON (no markdown fences):
       }
     }
 
+    const sponsorsData = Storage.get(Storage.KEYS.SPONSORS) || {};
+    const newsData     = Storage.get(Storage.KEYS.NEWS) || {};
+
     pastSeasons.push({
       season:      currentNum,
       summary:     summary || '',
@@ -1580,9 +1583,26 @@ Return ONLY valid JSON (no markdown fences):
         status: (hub.tracker || {})[i] || 'Active',
       })),
       events:      (hub.events?.rolled || []).map(i => hub.events?.pool?.[i]).filter(Boolean),
+      // Fase 4 season records: paid sponsor deals + the season's headlines
+      sponsors:    (sponsorsData.deals || []).filter(d => d.status === 'Paid')
+        .map(d => ({ sponsor: d.sponsor, title: d.title, tier: d.tier, reward: d.reward })),
+      headlines:   (newsData.items || []).filter(i => i.season === currentNum)
+        .slice(-15).map(i => ({ headline: i.headline, author: i.author || '' })),
       ...(playerStats ? { playerStats } : {}),
     });
     Storage.set(Storage.KEYS.SEASONS, pastSeasons);
+
+    // Season-scoped Fase 4 state dies with the season: open sponsor offers and
+    // unfinished deals expire, the news feed restarts, a stale agency
+    // opportunity is dropped (decision HISTORY stays — and rival + NPC
+    // relationships persist across seasons by design).
+    Storage.set(Storage.KEYS.SPONSORS, { offers: [], deals: [], season: currentNum + 1 });
+    Storage.set(Storage.KEYS.NEWS, { items: [] });
+    const agencyData = Storage.get(Storage.KEYS.AGENCY);
+    if (agencyData?.current) {
+      agencyData.current = null;
+      Storage.set(Storage.KEYS.AGENCY, agencyData);
+    }
 
     setup.season = Math.min(currentNum + 1, 15);
     // Player ages one year per season
@@ -1605,6 +1625,8 @@ Return ONLY valid JSON (no markdown fences):
     });
     hub.tracker = {};
     hub.events  = null;
+    delete hub.upcoming;        // stale pre-match from the old season
+    hub.tablePosition = null;   // new season, new table
     Storage.set(Storage.KEYS.HUB, hub);
 
     return setup.season;

@@ -231,6 +231,19 @@ const World = (() => {
     estadio:       { custom: () => WorldStadium.render(document.getElementById('world-generic')) },
   };
   let _returnPos = null;
+  // Location home (chooser / custom front page) — lets sub-panels go back to
+  // the location menu instead of forcing a round-trip through the city.
+  let _locHome = null;
+
+  function _menuBtn(show) {
+    const btn = document.getElementById('world-menu-btn');
+    if (show && _locHome) {
+      btn.textContent = `← ${_locHome.label}`;
+      btn.classList.remove('world-hidden');
+    } else {
+      btn.classList.add('world-hidden');
+    }
+  }
 
   function _clearPanels() {
     document.querySelectorAll('#world-overlay .module-panel')
@@ -244,6 +257,7 @@ const World = (() => {
     renderFn();
     if (window.lucide) lucide.createIcons();
     document.getElementById('world-overlay').scrollTop = 0;
+    _menuBtn(!!_locHome);
   }
 
   function _showConstruction(label) {
@@ -288,8 +302,18 @@ const World = (() => {
   // Setup lives outside the city (pre-world flow) — dedicated button, no door.
   function openSetup() {
     _returnPos = null;
+    _locHome = null;
     _openOverlayChrome();
     _showPanel('setup', () => SetupModule.render());
+  }
+
+  function _showCustom(m) {
+    _clearPanels();
+    m.custom();
+    document.getElementById('world-generic').classList.add('active');
+    if (window.lucide) lucide.createIcons();
+    document.getElementById('world-overlay').scrollTop = 0;
+    _menuBtn(false);
   }
 
   function openBuilding(id) {
@@ -297,17 +321,18 @@ const World = (() => {
       || WorldMap.props.find(p => p.id === id);
     _returnPos = { x: b.door.x + b.door.w / 2, y: b.door.y + b.door.h + 18 };
     _openOverlayChrome();
+    _locHome = null;
     const m = MAPPING[id];
     if (!m) _showConstruction(b.label);
     else if (m.custom) {
-      _clearPanels();
-      m.custom();
-      document.getElementById('world-generic').classList.add('active');
-      if (window.lucide) lucide.createIcons();
-      document.getElementById('world-overlay').scrollTop = 0;
+      _locHome = { label: b.label, show: () => _showCustom(m) };
+      _showCustom(m);
     }
     else if (m.panels.length === 1) _showPanel(m.panels[0][0], m.panels[0][2]);
-    else _showChooser(b.label, m.panels);
+    else {
+      _locHome = { label: b.label, show: () => _showChooser(b.label, m.panels) };
+      _showChooser(b.label, m.panels);
+    }
   }
 
   function closeOverlay() {
@@ -315,6 +340,8 @@ const World = (() => {
     document.getElementById('world-overlay').classList.remove('open');
     document.getElementById('world-back-btn').classList.add('world-hidden');
     document.getElementById('world-actions').classList.remove('world-hidden');
+    _locHome = null;
+    _menuBtn(false);
     if (_returnPos) { _px = _returnPos.x; _py = _returnPos.y; _persist(); }
     _doorZone = null;
   }
@@ -339,6 +366,9 @@ const World = (() => {
     HubModule.init(document.getElementById('module-hub'));
     document.getElementById('world-back-btn').addEventListener('click', closeOverlay);
     document.getElementById('world-setup-btn').addEventListener('click', openSetup);
+    document.getElementById('world-menu-btn').addEventListener('click', () => {
+      if (_locHome) _locHome.show();
+    });
     App.initChrome();
     if (window.lucide) lucide.createIcons();
     _restore();
@@ -347,6 +377,7 @@ const World = (() => {
   }
 
   const api = { init, openBuilding, openSetup, closeOverlay,
+    _navHook: () => _menuBtn(!!_locHome),
     setSpeed: v => { _speed = v || SPEED; _persist(); },
     _setOverlay: v => { _inOverlay = v; }, _pos: () => ({ x: _px, y: _py }),
     _moveTo: (x, y) => { _px = x; _py = y; _persist(); } };

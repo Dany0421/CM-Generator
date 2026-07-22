@@ -33,6 +33,10 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #4a7a34; }
 }
 .world-icon-btn:hover { background: rgba(0, 0, 0, 0.65); }
 .world-icon-btn svg { width: 18px; height: 18px; }
+#world-menu-btn {
+  position: fixed; top: 14px; left: 14px; z-index: 12;
+  font-family: 'Inter', sans-serif; font-weight: 600;
+}
 .world-hidden { display: none !important; }
 
 .world-chooser { display: flex; gap: 16px; justify-content: center; padding: 80px 20px; flex-wrap: wrap; }

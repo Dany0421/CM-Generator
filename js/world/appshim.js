@@ -12,6 +12,8 @@ const App = (() => {
     if (name === 'fiction') FictionModule.render();
     if (name === 'hub') HubModule.render();
     document.getElementById('world-overlay').scrollTop = 0;
+    // sub-panel opened from a location home → show the "back to menu" button
+    if (typeof World !== 'undefined' && World._navHook) World._navHook();
   }
 
   function setMode() {} // no fiction nav tab in the world entry

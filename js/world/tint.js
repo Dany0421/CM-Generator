@@ -12,7 +12,40 @@ const WorldTint = (() => {
     _normCtx.fillStyle = '#010203'; // sentinel
     _normCtx.fillStyle = String(color || '').trim();
     const out = _normCtx.fillStyle;
-    return out === '#010203' && String(color).trim() !== '#010203' ? fallback : out;
+    if (out === '#010203' && String(color).trim() !== '#010203') return fallback;
+    return /^#[0-9a-fA-F]{6}$/.test(out) ? out : fallback; // rgba() etc → fallback
+  }
+
+  // Same hue, fixed HIGH lightness — dark club colors (navy, black-ish) would
+  // crush the buildings under multiply; walls must stay bright, only hued.
+  function _pastel(hex, L) {
+    const n = parseInt(hex.slice(1), 16);
+    const r = ((n >> 16) & 255) / 255, g = ((n >> 8) & 255) / 255, b = (n & 255) / 255;
+    const max = Math.max(r, g, b), min = Math.min(r, g, b);
+    const l = (max + min) / 2;
+    let h = 0, s = 0;
+    if (max !== min) {
+      const d = max - min;
+      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+      h = max === r ? (g - b) / d + (g < b ? 6 : 0)
+        : max === g ? (b - r) / d + 2
+        : (r - g) / d + 4;
+      h /= 6;
+    }
+    if (s > 0.08) s = Math.max(s, 0.5); // punch for saturated-but-dark kits
+    const q = L < 0.5 ? L * (1 + s) : L + s - L * s;
+    const p = 2 * L - q;
+    const hue = t => {
+      if (t < 0) t += 1;
+      if (t > 1) t -= 1;
+      if (t < 1 / 6) return p + (q - p) * 6 * t;
+      if (t < 1 / 2) return q;
+      if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+      return p;
+    };
+    const to255 = v => Math.round(v * 255);
+    const rr = to255(hue(h + 1 / 3)), gg = to255(hue(h)), bb = to255(hue(h - 1 / 3));
+    return `#${((rr << 16) | (gg << 8) | bb).toString(16).padStart(6, '0')}`;
   }
 
   // mix with white so multiply keeps the art readable (pure strong colors
@@ -37,10 +70,10 @@ const WorldTint = (() => {
     g.drawImage(img, 0, 0);
     g.globalCompositeOperation = 'multiply';
     const grad = g.createLinearGradient(0, 0, 0, c.height);
-    grad.addColorStop(0, _soften(secondary, 0.35));
-    grad.addColorStop(0.30, _soften(secondary, 0.35));
-    grad.addColorStop(0.34, _soften(primary, 0.35));
-    grad.addColorStop(1, _soften(primary, 0.35));
+    grad.addColorStop(0, _pastel(secondary, 0.80));
+    grad.addColorStop(0.30, _pastel(secondary, 0.80));
+    grad.addColorStop(0.34, _pastel(primary, 0.72));
+    grad.addColorStop(1, _pastel(primary, 0.72));
     g.fillStyle = grad;
     g.fillRect(0, 0, c.width, c.height);
     g.globalCompositeOperation = 'destination-in';

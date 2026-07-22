@@ -683,6 +683,15 @@ const SetupModule = (() => {
     label.className = 'setup-player-section-label';
     label.textContent = 'Squad (optional)';
     head.appendChild(label);
+    const genBtn = document.createElement('button');
+    genBtn.className = 'btn-secondary';
+    genBtn.id = 'setup-squad-generate-btn';
+    const gi = document.createElement('i');
+    gi.setAttribute('data-lucide', 'sparkles');
+    genBtn.appendChild(gi);
+    genBtn.appendChild(document.createTextNode(' Generate Squad'));
+    genBtn.addEventListener('click', _generateSquad);
+    head.appendChild(genBtn);
     section.appendChild(head);
 
     const hint = document.createElement('p');
@@ -1012,6 +1021,30 @@ const SetupModule = (() => {
       App.showError(err.message);
     } finally {
       if (btn) btn.disabled = false;
+    }
+  }
+
+  async function _generateSquad() {
+    save(); // persist club/league/mode before the call
+    const btn = _container.querySelector('#setup-squad-generate-btn');
+    if (btn) {
+      btn.disabled = true;
+      btn.replaceChildren();
+      const spinner = document.createElement('div');
+      spinner.className = 'spinner';
+      spinner.style.cssText = 'width:14px;height:14px;display:inline-block;margin-right:8px;flex-shrink:0;';
+      btn.appendChild(spinner);
+      btn.appendChild(document.createTextNode('Generating…'));
+    }
+    try {
+      const result = await API.generateSquad(_squad?.formation || '');
+      _squad = normalizeSquad(result) || emptySquad();
+      save();
+      render();
+      App.showToast('Squad generated');
+    } catch (err) {
+      App.showError(err.message);
+      render(); // restore the button
     }
   }
 

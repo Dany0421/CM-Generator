@@ -2527,6 +2527,47 @@ a { color: var(--accent); text-decoration: none; }
   margin: 0 0 12px;
 }
 
+/* ── Setup: Squad section ───────────────────────────────────────────────── */
+.setup-squad-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.setup-squad-group-label {
+  font-size: 13px;
+  font-weight: 600;
+  margin: 14px 0 8px;
+}
+
+.setup-squad-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.setup-squad-row .squad-name { flex: 1 1 auto; min-width: 0; }
+.setup-squad-row .squad-pos  { flex: 0 0 72px; }
+.setup-squad-row .squad-ovr  { flex: 0 0 72px; }
+
+.setup-squad-remove {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  padding: 4px 6px;
+  color: inherit;
+  opacity: 0.55;
+}
+.setup-squad-remove:hover { opacity: 1; }
+
+.setup-squad-add { margin: 2px 0 4px; }
+
+.setup-squad-custom-formation { margin-top: 8px; }
+
 /* ── Player Mode: Season Stats Grid ─────────────────────────────────────── */
 .player-season-stats {
   margin-bottom: 12px;

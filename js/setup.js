@@ -65,6 +65,7 @@ const SetupModule = (() => {
     const saved = Storage.get(Storage.KEYS.SETUP);
     // Sync _mode from saved data
     if (saved?.mode) _mode = saved.mode;
+    if (!saved) _squad = null; // storage cleared (new save) — drop the in-memory squad too
     if (!_squad) _squad = normalizeSquad(saved?.squad);
 
     const headerFrag = document.createRange().createContextualFragment(`

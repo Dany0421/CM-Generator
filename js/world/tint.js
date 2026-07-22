@@ -85,9 +85,13 @@ const WorldTint = (() => {
         g.globalAlpha = 1;
       }
       if (mask3) {
-        // floodlight towers — always near-black, never club-colored
-        g.globalCompositeOperation = 'multiply';
-        g.drawImage(_coloredMask(mask3, '#2b2b2b'), 0, 0);
+        // floodlight towers — flattened to the pole gray (never club colors);
+        // 30% of the original art shows through to keep a hint of shading
+        const cm3 = _coloredMask(mask3, '#565b62');
+        g.globalCompositeOperation = 'source-over';
+        g.globalAlpha = 0.7;
+        g.drawImage(cm3, 0, 0);
+        g.globalAlpha = 1;
       }
     } else {
       g.globalCompositeOperation = 'multiply';

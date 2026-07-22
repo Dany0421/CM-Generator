@@ -84,15 +84,6 @@ const WorldTint = (() => {
         g.drawImage(cm, 0, 0);
         g.globalAlpha = 1;
       }
-      if (mask3) {
-        // floodlight towers — flattened to the pole gray (never club colors);
-        // 30% of the original art shows through to keep a hint of shading
-        const cm3 = _coloredMask(mask3, '#565b62');
-        g.globalCompositeOperation = 'source-over';
-        g.globalAlpha = 0.7;
-        g.drawImage(cm3, 0, 0);
-        g.globalAlpha = 1;
-      }
     } else {
       g.globalCompositeOperation = 'multiply';
       g.fillStyle = _pastel(primary, 0.72);
@@ -100,6 +91,19 @@ const WorldTint = (() => {
     }
     g.globalCompositeOperation = 'destination-in';
     g.drawImage(img, 0, 0);
+    // floodlight towers — AFTER the clip so the dark contour also shows on
+    // the sky side: dark-gray outline stamped around the silhouette, pole
+    // gray fill on top (never club colors)
+    if (mask3) {
+      g.globalCompositeOperation = 'source-over';
+      const dark = _coloredMask(mask3, '#23262b');
+      const O = [[-2, 0], [2, 0], [0, -2], [0, 2], [-1, -1], [1, -1],
+        [-1, 1], [1, 1], [-1, 0], [1, 0], [0, -1], [0, 1]];
+      for (const [dx, dy] of O) g.drawImage(dark, dx, dy);
+      g.globalAlpha = 0.85;
+      g.drawImage(_coloredMask(mask3, '#565b62'), 0, 0);
+      g.globalAlpha = 1;
+    }
     return c;
   }
 

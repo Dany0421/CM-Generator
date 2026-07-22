@@ -5,7 +5,7 @@ const WorldAssets = (() => {
     // masks for club-color recolor (kit + the two neutral buildings)
     'player-mask', 'player-mask2',
     'buildings/club-office-mask', 'buildings/club-office-mask2',
-    'buildings/estadio-mask', 'buildings/estadio-mask2',
+    'buildings/estadio-mask', 'buildings/estadio-mask2', 'buildings/estadio-mask3',
     ...WorldMap.buildings.map(b => b.sprite),
     ...new Set(WorldMap.props.map(p => p.sprite)),
   ];

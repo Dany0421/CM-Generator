@@ -66,7 +66,7 @@ const WorldTint = (() => {
   // Same recipe as the player kit: walls (light-neutral mask) painted SOLID
   // with the primary via multiply, mid-tone zones (roof/trim mask) take the
   // secondary via color+screen. No masks loaded → gentle pastel fallback.
-  function _tintBuilding(img, mask1, mask2, primary, secondary) {
+  function _tintBuilding(img, mask1, mask2, mask3, primary, secondary) {
     const c = _canvasFor(img);
     const g = c.getContext('2d');
     g.drawImage(img, 0, 0);
@@ -83,6 +83,11 @@ const WorldTint = (() => {
         g.globalAlpha = 0.35;
         g.drawImage(cm, 0, 0);
         g.globalAlpha = 1;
+      }
+      if (mask3) {
+        // floodlight towers — always near-black, never club-colored
+        g.globalCompositeOperation = 'multiply';
+        g.drawImage(_coloredMask(mask3, '#2b2b2b'), 0, 0);
       }
     } else {
       g.globalCompositeOperation = 'multiply';
@@ -135,7 +140,8 @@ const WorldTint = (() => {
       const img = assets.orig(name);
       if (img) {
         assets.setTint(name, _tintBuilding(img,
-          assets.orig(`${name}-mask`), assets.orig(`${name}-mask2`), primary, secondary));
+          assets.orig(`${name}-mask`), assets.orig(`${name}-mask2`),
+          assets.orig(`${name}-mask3`), primary, secondary));
       }
     }
     const sheet = assets.orig('player');

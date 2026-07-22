@@ -2568,6 +2568,13 @@ a { color: var(--accent); text-decoration: none; }
 
 .setup-squad-custom-formation { margin-top: 8px; }
 
+.setup-statscard-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
 /* ── Player Mode: Season Stats Grid ─────────────────────────────────────── */
 .player-season-stats {
   margin-bottom: 12px;

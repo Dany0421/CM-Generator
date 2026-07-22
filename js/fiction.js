@@ -66,7 +66,9 @@ const FictionModule = (() => {
   function render() {
     _container.replaceChildren();
     const setup = Storage.get(Storage.KEYS.SETUP);
-    if (setup?.mode !== 'fiction') return;
+    const cardEnabled = setup?.mode === 'fiction' ||
+      (setup?.mode === 'player' && setup?.player?.statsCard);
+    if (!cardEnabled) return;
 
     _container.appendChild(_buildHeader());
 
@@ -84,10 +86,11 @@ const FictionModule = (() => {
 
   function _buildHeader() {
     const hasPlayer = !!(Storage.get(Storage.KEYS.FICTION_PLAYER)?.stats);
+    const isReal = Storage.get(Storage.KEYS.SETUP)?.mode === 'player';
     const frag = document.createRange().createContextualFragment(`
       <div class="module-header">
         <div class="module-title-group">
-          <span class="module-label">Fiction</span>
+          <span class="module-label">${isReal ? 'Player' : 'Fiction'}</span>
           <h1 class="module-title">Player Creation</h1>
         </div>
         <div class="module-actions">

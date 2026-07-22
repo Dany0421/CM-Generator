@@ -25,7 +25,8 @@ const App = (() => {
     const fictionTab = document.querySelector('.nav-tab-fiction');
     if (!fictionTab) return;
 
-    if (mode === 'fiction') {
+    const statsCard = !!Storage.get(Storage.KEYS.SETUP)?.player?.statsCard;
+    if (mode === 'fiction' || (mode === 'player' && statsCard)) {
       fictionTab.classList.remove('hidden');
     } else {
       fictionTab.classList.add('hidden');

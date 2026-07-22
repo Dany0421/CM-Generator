@@ -426,6 +426,27 @@ const SetupModule = (() => {
           ratingRow.appendChild(grp);
         });
         playerSection.appendChild(ratingRow);
+
+        const cardGroup = document.createElement('div');
+        cardGroup.className = 'form-group';
+        const cardRow = document.createElement('label');
+        cardRow.className = 'form-label setup-statscard-toggle';
+        const cardCheck = document.createElement('input');
+        cardCheck.type = 'checkbox';
+        cardCheck.id = 'setup-player-statscard';
+        cardCheck.checked = !!saved?.player?.statsCard;
+        cardCheck.addEventListener('change', () => {
+          save();
+          App.setMode(_mode); // re-evaluate tab visibility immediately
+        });
+        cardRow.appendChild(cardCheck);
+        cardRow.appendChild(document.createTextNode(' Full Player Card (stats view)'));
+        cardGroup.appendChild(cardRow);
+        const cardHint = document.createElement('p');
+        cardHint.className = 'setup-generate-sub';
+        cardHint.textContent = 'Generates the complete FIFA card — attributes and PlayStyles — for your real player at the save’s starting point. Made for rewind saves; uses your setup, concept and narrative.';
+        cardGroup.appendChild(cardHint);
+        playerSection.appendChild(cardGroup);
       }
 
       card.appendChild(playerSection);
@@ -875,6 +896,8 @@ const SetupModule = (() => {
       const potEl = _container.querySelector('#setup-player-potential');
       if (ovrEl) data.player.ovr       = parseInt(ovrEl.value) || 0;
       if (potEl) data.player.potential = parseInt(potEl.value) || 0;
+      const scEl = _container.querySelector('#setup-player-statscard');
+      if (scEl) data.player.statsCard = scEl.checked;
     }
 
     // Squad: additive field. Fiction has no squad UI but must not delete a stored one.

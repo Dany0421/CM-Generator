@@ -77,7 +77,8 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #4a7a34; }
 .stadium-opp { width: 100%; margin-bottom: 4px; }
 .stadium-pos { width: 140px; }
 .stadium-score { font-size: 18px; font-weight: 700; }
-.stadium-goal { width: 90px; text-align: center; }
+.stadium-score-lbl { font-size: 13px; font-weight: 600; color: #98a2b3; }
+.stadium-goal { width: 74px; text-align: center; }
 .stadium-stat { width: 110px; }
 .stadium-day { width: 90px; }
 .stadium-formline { font-size: 13px; color: #98a2b3; margin: 6px 0 10px; }

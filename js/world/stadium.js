@@ -82,7 +82,6 @@ const WorldStadium = (() => {
   function _hub() { return Storage.get(Storage.KEYS.HUB) || { log: [], tracker: {}, players: [], seasons: [] }; }
   function _save(hub) { Storage.set(Storage.KEYS.HUB, hub); }
   function _uid() { return 'm' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
-  const RES_PT = { W: 'V', D: 'E', L: 'D' };
 
   let _panel = null;
 
@@ -98,7 +97,7 @@ const WorldStadium = (() => {
     body.className = 'stadium-mural-body';
     if (hub.rival?.name) {
       const h2h = headToHead(hub.log, hub.rival.name);
-      body.textContent = `${hub.rival.name} — rival desde a época ${hub.rival.since}. Contra eles: ${h2h.w}V ${h2h.d}E ${h2h.l}D.`;
+      body.textContent = `${hub.rival.name} — rival desde a época ${hub.rival.since}. Contra eles: ${h2h.w}W ${h2h.d}D ${h2h.l}L.`;
     } else {
       body.textContent = 'Ainda sem rival. As derrotas repetidas contra a mesma equipa decidem isto sozinhas.';
     }
@@ -162,7 +161,7 @@ const WorldStadium = (() => {
     const formLine = document.createElement('p');
     formLine.className = 'stadium-formline';
     formLine.textContent = form.length
-      ? `Forma recente: ${form.map(r => RES_PT[r]).join('-')}`
+      ? `Forma recente: ${form.join('-')}`
       : 'Forma recente: sem jogos registados ainda.';
     card.appendChild(formLine);
 
@@ -204,7 +203,7 @@ const WorldStadium = (() => {
       try {
         const result = await API.preMatch({
           opponent, oppPosition: oppP, ownPosition: hubNow.tablePosition,
-          form: deriveForm(hubNow.log, 5).map(r => RES_PT[r]),
+          form: deriveForm(hubNow.log, 5),
           rival: hubNow.rival || null,
           h2h: rivalName ? headToHead(hubNow.log, rivalName) : null,
           isDerby, rematch: flags.rematch, wantChallenge, highStakes,
@@ -256,7 +255,7 @@ const WorldStadium = (() => {
           const result = await API.preMatch({
             opponent: up.opponent, oppPosition: up.oppPosition,
             ownPosition: hubNow.tablePosition,
-            form: deriveForm(hubNow.log, 5).map(r => RES_PT[r]),
+            form: deriveForm(hubNow.log, 5),
             rival: hubNow.rival || null,
             h2h: rivalName ? headToHead(hubNow.log, rivalName) : null,
             isDerby: up.isDerby, rematch: !!up.rematch,
@@ -306,11 +305,17 @@ const WorldStadium = (() => {
 
     const scoreRow = document.createElement('div');
     scoreRow.className = 'stadium-row stadium-score';
-    const gfIn = _numInput('stadium-goal', 'Nós', 0, 99);
+    const usLbl = document.createElement('span');
+    usLbl.className = 'stadium-score-lbl';
+    usLbl.textContent = 'Nós';
+    const gfIn = _numInput('stadium-goal', '0', 0, 99);
     const dash = document.createElement('span');
     dash.textContent = '–';
-    const gaIn = _numInput('stadium-goal', 'Eles', 0, 99);
-    scoreRow.append(gfIn, dash, gaIn);
+    const gaIn = _numInput('stadium-goal', '0', 0, 99);
+    const themLbl = document.createElement('span');
+    themLbl.className = 'stadium-score-lbl';
+    themLbl.textContent = up.opponent;
+    scoreRow.append(usLbl, gfIn, dash, gaIn, themLbl);
     card.appendChild(scoreRow);
 
     let goalsIn = null, assistsIn = null, ratingIn = null;
@@ -341,6 +346,7 @@ const WorldStadium = (() => {
     card.appendChild(dateRow);
 
     const textarea = document.createElement('textarea');
+    textarea.className = 'form-textarea';
     textarea.placeholder = 'Notas do jogo (opcional) — momentos, lesões, o que quiseres que a história saiba…';
     card.appendChild(textarea);
 
@@ -394,7 +400,7 @@ const WorldStadium = (() => {
       const freeText = textarea.value.trim();
       const entry = {
         id: _uid(),
-        text: freeText || `vs ${up.opponent} ${gf}-${ga} (${RES_PT[res]})`,
+        text: freeText || `vs ${up.opponent} ${gf}-${ga} (${res})`,
         timestamp: new Date().toISOString(),
         gameDate: { day, month },
         highlight: undefined,
@@ -459,7 +465,7 @@ const WorldStadium = (() => {
     head.className = 'stadium-report-head';
     const title = document.createElement('span');
     title.className = 'stadium-report-title';
-    title.textContent = `vs ${m.opponent} ${m.outcome.gf}-${m.outcome.ga} (${RES_PT[m.outcome.res]})`;
+    title.textContent = `vs ${m.opponent} ${m.outcome.gf}-${m.outcome.ga} (${m.outcome.res})`;
     head.appendChild(title);
     const when = document.createElement('span');
     when.className = 'stadium-report-date';

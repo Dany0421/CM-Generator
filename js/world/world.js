@@ -277,7 +277,7 @@ const World = (() => {
     _inOverlay = true;
     document.getElementById('world-overlay').classList.add('open');
     document.getElementById('world-back-btn').classList.remove('world-hidden');
-    document.getElementById('world-setup-btn').classList.add('world-hidden');
+    document.getElementById('world-actions').classList.add('world-hidden');
   }
 
   // Setup lives outside the city (pre-world flow) — dedicated button, no door.
@@ -309,7 +309,7 @@ const World = (() => {
     _inOverlay = false;
     document.getElementById('world-overlay').classList.remove('open');
     document.getElementById('world-back-btn').classList.add('world-hidden');
-    document.getElementById('world-setup-btn').classList.remove('world-hidden');
+    document.getElementById('world-actions').classList.remove('world-hidden');
     if (_returnPos) { _px = _returnPos.x; _py = _returnPos.y; _persist(); }
     _doorZone = null;
   }
@@ -334,6 +334,8 @@ const World = (() => {
     HubModule.init(document.getElementById('module-hub'));
     document.getElementById('world-back-btn').addEventListener('click', closeOverlay);
     document.getElementById('world-setup-btn').addEventListener('click', openSetup);
+    App.initChrome();
+    if (window.lucide) lucide.createIcons();
     _restore();
     window.addEventListener('beforeunload', _persist);
     requestAnimationFrame(ts => { _last = ts; _frame(ts); });

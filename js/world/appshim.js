@@ -59,9 +59,97 @@ const App = (() => {
     setTimeout(() => toast.remove(), 200);
   }
 
+  // ── Settings modal + chat wiring (world chrome) ─────────────
+  // Same handlers as js/app.js init, minus the index-only chrome (nav tabs,
+  // api-setup screen). Modal markup lives in world.html with the same ids.
+  function _openSettings() { document.getElementById('settings-modal').classList.remove('hidden'); }
+  function _closeSettings() { document.getElementById('settings-modal').classList.add('hidden'); }
+
+  function _rerenderAll() {
+    SetupModule.render();
+    FictionModule.render();
+    NarrativeModule.render();
+    ChallengesModule.render();
+    RulesetModule.render();
+    HubModule.render();
+  }
+
+  function initChrome() {
+    document.getElementById('world-settings-btn').addEventListener('click', _openSettings);
+    document.getElementById('settings-close-btn').addEventListener('click', _closeSettings);
+    document.getElementById('settings-backdrop').addEventListener('click', _closeSettings);
+
+    const modelSel = document.getElementById('settings-model');
+    modelSel.value = API.getModel();
+    modelSel.addEventListener('change', () => {
+      API.setModel(modelSel.value);
+      _toast('Model updated', null, false);
+    });
+
+    document.getElementById('settings-key-save').addEventListener('click', () => {
+      const val = document.getElementById('settings-api-key').value.trim();
+      if (!val) return;
+      Storage.set(Storage.KEYS.API_KEY, val);
+      document.getElementById('settings-api-key').value = '';
+      _closeSettings();
+      _toast('API key updated', null, false);
+    });
+
+    document.getElementById('export-data-btn').addEventListener('click', () => {
+      const data = {};
+      const skip = new Set([Storage.KEYS.API_KEY, Storage.KEYS.MODEL]);
+      Object.entries(Storage.KEYS).forEach(([, v]) => {
+        if (!skip.has(v)) {
+          const val = Storage.get(v);
+          if (val !== null) data[v] = val;
+        }
+      });
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `career-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      _toast('Career exported', null, false);
+    });
+
+    document.getElementById('import-data-btn').addEventListener('click', () => {
+      document.getElementById('import-file-input').click();
+    });
+    document.getElementById('import-file-input').addEventListener('change', e => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = ev => {
+        try {
+          const data = JSON.parse(ev.target.result);
+          Object.entries(data).forEach(([k, v]) => Storage.set(k, v));
+          _closeSettings();
+          _rerenderAll();
+          _toast('Career imported successfully', null, false);
+        } catch {
+          _toast('Invalid career file.', null, true);
+        }
+        e.target.value = '';
+      };
+      reader.readAsText(file);
+    });
+
+    document.getElementById('clear-data-btn').addEventListener('click', () => {
+      Storage.clearAll();
+      _closeSettings();
+      _rerenderAll();
+      _toast('All save data cleared', null, false);
+    });
+
+    ChatModule.init();
+  }
+
   return {
     navigate,
     setMode,
+    initChrome,
     showToast: (m, undoFn) => _toast(m, undoFn, false),
     showError: m => _toast(m, null, true),
   };

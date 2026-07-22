@@ -55,14 +55,39 @@ const WorldMap = (() => {
   // (door positions vary per art, a door-anchored path can cut through the sprite).
   const plaza = [800, 420]; // central square in front of the Estádio
   // Imprensa has no own path — the Sponsors path runs right past it and doubles up.
+  // BEND: perpendicular offset (px) of each path's curve control point — signs
+  // chosen by hand so curves bow away from building solids (casa/sponsors clear
+  // the Imprensa block; the rest just vary side so the city feels grown, not radial).
+  const BEND = {
+    estadio: 30, balneario: 45, boardroom: -50, 'club-office': -55,
+    casa: -50, agencia: 60, sponsors: 45,
+  };
   const paths = buildings.filter(b => b.id !== 'imprensa').map(b => {
     const ex = Math.max(b.x, Math.min(plaza[0], b.x + b.w));
     const ey = Math.max(b.y, Math.min(plaza[1], b.y + b.h));
     const cx = b.x + b.w / 2, cy = b.y + b.h / 2;
     const m = Math.hypot(cx - ex, cy - ey) || 1;
     const tuck = 18;
-    return { from: [ex + (cx - ex) / m * tuck, ey + (cy - ey) / m * tuck], to: plaza };
+    const from = [ex + (cx - ex) / m * tuck, ey + (cy - ey) / m * tuck];
+    const dx = plaza[0] - from[0], dy = plaza[1] - from[1];
+    const len = Math.hypot(dx, dy) || 1;
+    const bend = BEND[b.id] || 0;
+    const via = [
+      (from[0] + plaza[0]) / 2 - dy / len * bend,
+      (from[1] + plaza[1]) / 2 + dx / len * bend,
+    ];
+    return { from, to: plaza, via };
   });
+
+  // Links between neighbouring buildings — a ring of detours/crossings so the
+  // city isn't only radial paths out of the plaza. Endpoints tuck under sprites.
+  paths.push(
+    { from: [470, 290],  via: [555, 215],  to: [650, 235] },   // balneário ↔ estádio
+    { from: [340, 940],  via: [460, 1010], to: [580, 990] },   // casa ↔ sponsors
+    { from: [740, 1010], via: [830, 1050], to: [920, 990] },   // sponsors ↔ agência
+    { from: [1080, 930], via: [1200, 890], to: [1270, 795] },  // agência ↔ club office
+    { from: [1340, 505], via: [1390, 580], to: [1310, 655] },  // boardroom ↔ club office
+  );
 
   return { W, H, buildings, props, paths };
 })();

@@ -41,12 +41,15 @@ const WorldGround = (() => {
     // stone paths (under buildings/props, so draw before world objects)
     g.lineCap = 'round'; g.lineJoin = 'round';
     for (const p of WorldMap.paths) {
-      g.strokeStyle = '#b9b09a';
-      g.lineWidth = 34;
-      g.beginPath(); g.moveTo(p.from[0], p.from[1]); g.lineTo(p.to[0], p.to[1]); g.stroke();
-      g.strokeStyle = '#cfc6ae';
-      g.lineWidth = 26;
-      g.beginPath(); g.moveTo(p.from[0], p.from[1]); g.lineTo(p.to[0], p.to[1]); g.stroke();
+      for (const [color, width] of [['#b9b09a', 34], ['#cfc6ae', 26]]) {
+        g.strokeStyle = color;
+        g.lineWidth = width;
+        g.beginPath();
+        g.moveTo(p.from[0], p.from[1]);
+        if (p.via) g.quadraticCurveTo(p.via[0], p.via[1], p.to[0], p.to[1]);
+        else g.lineTo(p.to[0], p.to[1]);
+        g.stroke();
+      }
     }
     // plaza circle where paths meet
     g.fillStyle = '#cfc6ae';

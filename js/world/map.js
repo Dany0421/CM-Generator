@@ -46,7 +46,7 @@ const WorldMap = (() => {
     { sprite: 'props/arbusto',   x: 850, y: 1080, w: 60 },
     // vegetation pass — clusters in the empty pockets, sizes varied on purpose
     { sprite: 'props/arvore',    x: 1250, y:  80, w: 110 },  // top-right grove
-    { sprite: 'props/arvore',    x: 1350, y: 160, w: 85 },
+    { sprite: 'props/arvore2',   x: 1350, y: 160, w: 85 },
     { sprite: 'props/arbusto',   x: 1300, y: 240, w: 60 },
     { sprite: 'props/arbusto',   x: 1180, y: 120, w: 50 },
     { sprite: 'props/arvore',    x: 1500, y: 400, w: 95 },   // east edge
@@ -55,14 +55,23 @@ const WorldMap = (() => {
     { sprite: 'props/arbusto',   x: 990, y: 230, w: 55 },
     { sprite: 'props/arvore',    x:  30, y: 320, w: 90 },    // west edge, above campo
     { sprite: 'props/arbusto',   x: 100, y: 410, w: 55 },
-    { sprite: 'props/arvore',    x:  20, y: 540, w: 90 },
+    { sprite: 'props/arvore2',   x:  20, y: 540, w: 90 },
     { sprite: 'props/arbusto',   x: 150, y: 680, w: 60 },    // below campo
     { sprite: 'props/arvore',    x:  60, y: 1050, w: 105 },  // bottom-left corner
     { sprite: 'props/arbusto',   x: 175, y: 1110, w: 60 },
     { sprite: 'props/arbusto',   x: 790, y: 1140, w: 65 },   // south strip
     { sprite: 'props/arvore',    x: 1290, y: 1080, w: 95 },  // bottom-right grove
     { sprite: 'props/arbusto',   x: 1400, y: 1040, w: 60 },
-    { sprite: 'props/arvore',    x: 1495, y: 1090, w: 100 },
+    { sprite: 'props/arvore2',   x: 1495, y: 1090, w: 100 },
+    // props round 2 — canteiros, pedras e jardins (sprites do Dany, 2026-07-22)
+    { sprite: 'props/canteiro',  x: 705, y: 465, w: 70 },    // beira da praça
+    { sprite: 'props/canteiro',  x: 1245, y: 255, w: 65 },   // norte do boardroom
+    { sprite: 'props/canteiro',  x: 330, y: 645, w: 65 },    // abaixo do campo
+    { sprite: 'props/pedra',     x: 1445, y: 175, w: 80 },   // top-right grove
+    { sprite: 'props/pedra',     x:  60, y: 905, w: 75 },    // oeste da casa
+    { sprite: 'props/pedra',     x: 1175, y: 1125, w: 80 },  // faixa sul
+    { sprite: 'props/jardim',    x: 1445, y: 640, w: 115 },  // borda este
+    { sprite: 'props/jardim',    x: 235, y: 1045, w: 110 },  // canto inf. esquerdo
     { sprite: 'props/banco',     x: 700, y: 400, w: 70 },
     { sprite: 'props/banco',     x: 1300, y: 850, w: 70 },
     { sprite: 'props/candeeiro', x: 410, y: 480, w: 50 },

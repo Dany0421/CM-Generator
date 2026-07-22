@@ -1190,6 +1190,87 @@ Return ONLY valid JSON (no markdown fences):
     return hub.events;
   }
 
+  // ── Estádio match loop (Fase 2) ──────────────────────────────
+  const MATCH_CHALLENGE_SCHEMA = S.obj({
+    title:       S.str,
+    description: S.str,
+    metric:      { type: 'string', enum: ['goals', 'assists', 'wins', 'clean_sheets', 'rating_avg', 'none'] },
+    target:      S.int,
+  });
+  const PRE_MATCH_SCHEMA           = S.obj({ reaction: S.str });
+  const PRE_MATCH_CHALLENGE_SCHEMA = S.obj({ reaction: S.str, challenge: MATCH_CHALLENGE_SCHEMA });
+  const MATCH_REPORT_SCHEMA        = S.obj({ report: S.str, fan_reaction: S.str });
+
+  const SYSTEM_PRE_MATCH =
+    'You are the matchday voice of a FIFA/FC career mode companion app. Before a match, ' +
+    'you write a short pre-match reaction: 2-4 sentences of context and hype — what this ' +
+    'specific game means right now given the form, the table, the rivalry and the story so far. ' +
+    'Speak directly to the user ("you"). Never invent results that have not happened. ' +
+    'If asked for a match challenge, it must be resolvable in this single match, concrete and ' +
+    'thematically tied to the occasion. metric/target define auto-evaluation: goals/assists = ' +
+    "the user's own numbers this match, wins = 1 means win the game, clean_sheets = 1 means " +
+    'concede zero, rating_avg = minimum match rating, none = narrative challenge judged by the ' +
+    'user. For a high-stakes challenge, raise the drama and say what is on the line.';
+
+  const SYSTEM_MATCH_REPORT =
+    'You are the matchday voice of a FIFA/FC career mode companion app. After a match, given ' +
+    'the pre-match context and the real result the user reports, write: (1) "report" — a short ' +
+    'match report, 2-4 sentences, vivid but grounded ONLY in the data given (never invent ' +
+    'scorers, minutes or events the user did not mention); mention the rivalry when relevant ' +
+    'and the match challenge outcome if there was one. (2) "fan_reaction" — 1-2 sentences in ' +
+    'the collective voice of the club\'s fans (passionate, honest, harsher after a derby loss, ' +
+    'euphoric after a derby win).';
+
+  async function preMatch(input) {
+    const setup   = Storage.get(Storage.KEYS.SETUP) || {};
+    const context = setup.mode === 'player' || setup.mode === 'fiction' ? buildPlayerContext() : buildContext();
+    const lines = [
+      `Opponent: ${input.opponent}`,
+      `Opponent league position: ${input.oppPosition || '—'}`,
+      `Our league position: ${input.ownPosition || '—'}`,
+      `Recent form (oldest to newest): ${input.form && input.form.length ? input.form.join('-') : 'no matches logged yet'}`,
+    ];
+    if (input.isDerby && input.rival) {
+      lines.push(`THIS IS A DERBY: ${input.rival.name} is the rival (since season ${input.rival.since}). Head-to-head W-D-L: ${input.h2h.w}-${input.h2h.d}-${input.h2h.l}.`);
+    } else if (input.rival) {
+      lines.push(`Current rival (not this opponent): ${input.rival.name}.`);
+    }
+    if (input.rematch) lines.push('Rematch: a previous match challenge involved this opponent.');
+    let ask = 'Write the pre-match reaction only.';
+    if (input.wantChallenge) {
+      ask = 'Write the pre-match reaction AND one match challenge for this game.' +
+        (input.highStakes ? ' This one is HIGH STAKES — dramatic, with something real on the line.' : '');
+    }
+    const msg = `${context}\n\nNEXT MATCH:\n${lines.join('\n')}\n\n${ask}`;
+    const result = await call(SYSTEM_PRE_MATCH, msg, 1024,
+      input.wantChallenge ? PRE_MATCH_CHALLENGE_SCHEMA : PRE_MATCH_SCHEMA);
+    if (result.challenge) result.challenge.high_stakes = !!input.highStakes;
+    return result;
+  }
+
+  async function reactToCheckIn(entry, pre) {
+    const setup   = Storage.get(Storage.KEYS.SETUP) || {};
+    const context = setup.mode === 'player' || setup.mode === 'fiction' ? buildPlayerContext() : buildContext();
+    const m = entry.match || {};
+    const o = m.outcome || {};
+    const lines = [
+      `Opponent: ${m.opponent}`,
+      `Final score (us-them): ${o.gf}-${o.ga} (${o.res === 'W' ? 'win' : o.res === 'D' ? 'draw' : 'loss'})`,
+    ];
+    if (m.isDerby) lines.push('This was a DERBY against the rival.');
+    if (typeof m.playerGoals === 'number') lines.push(`User's own goals: ${m.playerGoals}, assists: ${m.playerAssists || 0}${m.playerRating ? `, match rating: ${m.playerRating}` : ''}`);
+    if (m.challenge) {
+      lines.push(`Match challenge was: "${m.challenge.title}" — ${m.challenge.description}` +
+        ` → outcome: ${m.challengeResult === true ? 'COMPLETED' : m.challengeResult === false ? 'FAILED' : 'unresolved'}` +
+        (m.challenge.high_stakes ? ' (high stakes)' : ''));
+    }
+    if (pre && pre.reaction) lines.push(`Pre-match talk was: ${pre.reaction}`);
+    if (m.rivalChanged) lines.push(`NOTE: this result made ${m.rivalChanged} the new rival — losses piled up. Mention it.`);
+    if (entry.text) lines.push(`User's own notes: ${entry.text}`);
+    const msg = `${context}\n\nMATCH PLAYED:\n${lines.join('\n')}\n\nWrite the match report and the fan reaction.`;
+    return call(SYSTEM_MATCH_REPORT, msg, 1024, MATCH_REPORT_SCHEMA);
+  }
+
   async function generateSeasonSummary() {
     const setup  = Storage.get(Storage.KEYS.SETUP);
     const mode   = setup?.mode;
@@ -1692,6 +1773,8 @@ Return ONLY the JSON. No preamble, no markdown fences.`;
     generateSingleRule,
     condenseHubData,
     generateEvents,
+    preMatch,
+    reactToCheckIn,
     generateSeasonSummary,
     advanceSeason,
     generateLinkedBond,

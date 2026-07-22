@@ -223,6 +223,7 @@ const World = (() => {
     boardroom:     { panels: [['ruleset', 'Ruleset', () => RulesetModule.render()],
                               ['hub', 'Boardroom', () => HubModule.render()]] },
     quadro:        { custom: () => WorldBoard.render(document.getElementById('world-generic')) },
+    estadio:       { custom: () => WorldStadium.render(document.getElementById('world-generic')) },
   };
   let _returnPos = null;
 

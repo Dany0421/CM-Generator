@@ -842,6 +842,33 @@ a { color: var(--accent); text-decoration: none; }
   margin-bottom: 14px;
 }
 
+.challenge-progress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.challenge-progress-bar {
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--bg-input);
+  overflow: hidden;
+}
+.challenge-progress-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: var(--accent, #4f8cff);
+  transition: width .3s;
+}
+.challenge-progress-fill.done { background: #34c07c; }
+.challenge-progress-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
 .challenge-meta {
   display: grid;
   grid-template-columns: 1fr 1fr;

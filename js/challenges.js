@@ -30,6 +30,34 @@ const ChallengesModule = (() => {
 
   const DIFF_CLASS = { Mild: 'badge-mild', Brutal: 'badge-brutal', Savage: 'badge-savage' };
 
+  // Progress is computed, never accumulated: summed on the fly from the
+  // season's Estádio match entries (entry.match). Editing/deleting an entry
+  // recalculates by itself. Team mode reads team goals (gf); solo modes read
+  // the player's own numbers.
+  function computeProgress(metric, entries, isSolo) {
+    let value = 0;
+    let rated = 0;
+    for (const e of entries) {
+      const m = e && e.match;
+      if (!m || !m.outcome) continue;
+      switch (metric) {
+        case 'goals':        value += isSolo ? (m.playerGoals || 0) : (m.outcome.gf || 0); break;
+        case 'assists':      value += m.playerAssists || 0; break;
+        case 'wins':         if (m.outcome.res === 'W') value++; break;
+        case 'clean_sheets': if ((m.outcome.ga || 0) === 0) value++; break;
+        case 'rating_avg':   if (m.playerRating) { value += m.playerRating; rated++; } break;
+      }
+    }
+    if (metric === 'rating_avg') return rated ? Math.round((value / rated) * 10) / 10 : 0;
+    return value;
+  }
+
+  function _seasonMatchEntries() {
+    const season = Storage.get(Storage.KEYS.SETUP)?.season || 1;
+    return (Storage.get(Storage.KEYS.HUB)?.log || [])
+      .filter(e => e && !e.isDivider && e.match?.outcome && e.match.season === season);
+  }
+
   function init(container) {
     _container = container;
     render();
@@ -221,6 +249,28 @@ const ChallengesModule = (() => {
 
     card.appendChild(descEl);
     card.appendChild(descInput);
+
+    // Auto-tracked progress (metric/target from generation; old saves have none)
+    if (ch.metric && ch.metric !== 'none' && ch.target > 0) {
+      const mode = Storage.get(Storage.KEYS.SETUP)?.mode;
+      const isSolo = mode === 'player' || mode === 'fiction';
+      const value = computeProgress(ch.metric, _seasonMatchEntries(), isSolo);
+      const done = value >= ch.target;
+      const prog = document.createElement('div');
+      prog.className = 'challenge-progress';
+      const bar = document.createElement('div');
+      bar.className = 'challenge-progress-bar';
+      const fill = document.createElement('div');
+      fill.className = 'challenge-progress-fill' + (done ? ' done' : '');
+      fill.style.width = `${Math.min(100, (value / ch.target) * 100)}%`;
+      bar.appendChild(fill);
+      prog.appendChild(bar);
+      const lbl = document.createElement('span');
+      lbl.className = 'challenge-progress-label';
+      lbl.textContent = `${value} / ${ch.target} ${ch.metric.replace('_', ' ')}`;
+      prog.appendChild(lbl);
+      card.appendChild(prog);
+    }
 
     // Duration (tap to edit)
     if (ch.duration && ch.duration !== '—') {
@@ -434,5 +484,8 @@ const ChallengesModule = (() => {
     }
   }
 
+  if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { computeProgress };
+  }
   return { init, render };
 })();

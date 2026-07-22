@@ -53,6 +53,8 @@ const API = (() => {
     stakes:      S.str,
     difficulty:  { type: 'string', enum: ['Mild', 'Brutal', 'Savage'] },
     hub_line:    S.str,
+    metric:      { type: 'string', enum: ['goals', 'assists', 'wins', 'clean_sheets', 'rating_avg', 'none'] },
+    target:      S.int,
   });
 
   const PLAYER_CHALLENGES_SCHEMA = S.obj({ challenges: S.arr(CHALLENGE_SCHEMA) });
@@ -228,7 +230,9 @@ OUTPUT FORMAT (strict JSON):
 "duration": "string (e.g. 'Full season', 'Next transfer window', 'Until triggered')",
 "stakes": "string (1-2 sentences — what happens if broken or failed)",
 "difficulty": "Mild | Brutal | Savage",
-"hub_line": "string — ONE line, max 12 words. The core constraint only: what you must/cannot do. Direct, assertive. Arrow (→) for conditional triggers. Zero context, zero fluff."
+"hub_line": "string — ONE line, max 12 words. The core constraint only: what you must/cannot do. Direct, assertive. Arrow (→) for conditional triggers. Zero context, zero fluff.",
+"metric": "goals | assists | wins | clean_sheets | rating_avg | none — ONLY when the challenge's pass condition is literally that season stat can it be auto-tracked; anything structural, conditional or narrative is 'none'",
+"target": "integer — the number to reach for that metric (0 when metric is none)"
 }
 
 Return ONLY the JSON object. No preamble, no explanation, no markdown fences.`;
@@ -959,7 +963,9 @@ OUTPUT (strict JSON — exactly 3 challenges):
       "duration": "string",
       "stakes": "string — 1 sentence, the absolute worst case",
       "difficulty": "Mild | Brutal | Savage",
-      "hub_line": "string — ONE line, max 12 words. Trigger → consequence. Arrow (→)."
+      "hub_line": "string — ONE line, max 12 words. Trigger → consequence. Arrow (→).",
+      "metric": "goals | assists | wins | clean_sheets | rating_avg | none — ONLY when the pass condition is literally that season stat; conditional/narrative challenges are 'none'",
+      "target": "integer — the number to reach (0 when metric is none)"
     },
     { ... },
     { ... }

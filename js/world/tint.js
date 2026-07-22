@@ -63,19 +63,32 @@ const WorldTint = (() => {
     return c;
   }
 
-  // facade takes the primary, the roof band the secondary
-  function _tintBuilding(img, primary, secondary) {
+  // Same recipe as the player kit: walls (light-neutral mask) painted SOLID
+  // with the primary via multiply, mid-tone zones (roof/trim mask) take the
+  // secondary via color+screen. No masks loaded → gentle pastel fallback.
+  function _tintBuilding(img, mask1, mask2, primary, secondary) {
     const c = _canvasFor(img);
     const g = c.getContext('2d');
     g.drawImage(img, 0, 0);
-    g.globalCompositeOperation = 'multiply';
-    const grad = g.createLinearGradient(0, 0, 0, c.height);
-    grad.addColorStop(0, _pastel(secondary, 0.80));
-    grad.addColorStop(0.30, _pastel(secondary, 0.80));
-    grad.addColorStop(0.34, _pastel(primary, 0.72));
-    grad.addColorStop(1, _pastel(primary, 0.72));
-    g.fillStyle = grad;
-    g.fillRect(0, 0, c.width, c.height);
+    if (mask1 || mask2) {
+      if (mask1) {
+        g.globalCompositeOperation = 'multiply';
+        g.drawImage(_coloredMask(mask1, _soften(primary, 0.12)), 0, 0);
+      }
+      if (mask2) {
+        const cm = _coloredMask(mask2, secondary);
+        g.globalCompositeOperation = 'color';
+        g.drawImage(cm, 0, 0);
+        g.globalCompositeOperation = 'screen';
+        g.globalAlpha = 0.35;
+        g.drawImage(cm, 0, 0);
+        g.globalAlpha = 1;
+      }
+    } else {
+      g.globalCompositeOperation = 'multiply';
+      g.fillStyle = _pastel(primary, 0.72);
+      g.fillRect(0, 0, c.width, c.height);
+    }
     g.globalCompositeOperation = 'destination-in';
     g.drawImage(img, 0, 0);
     return c;
@@ -120,7 +133,10 @@ const WorldTint = (() => {
     secondary = _safe(secondary, '#dddddd');
     for (const name of ['buildings/club-office', 'buildings/estadio']) {
       const img = assets.orig(name);
-      if (img) assets.setTint(name, _tintBuilding(img, primary, secondary));
+      if (img) {
+        assets.setTint(name, _tintBuilding(img,
+          assets.orig(`${name}-mask`), assets.orig(`${name}-mask2`), primary, secondary));
+      }
     }
     const sheet = assets.orig('player');
     if (sheet) {

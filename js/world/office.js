@@ -4,7 +4,8 @@
 // Squad data is setup.squad (same storage as the Setup module — no duplication:
 // full add/remove/rename editing stays in Setup, this is the day-to-day mirror).
 const WorldOffice = (() => {
-  const HUB_VIEW = { title: 'Club Office', tabs: ['log', 'trophies', 'players'] };
+  // players tab moved to the Balneário (Fase 3)
+  const HUB_VIEW = { title: 'Club Office', tabs: ['log', 'trophies'] };
   const GROUPS = [
     { key: 'starters', label: 'Titulares' },
     { key: 'bench',    label: 'Banco' },

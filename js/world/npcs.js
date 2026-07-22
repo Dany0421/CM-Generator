@@ -82,7 +82,6 @@ const WorldNPCs = (() => {
   function processMatchBeat(outcome) {
     const season = Storage.get(Storage.KEYS.SETUP)?.season || 1;
     const data = load();
-    if (!data.list.length) return;
     const f = fans(data);
     const fd = fansDelta(outcome.res, outcome.isDerby, outcome.challengeResult);
     if (fd) {

@@ -223,7 +223,8 @@ const World = (() => {
     board: { title: 'Boardroom', tabs: ['tracker', 'rulebook', 'career', 'archive'] },
   };
   const MAPPING = {
-    casa:          { panels: [['narrative', 'Narrativa', () => NarrativeModule.render()]] },
+    casa:          { custom: () => WorldCasa.render(document.getElementById('world-generic')) },
+    balneario:     { custom: () => WorldBalneario.render(document.getElementById('world-generic')) },
     'club-office': { custom: () => WorldOffice.render(document.getElementById('world-generic')) },
     boardroom:     { panels: [['ruleset', 'Ruleset', () => RulesetModule.render()],
                               ['hub', 'Boardroom', () => HubModule.render(HUB_VIEWS.board)]] },

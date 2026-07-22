@@ -102,6 +102,15 @@ const WorldStadium = (() => {
       body.textContent = 'Ainda sem rival. As derrotas repetidas contra a mesma equipa decidem isto sozinhas.';
     }
     card.appendChild(body);
+    if (typeof WorldNPCs !== 'undefined') {
+      const fansNpc = WorldNPCs.load().list.find(n => n.category === 'fans');
+      if (fansNpc) {
+        const fansLine = document.createElement('p');
+        fansLine.className = 'stadium-mural-fans';
+        fansLine.textContent = `Adeptos: ${fansNpc.value}/100`;
+        card.appendChild(fansLine);
+      }
+    }
     return card;
   }
 
@@ -437,6 +446,13 @@ const WorldStadium = (() => {
       const preReaction = up.reaction || null;
       delete hubNow.upcoming;
       _save(hubNow);
+
+      // o beat da Fase 3: adeptos movem com o resultado, resto decai se ignorado
+      if (typeof WorldNPCs !== 'undefined') {
+        WorldNPCs.processMatchBeat({
+          res, isDerby: !!up.isDerby, challengeResult, opponent: up.opponent,
+        });
+      }
 
       try {
         const result = await API.reactToCheckIn(entry, { reaction: preReaction });

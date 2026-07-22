@@ -73,6 +73,30 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #4a7a34; }
 .board-empty { text-align: center; padding: 50px 20px; }
 .board-empty p { margin: 0 0 16px; }
 
+/* NPCs — Casa & Balneário */
+.npc-wrap { max-width: 720px; margin: 0 auto; padding: 64px 16px 40px; font-family: 'Inter', sans-serif; color: #cdd3dd; }
+.npc-wrap h2 { color: #fff; margin: 0 0 14px; }
+.npc-hint { font-size: 13px; color: #6f7a8c; margin: 0 0 14px; }
+.npc-empty { text-align: center; padding: 40px 20px; }
+.npc-empty p { margin: 0 0 16px; }
+.npc-card { margin-bottom: 12px; }
+.npc-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+.npc-name { font-weight: 700; color: #fff; margin: 0; }
+.npc-role { font-size: 13px; color: #98a2b3; margin: 2px 0 0; }
+.npc-value { font-size: 18px; font-weight: 800; color: #cdd3dd; }
+.npc-value.low { color: #e66a6a; }
+.npc-value.high { color: #63d68f; }
+.npc-bar { height: 6px; border-radius: 3px; background: #232a36; margin: 10px 0 6px; overflow: hidden; }
+.npc-bar-fill { height: 100%; border-radius: 3px; background: #4f8cff; transition: width .3s; }
+.npc-bar-fill.low { background: #e66a6a; }
+.npc-streak { font-size: 12px; color: #e0a94c; margin: 4px 0 0; }
+.npc-history { margin: 8px 0 0; }
+.npc-history p { font-size: 12px; color: #6f7a8c; margin: 2px 0; }
+.npc-scene { font-size: 14px; line-height: 1.5; color: #e6e9ee; margin: 10px 0 0; }
+.npc-le { font-size: 13px; color: #e0a94c; margin: 8px 0 0; }
+.npc-hangout-btn { margin-top: 10px; }
+.stadium-mural-fans { margin: 6px 0 0; font-size: 13px; color: #9fb4d8; }
+
 /* Club Office */
 .office-wrap { max-width: 720px; margin: 0 auto; padding: 64px 16px 40px; font-family: 'Inter', sans-serif; color: #cdd3dd; }
 .office-wrap h2 { color: #fff; margin: 0 0 14px; }

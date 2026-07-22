@@ -86,6 +86,13 @@ const App = (() => {
       _toast('Model updated', null, false);
     });
 
+    const speedSel = document.getElementById('settings-world-speed');
+    speedSel.value = String(Storage.get(Storage.KEYS.WORLD)?.speed || 220);
+    speedSel.addEventListener('change', () => {
+      World.setSpeed(parseInt(speedSel.value));
+      _toast('Velocidade atualizada', null, false);
+    });
+
     document.getElementById('settings-key-save').addEventListener('click', () => {
       const val = document.getElementById('settings-api-key').value.trim();
       if (!val) return;

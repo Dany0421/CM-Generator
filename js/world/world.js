@@ -1,6 +1,6 @@
 // Career World engine: render loop, camera, player, collision, door detection.
 const World = (() => {
-  const SPEED = 220;              // world units / second
+  const SPEED = 220;              // world units / second (default; Settings override)
   const PLAYER = { w: 64, h: 96, feetW: 28, feetH: 14 };
   const FRAME = { w: 128, h: 192, order: { down: 0, left: 1, right: 2, up: 3 } };
   const DAY_MS = 8 * 60 * 1000;   // full day+night cycle; world clock, not FIFA's
@@ -8,6 +8,7 @@ const World = (() => {
   let _canvas, _ctx, _assets, _ground;
   let _px = 800, _py = 500;       // player world position (feet center)
   let _face = 'down';
+  let _speed = SPEED;
   let _last = 0;
   let _inOverlay = false;
   let _doorZone = null;
@@ -24,12 +25,13 @@ const World = (() => {
   function _restore() {
     const s = Storage.get(Storage.KEYS.WORLD);
     if (s && typeof s.x === 'number') { _px = s.x; _py = s.y; _face = s.face || 'down'; }
+    if (s && s.speed) _speed = s.speed;
     // saved position may sit inside a solid added later — would lock movement forever
     const box = { w: PLAYER.feetW, h: PLAYER.feetH };
     if (WorldLogic.hitZone(_px, _py, box, _solids())) { _px = 800; _py = 500; }
   }
   function _persist() {
-    Storage.set(Storage.KEYS.WORLD, { x: _px, y: _py, face: _face });
+    Storage.set(Storage.KEYS.WORLD, { x: _px, y: _py, face: _face, speed: _speed });
   }
 
   function _frame(ts) {
@@ -40,7 +42,7 @@ const World = (() => {
       const v = WorldInput.vector();
       if (v.x || v.y) {
         const p = WorldLogic.resolveMove(
-          _px, _py, v.x * SPEED * dt, v.y * SPEED * dt,
+          _px, _py, v.x * _speed * dt, v.y * _speed * dt,
           { w: PLAYER.feetW, h: PLAYER.feetH }, _solids());
         _px = Math.max(20, Math.min(WorldMap.W - 20, p.x));
         _py = Math.max(20, Math.min(WorldMap.H - 20, p.y));
@@ -341,7 +343,8 @@ const World = (() => {
     requestAnimationFrame(ts => { _last = ts; _frame(ts); });
   }
 
-  const api = { init, openBuilding, closeOverlay,
+  const api = { init, openBuilding, openSetup, closeOverlay,
+    setSpeed: v => { _speed = v || SPEED; _persist(); },
     _setOverlay: v => { _inOverlay = v; }, _pos: () => ({ x: _px, y: _py }),
     _moveTo: (x, y) => { _px = x; _py = y; _persist(); } };
   document.addEventListener('DOMContentLoaded', init);

@@ -454,13 +454,21 @@ const WorldStadium = (() => {
         });
       }
 
+      // press conference only after big games: derby, high-stakes challenge,
+      // or a thrashing either way — same trigger philosophy as the challenges
+      const wantPress = !!up.isDerby ||
+        !!(up.challenge && up.challenge.high_stakes) ||
+        Math.abs(gf - ga) >= 4;
       try {
-        const result = await API.reactToCheckIn(entry, { reaction: preReaction });
+        const result = await API.reactToCheckIn(entry, { reaction: preReaction }, wantPress);
         const hubAfter = _hub();
         const saved = (hubAfter.log || []).find(e => e.id === entry.id);
         if (saved) {
           saved.match.report = result.report;
           saved.match.fanReaction = result.fan_reaction;
+          if (result.press_question) {
+            saved.match.press = { question: result.press_question, answers: result.press_answers || [] };
+          }
           _save(hubAfter);
         }
       } catch (err) {
@@ -533,7 +541,54 @@ const WorldStadium = (() => {
       fan.textContent = `Bancada: "${m.fanReaction}"`;
       card.appendChild(fan);
     }
+    if (m.press) card.appendChild(_pressBlock(entry, m));
     return card;
+  }
+
+  // Press conference (Fase 4 hook): the answer feeds the press relation —
+  // diplomatic +2, fiery -1 (they love the drama, you less so), dismissive -3.
+  const PRESS_DELTA = { diplomatic: 2, fiery: -1, dismissive: -3 };
+
+  function _pressBlock(entry, m) {
+    const block = document.createElement('div');
+    block.className = 'stadium-press';
+    const q = document.createElement('p');
+    q.className = 'stadium-press-q';
+    q.textContent = `Imprensa: "${m.press.question}"`;
+    block.appendChild(q);
+
+    if (m.pressAnswer) {
+      const a = document.createElement('p');
+      a.className = 'stadium-press-a';
+      a.textContent = `Tu: "${m.pressAnswer.text}"`;
+      block.appendChild(a);
+      return block;
+    }
+
+    for (const ans of (m.press.answers || [])) {
+      const btn = document.createElement('button');
+      btn.className = 'btn-ghost stadium-press-btn';
+      btn.textContent = ans.text;
+      btn.addEventListener('click', () => {
+        const hubNow = _hub();
+        const saved = (hubNow.log || []).find(e => e.id === entry.id);
+        if (saved) { saved.match.pressAnswer = { text: ans.text, tone: ans.tone }; _save(hubNow); }
+        if (typeof WorldNPCs !== 'undefined') {
+          const npcData = WorldNPCs.load();
+          const press = npcData.list.find(n => n.category === 'press');
+          if (press) {
+            const season = Storage.get(Storage.KEYS.SETUP)?.season || 1;
+            const delta = PRESS_DELTA[ans.tone] ?? 0;
+            WorldNPCs.addEvent(press, `Conferência (${ans.tone}): "${ans.text}"`, delta, season);
+            if (delta > 0) { press.streak = 0; press.interacted = true; }
+            WorldNPCs.save(npcData);
+          }
+        }
+        render(_panel);
+      });
+      block.appendChild(btn);
+    }
+    return block;
   }
 
   function render(panel) {

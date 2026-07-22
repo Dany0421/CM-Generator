@@ -1226,6 +1226,14 @@ Return ONLY valid JSON (no markdown fences):
   const PRE_MATCH_SCHEMA           = S.obj({ reaction: S.str });
   const PRE_MATCH_CHALLENGE_SCHEMA = S.obj({ reaction: S.str, challenge: MATCH_CHALLENGE_SCHEMA });
   const MATCH_REPORT_SCHEMA        = S.obj({ report: S.str, fan_reaction: S.str });
+  const MATCH_REPORT_PRESS_SCHEMA  = S.obj({
+    report: S.str, fan_reaction: S.str,
+    press_question: S.str,
+    press_answers: S.arr(S.obj({
+      text: S.str,
+      tone: { type: 'string', enum: ['diplomatic', 'fiery', 'dismissive'] },
+    })),
+  });
 
   const SYSTEM_PRE_MATCH =
     'You are the matchday voice of a FIFA/FC career mode companion app. Before a match, ' +
@@ -1245,7 +1253,10 @@ Return ONLY valid JSON (no markdown fences):
     'scorers, minutes or events the user did not mention); mention the rivalry when relevant ' +
     'and the match challenge outcome if there was one. (2) "fan_reaction" — 1-2 sentences in ' +
     'the collective voice of the club\'s fans (passionate, honest, harsher after a derby loss, ' +
-    'euphoric after a derby win).';
+    'euphoric after a derby win). When the message requests a PRESS CONFERENCE, also return ' +
+    'press_question — ONE pointed question from the press about this specific match — and ' +
+    'press_answers: exactly 3 replies the user could give, one per tone (diplomatic, fiery, ' +
+    'dismissive), each a single quotable sentence.';
 
   async function preMatch(input) {
     const setup   = Storage.get(Storage.KEYS.SETUP) || {};
@@ -1274,7 +1285,7 @@ Return ONLY valid JSON (no markdown fences):
     return result;
   }
 
-  async function reactToCheckIn(entry, pre) {
+  async function reactToCheckIn(entry, pre, wantPress) {
     const setup   = Storage.get(Storage.KEYS.SETUP) || {};
     const context = setup.mode === 'player' || setup.mode === 'fiction' ? buildPlayerContext() : buildContext();
     const m = entry.match || {};
@@ -1293,8 +1304,12 @@ Return ONLY valid JSON (no markdown fences):
     if (pre && pre.reaction) lines.push(`Pre-match talk was: ${pre.reaction}`);
     if (m.rivalChanged) lines.push(`NOTE: this result made ${m.rivalChanged} the new rival — losses piled up. Mention it.`);
     if (entry.text) lines.push(`User's own notes: ${entry.text}`);
-    const msg = `${context}\n\nMATCH PLAYED:\n${lines.join('\n')}\n\nWrite the match report and the fan reaction.`;
-    return call(SYSTEM_MATCH_REPORT, msg, 1024, MATCH_REPORT_SCHEMA);
+    const ask = wantPress
+      ? 'Write the match report, the fan reaction, AND a PRESS CONFERENCE (this was a big one).'
+      : 'Write the match report and the fan reaction.';
+    const msg = `${context}\n\nMATCH PLAYED:\n${lines.join('\n')}\n\n${ask}`;
+    return call(SYSTEM_MATCH_REPORT, msg, wantPress ? 1536 : 1024,
+      wantPress ? MATCH_REPORT_PRESS_SCHEMA : MATCH_REPORT_SCHEMA);
   }
 
   // ── Fase 3: NPCs & hangouts ──────────────────────────────────
@@ -1411,7 +1426,7 @@ Return ONLY valid JSON (no markdown fences):
     const matches = (hub.log || [])
       .filter(e => e && !e.isDivider && e.match?.outcome && e.match.season === season)
       .slice(-5)
-      .map(e => `- vs ${e.match.opponent} ${e.match.outcome.gf}-${e.match.outcome.ga} (${e.match.outcome.res})${e.match.isDerby ? ' DERBY' : ''}${e.match.challenge ? ` | match challenge: ${e.match.challenge.title} → ${e.match.challengeResult === true ? 'done' : e.match.challengeResult === false ? 'failed' : 'open'}` : ''}`);
+      .map(e => `- vs ${e.match.opponent} ${e.match.outcome.gf}-${e.match.outcome.ga} (${e.match.outcome.res})${e.match.isDerby ? ' DERBY' : ''}${e.match.challenge ? ` | match challenge: ${e.match.challenge.title} → ${e.match.challengeResult === true ? 'done' : e.match.challengeResult === false ? 'failed' : 'open'}` : ''}${e.match.pressAnswer ? ` | said to the press (${e.match.pressAnswer.tone}): "${e.match.pressAnswer.text}"` : ''}`);
     const events = hub.events && hub.events.season === season
       ? (hub.events.rolled || []).map(i => hub.events.pool[i]?.text).filter(Boolean).slice(-3)
       : [];

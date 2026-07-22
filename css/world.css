@@ -195,3 +195,7 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #4a7a34; }
 .stadium-report-date { font-size: 12px; color: #6f7a8c; }
 .stadium-report-text { font-size: 14px; line-height: 1.5; margin: 10px 0 0; }
 .stadium-fan { font-size: 13px; font-style: italic; color: #9fb4d8; margin: 10px 0 0; }
+.stadium-press { border-top: 1px dashed #2a3140; margin-top: 12px; padding-top: 10px; }
+.stadium-press-q { font-size: 13px; font-weight: 600; color: #cdd3dd; margin: 0 0 8px; }
+.stadium-press-a { font-size: 13px; font-style: italic; color: #c9a44a; margin: 0; }
+.stadium-press-btn { display: block; width: 100%; text-align: left; margin-bottom: 6px; font-size: 13px; }

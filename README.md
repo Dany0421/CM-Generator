@@ -1,4 +1,4 @@
-# CM Generator — Career World
+# OffPitch
 
 A companion app for **EA FC 25 career mode** that turns your save into a living story. Instead of menus, you walk a **free-roam 2D city**: every building is a part of your career — your house, the locker room, the stadium, the press, your agent. AI (Claude) writes the narrative around the *real* things you do in the game; the app never touches FC 25 itself.
 

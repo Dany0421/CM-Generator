@@ -15,3 +15,39 @@
   --accent-dim: rgba(90, 138, 240, 0.12);
   --accent-dim-hover: rgba(90, 138, 240, 0.2);
 }
+
+/* ── Estádio · theme-broadcast ──────────────────────────── */
+#world-overlay.theme-broadcast { background: #0a0e1a; }
+.theme-broadcast .stadium-wrap { font-family: 'Inter', sans-serif; }
+.theme-broadcast .stadium-wrap h2 {
+  font-family: var(--font-cond); font-style: italic; text-transform: uppercase;
+  letter-spacing: 2px; font-weight: 800;
+  border-left: 5px solid var(--wt-accent); padding-left: 12px;
+}
+.theme-broadcast .card,
+.theme-broadcast .stadium-mural {
+  background: #101828; border: 1px solid #1c2436; border-radius: 0;
+  border-left: 4px solid var(--wt-accent);
+}
+.theme-broadcast .stadium-mural { background: linear-gradient(100deg, #101828 70%, #0a0e1a); }
+.theme-broadcast .stadium-mural-title,
+.theme-broadcast .stadium-section-title {
+  font-family: var(--font-cond); text-transform: uppercase; letter-spacing: 2px;
+  color: var(--wt-accent);
+}
+.theme-broadcast .btn-primary {
+  background: var(--wt-accent); color: #0a0e1a; border: none; border-radius: 0;
+  font-family: var(--font-cond); font-weight: 800; letter-spacing: 1.5px;
+  text-transform: uppercase; transform: skewX(-6deg);
+}
+.theme-broadcast .btn-primary:hover { filter: brightness(1.12); }
+.theme-broadcast .btn-secondary, .theme-broadcast .btn-ghost {
+  border-radius: 0; font-family: var(--font-cond); letter-spacing: 1px;
+  text-transform: uppercase; transform: skewX(-6deg);
+}
+.theme-broadcast .stadium-derby-tag { border-radius: 0; transform: skewX(-10deg); }
+.theme-broadcast .form-input, .theme-broadcast .form-textarea {
+  background: #0a0e1a; border: 1px solid #26304a; border-radius: 0; color: #e8ecf5;
+}
+.theme-broadcast .stadium-challenge { border-radius: 0; border-color: #3a4460; }
+.theme-broadcast .stadium-score { font-family: var(--font-cond); font-style: italic; }

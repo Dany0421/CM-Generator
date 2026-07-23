@@ -6,6 +6,7 @@
 // challenges (Transfer Rule / non-duo Career Decision).
 const WorldAgencia = (() => {
   let _panel = null;
+  let _showAgent = false;   // header aberto → card do agente (hangout) visível
 
   function _data() {
     const d = Storage.get(Storage.KEYS.AGENCY);
@@ -162,7 +163,14 @@ const WorldAgencia = (() => {
       bar.appendChild(fill);
       rel.append(num, bar);
       head.append(av, who, rel);
+      head.style.cursor = 'pointer';
+      head.title = 'Falar com o agente';
+      head.addEventListener('click', () => { _showAgent = !_showAgent; render(_panel); });
       wrap.appendChild(head);
+      if (_showAgent) {
+        wrap.appendChild(WorldNPCs.buildCard(agent, (n, btn, card) =>
+          WorldNPCs.hangout(n, btn, card, () => render(_panel))));
+      }
     } else {
       const hint = document.createElement('p');
       hint.className = 'npc-hint';

@@ -142,3 +142,44 @@
 .theme-press .news-author { margin: 0; }
 .theme-press .news-author.verified::after { content: ' ✓'; color: #1d9bf0; }
 .theme-press .news-comment { display: flex; align-items: baseline; }
+
+/* ── Balneário · theme-locker ───────────────────────────── */
+#world-overlay.theme-locker { background: linear-gradient(180deg, #22252b 0%, #17191d 100%); }
+.theme-locker .npc-wrap h2 {
+  font-family: var(--font-cond); text-transform: uppercase; letter-spacing: 2px; font-weight: 800;
+}
+.locker-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(86px, 1fr)); gap: 9px; margin: 0 0 16px; }
+.locker-card {
+  background: linear-gradient(180deg, #2c3037 0%, #23262c 100%);
+  border: 1px solid #3c414a; border-top: 4px solid #6a727e; border-radius: 8px;
+  padding: 9px 6px; text-align: center; cursor: pointer;
+}
+.locker-card.linked { border-top-color: var(--wt-accent); }
+.locker-card.selected { outline: 2px solid var(--wt-accent); }
+.locker-jersey {
+  width: 38px; height: 44px; margin: 0 auto; color: #fff; font-weight: 800; font-size: 14px;
+  display: flex; align-items: flex-end; justify-content: center; padding-bottom: 3px;
+  background: linear-gradient(180deg, #444b56, #32383f);
+  clip-path: polygon(20% 0, 80% 0, 100% 22%, 88% 30%, 88% 100%, 12% 100%, 12% 30%, 0 22%);
+}
+.locker-card.linked .locker-jersey { background: linear-gradient(180deg, #20744a, #175636); }
+.locker-clip { font-size: 26px; height: 44px; display: flex; align-items: center; justify-content: center; }
+.locker-name { color: #e8eaee; font-size: 11px; font-weight: 700; margin: 6px 0 0; }
+.locker-sub { color: #8a929e; font-size: 8px; font-weight: 800; letter-spacing: 1px; margin: 3px 0 0; }
+.locker-card.linked .locker-sub { color: var(--wt-accent); }
+.chalkboard {
+  background: #24382c; border: 7px solid #5a4632; border-radius: 5px;
+  padding: 12px 14px; margin: 0 0 16px; box-shadow: 0 5px 16px rgba(0,0,0,.45);
+}
+.chalk-title {
+  color: #e8f0e8; font-size: 15px; font-weight: 700; font-family: var(--font-chalk);
+  border-bottom: 2px dashed rgba(255,255,255,.22); padding-bottom: 6px; margin: 0 0 9px;
+}
+.chalk-line { color: #d8e8d8; font-size: 13px; line-height: 1.7; font-family: var(--font-chalk); margin: 0; }
+.chalk-line.done { color: #a8d8a8; text-decoration: line-through; }
+.chalk-line.failed { color: #e0a0a0; }
+.theme-locker .office-nav .btn-primary {
+  background: rgba(255,255,255,.10); border: 1.5px dashed rgba(255,255,255,.35);
+  color: #e8f0e8; font-family: var(--font-chalk); border-radius: 5px;
+}
+.theme-locker .card { background: #23262c; border: 1px solid #3c414a; }

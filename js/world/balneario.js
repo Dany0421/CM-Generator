@@ -5,6 +5,7 @@
 // starters. Team mode has no coach NPC (the user IS the manager).
 const WorldBalneario = (() => {
   let _panel = null;
+  let _selected = null;
 
   function _seeds() {
     const setup = Storage.get(Storage.KEYS.SETUP) || {};
@@ -80,6 +81,71 @@ const WorldBalneario = (() => {
     if (changed) Storage.set(Storage.KEYS.HUB, hub);
   }
 
+  function _ovrFor(name) {
+    const squad = Storage.get(Storage.KEYS.SETUP)?.squad || {};
+    for (const g of ['starters', 'bench', 'reserves']) {
+      const p = (squad[g] || []).find(x => (x.name || '').trim().toLowerCase() === name.trim().toLowerCase());
+      if (p && p.ovr) return p.ovr;
+    }
+    return null;
+  }
+
+  function _locker(npc, isLinked) {
+    const card = document.createElement('div');
+    card.className = 'locker-card' + (isLinked ? ' linked' : '') +
+      (_selected === npc.id ? ' selected' : '');
+    const isMister = npc.role === 'Treinador';
+    if (isMister) {
+      const board = document.createElement('div');
+      board.className = 'locker-clip';
+      board.textContent = '📋';
+      card.appendChild(board);
+    } else {
+      const jersey = document.createElement('div');
+      jersey.className = 'locker-jersey';
+      jersey.textContent = _ovrFor(npc.name) || '';
+      card.appendChild(jersey);
+    }
+    const name = document.createElement('p');
+    name.className = 'locker-name';
+    name.textContent = isMister ? 'Mister' : npc.name.split(' ')[0];
+    card.appendChild(name);
+    const sub = document.createElement('p');
+    sub.className = 'locker-sub';
+    sub.textContent = isLinked ? 'LINKED' : `REL. ${npc.value}`;
+    card.appendChild(sub);
+    card.addEventListener('click', () => { _selected = npc.id; render(_panel); });
+    return card;
+  }
+
+  function _chalkboard(setup) {
+    const board = document.createElement('div');
+    board.className = 'chalkboard';
+    const title = document.createElement('p');
+    title.className = 'chalk-title';
+    title.textContent = 'Plano do Mister';
+    board.appendChild(title);
+    const chs = Storage.get(Storage.KEYS.CHALLENGES) || [];
+    const tracker = (Storage.get(Storage.KEYS.HUB) || {}).tracker || {};
+    let any = false;
+    chs.forEach((ch, i) => {
+      if (!ChallengesModule.isBalnearioChallenge(ch, setup)) return;
+      any = true;
+      const line = document.createElement('p');
+      const st = tracker[i] || 'Active';
+      line.className = 'chalk-line' + (st === 'Completed' ? ' done' : st === 'Failed' ? ' failed' : '');
+      line.textContent = `→ ${ch.title}`;
+      board.appendChild(line);
+    });
+    if (!any) {
+      const line = document.createElement('p');
+      line.className = 'chalk-line';
+      line.textContent = '→ (sem challenges do balneário nesta época)';
+      board.appendChild(line);
+    }
+    return board;
+  }
+
   function render(panel) {
     _panel = panel;
     panel.replaceChildren();
@@ -144,8 +210,17 @@ const WorldBalneario = (() => {
       hint.className = 'npc-hint';
       hint.textContent = 'Colegas reagem a atenção e a resultados — hangouts contam como interação do próximo beat.';
       wrap.appendChild(hint);
+      const linkedName = (setup.player?.linked?.name || '').trim().toLowerCase();
+      const grid = document.createElement('div');
+      grid.className = 'locker-grid';
       for (const npc of roster) {
-        wrap.appendChild(WorldNPCs.buildCard(npc, (n, btn, card) =>
+        grid.appendChild(_locker(npc, npc.name.trim().toLowerCase() === linkedName && !!linkedName));
+      }
+      wrap.appendChild(grid);
+      wrap.appendChild(_chalkboard(setup));
+      const sel = roster.find(n => n.id === _selected);
+      if (sel) {
+        wrap.appendChild(WorldNPCs.buildCard(sel, (n, btn, card) =>
           WorldNPCs.hangout(n, btn, card, () => render(_panel))));
       }
       wrap.appendChild(_addColegaForm());

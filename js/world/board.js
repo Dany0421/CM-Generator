@@ -31,7 +31,7 @@ const WorldBoard = (() => {
     card.classList.add(ev.type);
     const badge = document.createElement('span');
     badge.className = `board-badge ${ev.type}`;
-    badge.textContent = ev.type === 'positive' ? '+ Positivo' : '− Negativo';
+    badge.textContent = ev.type === 'positive' ? 'BOA SORTE ✓' : 'AZAR ✗';
     card.appendChild(badge);
     const text = document.createElement('p');
     text.className = 'board-text';
@@ -40,7 +40,7 @@ const WorldBoard = (() => {
     if (rollNum) {
       const num = document.createElement('span');
       num.className = 'board-rollnum';
-      num.textContent = `Mês ${rollNum}`;
+      num.textContent = `RASPADO · MÊS ${rollNum}`;
       card.appendChild(num);
     }
   }
@@ -63,13 +63,16 @@ const WorldBoard = (() => {
       cv.width = card.clientWidth || 240;
       cv.height = card.clientHeight || 120;
       const g = cv.getContext('2d');
-      g.fillStyle = '#59637a';
+      const grad = g.createLinearGradient(0, 0, cv.width, cv.height);
+      grad.addColorStop(0, '#b8b8c0'); grad.addColorStop(0.4, '#9a9aa4');
+      grad.addColorStop(0.6, '#c8c8d0'); grad.addColorStop(1, '#a8a8b2');
+      g.fillStyle = grad;
       g.fillRect(0, 0, cv.width, cv.height);
-      g.fillStyle = 'rgba(255,255,255,0.10)';
+      g.fillStyle = 'rgba(255,255,255,0.18)';
       for (let i = 0; i < 26; i++) {
         g.fillRect(Math.random() * cv.width, Math.random() * cv.height, 16, 2);
       }
-      g.fillStyle = 'rgba(255,255,255,0.6)';
+      g.fillStyle = 'rgba(60,60,70,0.75)';
       g.font = '800 16px Inter, sans-serif';
       g.textAlign = 'center';
       g.textBaseline = 'middle';
@@ -110,6 +113,13 @@ const WorldBoard = (() => {
   function _buildCard(pool, rolled, idx) {
     const card = document.createElement('div');
     card.className = 'board-card';
+    const tc = WorldTheme.ticketColor(idx);
+    card.style.setProperty('--ticket-bg', tc.bg);
+    card.style.setProperty('--ticket-fg', tc.fg);
+    const serial = document.createElement('span');
+    serial.className = 'ticket-serial';
+    serial.textContent = `Nº ${String(idx + 1).padStart(3, '0')}`;
+    card.appendChild(serial);
     const rolledPos = rolled.indexOf(idx);
 
     if (rolledPos !== -1) {
@@ -129,6 +139,10 @@ const WorldBoard = (() => {
     q.className = 'board-cover-q';
     q.textContent = '?';
     card.appendChild(q);
+    const foot = document.createElement('p');
+    foot.className = 'ticket-foot';
+    foot.textContent = 'RASPA E REZA ✦';
+    card.appendChild(foot);
     card.addEventListener('click', () => {
       if (_committed) return;
       _armedIdx = idx;
@@ -143,9 +157,16 @@ const WorldBoard = (() => {
     const wrap = document.createElement('div');
     wrap.className = 'board-wrap';
 
-    const h = document.createElement('h2');
-    h.textContent = 'Quadro de Avisos';
-    wrap.appendChild(h);
+    const sign = document.createElement('div');
+    sign.className = 'lottery-sign';
+    const st = document.createElement('p');
+    st.className = 'lottery-sign-title';
+    st.textContent = '★ Raspadinhas da Época ★';
+    const ss = document.createElement('p');
+    ss.className = 'lottery-sign-sub';
+    ss.textContent = '1 BILHETE POR MÊS · A SORTE ESTÁ SELADA';
+    sign.append(st, ss);
+    wrap.appendChild(sign);
 
     const setup = Storage.get(Storage.KEYS.SETUP);
     const season = setup?.season || 1;

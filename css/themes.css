@@ -300,3 +300,49 @@
 }
 .theme-vault .cheque .btn-ghost { color: #8a8270; border-color: #b8b09a; }
 .theme-vault .sponsor-card.paid { opacity: .92; }
+
+/* ── Quadro de Avisos · theme-lottery ───────────────────── */
+#world-overlay.theme-lottery { background: linear-gradient(180deg, #3a2c1c 0%, #2a2014 100%); }
+.lottery-sign {
+  background: linear-gradient(180deg, #c8342e 0%, #a82420 100%);
+  border: 3px solid #7a1a16; border-radius: 10px; padding: 8px 16px; text-align: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,.45), inset 0 2px 0 rgba(255,255,255,.15);
+  margin: 0 0 10px;
+}
+.lottery-sign-title {
+  color: #ffe8a0; font-family: var(--font-cond); font-size: 18px; font-weight: 800;
+  letter-spacing: 2.5px; text-transform: uppercase; margin: 0;
+  text-shadow: 0 2px 0 rgba(0,0,0,.35);
+}
+.lottery-sign-sub { color: #f0b0a8; font-size: 9px; font-weight: 700; letter-spacing: 1.5px; margin: 2px 0 0; }
+.theme-lottery .board-hint, .theme-lottery .board-counter { color: #b09070; }
+.theme-lottery .board-card {
+  background: var(--ticket-bg, #f0c030);
+  border: none; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,.4);
+  transform: rotate(-1deg);
+}
+.theme-lottery .board-card:nth-child(even) { transform: rotate(1deg); }
+.theme-lottery .board-card.covered:hover { transform: rotate(0) scale(1.03); }
+.ticket-serial {
+  position: absolute; top: 8px; right: 10px; color: var(--ticket-fg, #7a5208);
+  font-size: 8px; font-weight: 800; letter-spacing: 1px; z-index: 1;
+}
+.ticket-foot {
+  color: var(--ticket-fg, #7a5208); font-size: 8px; font-weight: 800; text-align: center;
+  letter-spacing: 1.5px; margin: 6px 0 0;
+}
+.theme-lottery .board-cover-q {
+  background: linear-gradient(135deg, #b8b8c0 0%, #9a9aa4 40%, #c8c8d0 60%, #a8a8b2 100%);
+  border: 1.5px dashed #7a7a84; border-radius: 5px; color: #5a5a64; min-height: 84px;
+}
+.theme-lottery .board-card.positive, .theme-lottery .board-card.negative { background: #f2f0ea; }
+.theme-lottery .board-card.positive { border: 2px solid #2a8a4a; }
+.theme-lottery .board-card.negative { border: 2px solid #b03030; }
+.theme-lottery .board-badge {
+  border: 2.5px solid currentColor; padding: 1px 7px; transform: rotate(-6deg);
+  display: inline-block; letter-spacing: 1px;
+}
+.theme-lottery .board-badge.positive { color: #2a8a4a; }
+.theme-lottery .board-badge.negative { color: #b03030; }
+.theme-lottery .board-text { color: #2a2620; }
+.theme-lottery .board-rollnum { color: #8a8270; font-weight: 800; letter-spacing: 1px; }

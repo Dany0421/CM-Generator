@@ -1,0 +1,17 @@
+/* ============================================================
+   Career World restyle (2026-07-23) — per-building overlay themes.
+   Loaded ONLY by the world pages (index.html / world.html), never
+   by classic.html — the :root overrides below are world-scoped.
+   ============================================================ */
+:root {
+  --wt-accent: #ccff00; /* club primary (world.js sets it) or lime fallback */
+  --font-cond:  'Arial Narrow', 'Helvetica Neue Condensed', 'sans-serif-condensed', Arial, sans-serif;
+  --font-chalk: 'Segoe Print', 'Comic Sans MS', cursive;
+  --font-type:  'Courier New', monospace;
+  --font-serif: Georgia, 'Times New Roman', serif;
+  /* chrome neutro: o mundo deixa de vestir o laranja da app antiga */
+  --accent: #5a8af0;
+  --accent-hover: #82a8f5;
+  --accent-dim: rgba(90, 138, 240, 0.12);
+  --accent-dim-hover: rgba(90, 138, 240, 0.2);
+}

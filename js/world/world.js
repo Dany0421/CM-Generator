@@ -43,7 +43,11 @@ const World = (() => {
 
   async function _applyClubTint(forceAsk) {
     const club = (Storage.get(Storage.KEYS.SETUP)?.club || '').trim();
-    if (!club) { _assets.clearTint(); _tintedClub = ''; return; }
+    if (!club) {
+      _assets.clearTint(); _tintedClub = '';
+      document.documentElement.style.setProperty('--wt-accent', '#ccff00');
+      return;
+    }
     const w = Storage.get(Storage.KEYS.WORLD) || {};
     let cc = w.clubColors;
     // neutral-gray cache = the picker defaults / a failed fetch, not a real
@@ -63,6 +67,7 @@ const World = (() => {
     WorldTint.apply(_assets, cc.primary, cc.secondary);
     _tintedClub = club;
     _syncColorPickers(cc);
+    document.documentElement.style.setProperty('--wt-accent', WorldTheme.accentFor(cc.primary));
   }
 
   function _syncColorPickers(cc) {
@@ -80,6 +85,7 @@ const World = (() => {
     Storage.set(Storage.KEYS.WORLD, w);
     WorldTint.apply(_assets, primary, secondary);
     _tintedClub = club;
+    document.documentElement.style.setProperty('--wt-accent', WorldTheme.accentFor(primary));
   }
 
   function refreshClubColors() { return _applyClubTint(true); }
@@ -355,6 +361,14 @@ const World = (() => {
     panel.classList.add('active');
   }
 
+  // Restyle: each building dresses the overlay in its own theme class.
+  function _setTheme(id) {
+    const ov = document.getElementById('world-overlay');
+    for (const c of [...ov.classList]) if (c.startsWith('theme-')) ov.classList.remove(c);
+    const cls = (typeof WorldTheme !== 'undefined') && WorldTheme.THEMES[id];
+    if (cls) ov.classList.add(cls);
+  }
+
   function _openOverlayChrome() {
     _inOverlay = true;
     document.getElementById('world-overlay').classList.add('open');
@@ -367,6 +381,7 @@ const World = (() => {
     _returnPos = null;
     _locHome = null;
     _openOverlayChrome();
+    _setTheme(null);
     _showPanel('setup', () => SetupModule.render());
   }
 
@@ -384,6 +399,7 @@ const World = (() => {
       || WorldMap.props.find(p => p.id === id);
     _returnPos = { x: b.door.x + b.door.w / 2, y: b.door.y + b.door.h + 18 };
     _openOverlayChrome();
+    _setTheme(id);
     _locHome = null;
     const m = MAPPING[id];
     if (!m) _showConstruction(b.label);
@@ -401,6 +417,7 @@ const World = (() => {
   function closeOverlay() {
     _inOverlay = false;
     document.getElementById('world-overlay').classList.remove('open');
+    _setTheme(null);
     document.getElementById('world-back-btn').classList.add('world-hidden');
     document.getElementById('world-actions').classList.remove('world-hidden');
     _locHome = null;

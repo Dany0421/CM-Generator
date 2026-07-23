@@ -56,3 +56,48 @@
 .npc-scene-line { font-size: 14px; line-height: 1.5; color: #e6e9ee; margin: 6px 0; }
 .npc-scene-who { font-weight: 700; color: #9fb4d8; margin-right: 6px; }
 .npc-scene-line.me .npc-scene-who { color: #63d68f; }
+
+/* ── Casa · theme-casa ──────────────────────────────────── */
+#world-overlay.theme-casa {
+  background: radial-gradient(circle at 30% 10%, #1a2420 0%, #121a16 55%, #0e1512 100%);
+}
+.theme-casa .npc-wrap h2 { color: #f5ead8; }
+.theme-casa .npc-hint { color: #7a9a88; }
+.casa-wall { display: flex; flex-wrap: wrap; gap: 12px; margin: 4px 0 18px; }
+.casa-polaroid {
+  background: #faf6ee; border-radius: 2px; padding: 6px 6px 8px; width: 92px;
+  transform: rotate(var(--tilt, -2deg)); box-shadow: 0 5px 14px rgba(0,0,0,.5);
+  cursor: pointer; transition: transform .15s;
+}
+.casa-polaroid:hover, .casa-polaroid.selected { transform: rotate(0deg) scale(1.05); }
+.casa-polaroid.selected { outline: 2px solid #4ac878; }
+.casa-photo {
+  height: 66px; display: flex; align-items: center; justify-content: center;
+  color: #fff; font-weight: 800; font-size: 24px; letter-spacing: 1px;
+}
+.casa-group .casa-photo { font-size: 14px; background: linear-gradient(135deg, #4ac878, #2a8a4e); }
+.casa-caption {
+  color: #3a2c1a; font-size: 10px; font-weight: 700; margin: 6px 0 0;
+  text-align: center; font-family: var(--font-serif); font-style: italic;
+}
+.theme-casa .card { background: #141d18; border: 1px solid #24322a; border-radius: 16px; }
+.theme-casa .npc-bar { background: #24322a; }
+.theme-casa .npc-bar-fill { background: #4ac878; }
+.theme-casa .btn-ghost, .theme-casa .btn-primary { border-radius: 20px; }
+.casa-toggles { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 2px; }
+.casa-toggle {
+  background: #1a241f; border: 1px solid #2a3a30; color: #e8f2ec; font-size: 12px;
+  font-weight: 700; padding: 5px 12px; border-radius: 20px; cursor: pointer;
+}
+.casa-toggle.off { opacity: .38; text-decoration: line-through; }
+/* hangout dialogue as chat bubbles */
+.theme-casa .npc-scene { margin-top: 10px; }
+.theme-casa .npc-scene-line {
+  background: #1e2a24; border-radius: 2px 14px 14px 14px; padding: 8px 12px;
+  margin: 6px 0; max-width: 86%; color: #dce8e0;
+}
+.theme-casa .npc-scene-line.me {
+  background: #2a4a38; border-radius: 14px 2px 14px 14px; margin-left: auto;
+}
+.theme-casa .npc-scene-who { display: block; font-size: 10px; color: #8ad0a8; margin: 0 0 2px; }
+.theme-casa .npc-scene-line.me .npc-scene-who { display: none; }

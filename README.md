@@ -40,12 +40,12 @@ style.css         app-wide styles · css/world.css — world styles
 js/               modules: setup, narrative, challenges, ruleset, hub, fiction, chat, api, storage
 js/world/         the city: engine, map, ground, input, tint, NPCs, stadium, board, office, casa, balneário, sponsors, imprensa, agência
 data/leagues.js   playable clubs/leagues dataset (anti-hallucination layer for AI calls)
-assets/           sprites (AI-generated, processed locally — not committed)
+assets/sprites/dist/   processed sprites used by the engine (committed; AI-generated source art stays local)
 ```
 
 ## Tech
 
-Vanilla JavaScript (IIFE modules, no frameworks, no build step), HTML5 canvas, `localStorage`, and the Claude API with structured outputs for every generation. Sprite art is AI-generated and processed by a local pure-Python pipeline; the engine falls back to labeled placeholders for any missing asset, so the app runs fine without the art.
+Vanilla JavaScript (IIFE modules, no frameworks, no build step), HTML5 canvas, `localStorage`, and the Claude API with structured outputs for every generation. Sprite art is AI-generated and processed by a local pure-Python pipeline into `assets/sprites/dist/`; the engine falls back to labeled placeholders for any missing asset, so nothing ever blocks on art.
 
 ## Notes
 

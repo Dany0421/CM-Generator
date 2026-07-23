@@ -229,6 +229,13 @@
 .theme-dossier .badge-completed { border-color: #2a7a3e; color: #2a7a3e; }
 .theme-dossier .badge-failed, .theme-dossier .badge-broken { border-color: #b03030; color: #b03030; transform: rotate(4deg); }
 .theme-dossier .badge-active { border-color: #6a5a38; color: #6a5a38; transform: none; }
+/* texto do arquivo sobre o papel manila — nada de cinzas do tema escuro */
+.theme-dossier .history-epigraph { color: #5a4a28; }
+.theme-dossier .history-empty, .theme-dossier .history-club,
+.theme-dossier .history-notes, .theme-dossier .history-season-tag { color: #3a3020; }
+.theme-dossier .history-position, .theme-dossier .history-trophies { color: #6a5a38; }
+.theme-dossier .history-entry { border-left-color: #8a7a50; }
+.theme-dossier .history-entry::before { background: #8a7a50; }
 
 /* ── Agência · theme-agency ─────────────────────────────── */
 #world-overlay.theme-agency { background: linear-gradient(160deg, #0c0c0e 0%, #14121a 100%); }

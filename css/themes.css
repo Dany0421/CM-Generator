@@ -101,3 +101,44 @@
 }
 .theme-casa .npc-scene-who { display: block; font-size: 10px; color: #8ad0a8; margin: 0 0 2px; }
 .theme-casa .npc-scene-line.me .npc-scene-who { display: none; }
+
+/* ── Imprensa · theme-press ─────────────────────────────── */
+#world-overlay.theme-press { background: #0d0f14; }
+.press-bar { display: flex; align-items: center; gap: 10px; margin: 0 0 6px; }
+.press-breaking {
+  background: #e01414; color: #fff; font-family: var(--font-cond); font-size: 11px;
+  font-weight: 800; letter-spacing: 1.5px; padding: 4px 12px; transform: skewX(-10deg);
+}
+.press-title {
+  color: #fff; font-family: var(--font-cond); font-size: 20px; font-weight: 800;
+  font-style: italic; text-transform: uppercase; letter-spacing: 1px;
+}
+.press-live { margin-left: auto; color: #e01414; font-size: 11px; font-weight: 800; }
+.press-ticker {
+  background: #e01414; overflow: hidden; white-space: nowrap; margin: 0 0 14px;
+  padding: 5px 0; font-family: var(--font-cond);
+}
+.press-ticker-inner {
+  display: inline-block; color: #fff; font-size: 11px; font-weight: 800;
+  letter-spacing: 1px; animation: press-scroll 28s linear infinite;
+}
+@keyframes press-scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+@media (prefers-reduced-motion: reduce) { .press-ticker-inner { animation: none; } }
+.theme-press .card { background: #141821; border: 1px solid #232a38; border-radius: 12px; }
+.theme-press .news-card.confirmed { border-left: 4px solid #e01414; }
+.press-confirmed-tag {
+  display: inline-block; color: #e01414; font-family: var(--font-cond);
+  font-size: 9px; font-weight: 800; letter-spacing: 2px; margin: 0 0 8px;
+}
+.press-author-row { display: flex; align-items: center; gap: 8px; margin: 0 0 6px; }
+.press-avatar {
+  width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0; display: flex;
+  align-items: center; justify-content: center; color: #fff; font-weight: 800; font-size: 13px;
+}
+.press-avatar.mini {
+  display: inline-flex; width: 20px; height: 20px; font-size: 9px;
+  vertical-align: middle; margin-right: 6px;
+}
+.theme-press .news-author { margin: 0; }
+.theme-press .news-author.verified::after { content: ' ✓'; color: #1d9bf0; }
+.theme-press .news-comment { display: flex; align-items: baseline; }

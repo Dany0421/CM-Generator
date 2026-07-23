@@ -57,11 +57,28 @@ const WorldImprensa = (() => {
     const card = document.createElement('div');
     card.className = 'card news-card' + (item.manual ? ' manual' : '');
 
+    const confirmed = item.author === 'Fabrizio Romano' && !item.is_rumor;
+    if (confirmed) {
+      card.classList.add('confirmed');
+      const tag = document.createElement('span');
+      tag.className = 'press-confirmed-tag';
+      tag.textContent = 'CONFIRMADO';
+      card.appendChild(tag);
+    }
     if (item.author) {
+      const row = document.createElement('div');
+      row.className = 'press-author-row';
+      const av = document.createElement('div');
+      av.className = 'press-avatar';
+      av.textContent = item.author.trim().charAt(0).toUpperCase();
+      const c = WorldTheme.avatarColors(item.author);
+      av.style.background = `linear-gradient(135deg, ${c.a}, ${c.b})`;
       const author = document.createElement('p');
-      author.className = 'news-author';
+      author.className = 'news-author' +
+        (item.author === 'Fabrizio Romano' ? ' verified' : '');
       author.textContent = item.author;
-      card.appendChild(author);
+      row.append(av, author);
+      card.appendChild(row);
     }
 
     const head = document.createElement('p');
@@ -85,6 +102,12 @@ const WorldImprensa = (() => {
       for (const c of item.comments) {
         const line = document.createElement('p');
         line.className = 'news-comment';
+        const cav = document.createElement('span');
+        cav.className = 'press-avatar mini';
+        cav.textContent = (c.username || '?').trim().charAt(0).toUpperCase();
+        const cc2 = WorldTheme.avatarColors(c.username);
+        cav.style.background = `linear-gradient(135deg, ${cc2.a}, ${cc2.b})`;
+        line.appendChild(cav);
         const user = document.createElement('span');
         user.className = 'news-comment-user' +
           (c.username === 'Fabrizio Romano' ? ' verified' : '');
@@ -131,9 +154,31 @@ const WorldImprensa = (() => {
     const wrap = document.createElement('div');
     wrap.className = 'npc-wrap';
 
-    const h = document.createElement('h2');
-    h.textContent = 'Imprensa';
-    wrap.appendChild(h);
+    const bar = document.createElement('div');
+    bar.className = 'press-bar';
+    const brk = document.createElement('span');
+    brk.className = 'press-breaking';
+    brk.textContent = 'BREAKING';
+    const title = document.createElement('span');
+    title.className = 'press-title';
+    title.textContent = 'Imprensa 24';
+    const live = document.createElement('span');
+    live.className = 'press-live';
+    live.textContent = '● AO VIVO';
+    bar.append(brk, title, live);
+    wrap.appendChild(bar);
+
+    const heads = [..._data().items].reverse().slice(0, 6).map(i => i.headline).filter(Boolean);
+    if (heads.length) {
+      const ticker = document.createElement('div');
+      ticker.className = 'press-ticker';
+      const inner = document.createElement('span');
+      inner.className = 'press-ticker-inner';
+      const t = heads.join('  ▸  ').toUpperCase();
+      inner.textContent = `${t}  ▸  ${t}  ▸  `;
+      ticker.appendChild(inner);
+      wrap.appendChild(ticker);
+    }
 
     const press = _npc();
     const hint = document.createElement('p');

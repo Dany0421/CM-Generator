@@ -71,22 +71,33 @@ const WorldAgencia = (() => {
   function _opportunityCard(current) {
     const card = document.createElement('div');
     card.className = 'card agency-opp';
-    const sit = document.createElement('p');
-    sit.className = 'agency-situation';
-    sit.textContent = current.situation;
-    card.appendChild(sit);
+    // a situação do agente, partida em bolhas por frase (máx. 3)
+    const parts = String(current.situation).split(/(?<=[.!?…])\s+/).filter(Boolean);
+    const bubbles = parts.length > 3
+      ? [parts.slice(0, -2).join(' '), ...parts.slice(-2)] : parts;
+    for (const p of bubbles) {
+      const b = document.createElement('p');
+      b.className = 'agency-bubble';
+      b.textContent = p;
+      card.appendChild(b);
+    }
     for (const opt of current.options) {
-      const optWrap = document.createElement('div');
-      optWrap.className = 'agency-option';
       const btn = document.createElement('button');
-      btn.className = 'btn-secondary';
-      btn.textContent = opt.label;
+      btn.className = 'agency-option-btn' + (opt.agent_pick ? ' pick' : '');
+      const lbl = document.createElement('span');
+      lbl.textContent = opt.label;
+      btn.appendChild(lbl);
+      if (opt.agent_pick) {
+        const star = document.createElement('span');
+        star.className = 'agency-pick-tag';
+        star.textContent = '★ RECOMENDADO';
+        btn.appendChild(star);
+      }
       btn.addEventListener('click', () => _choose(opt));
       const cons = document.createElement('p');
       cons.className = 'agency-consequence';
       cons.textContent = opt.consequence;
-      optWrap.append(btn, cons);
-      card.appendChild(optWrap);
+      card.append(btn, cons);
     }
     const note = document.createElement('p');
     note.className = 'npc-hint';
@@ -126,8 +137,32 @@ const WorldAgencia = (() => {
 
     const agent = _agent();
     if (agent) {
-      wrap.appendChild(WorldNPCs.buildCard(agent, (n, btn, card) =>
-        WorldNPCs.hangout(n, btn, card, () => render(_panel))));
+      const head = document.createElement('div');
+      head.className = 'agency-head';
+      const av = document.createElement('div');
+      av.className = 'agency-avatar';
+      av.textContent = agent.name.split(' ').map(w => w.charAt(0)).slice(0, 2).join('').toUpperCase();
+      const who = document.createElement('div');
+      who.className = 'agency-who';
+      const nm = document.createElement('p');
+      nm.className = 'agency-name';
+      nm.textContent = agent.name;
+      const tag = document.createElement('p');
+      tag.className = 'agency-tag';
+      tag.textContent = 'GESTÃO DE CARREIRAS';
+      who.append(nm, tag);
+      const rel = document.createElement('div');
+      rel.className = 'agency-rel';
+      const num = document.createElement('span');
+      num.textContent = agent.value;
+      const bar = document.createElement('div');
+      bar.className = 'agency-rel-bar';
+      const fill = document.createElement('div');
+      fill.style.width = `${agent.value}%`;
+      bar.appendChild(fill);
+      rel.append(num, bar);
+      head.append(av, who, rel);
+      wrap.appendChild(head);
     } else {
       const hint = document.createElement('p');
       hint.className = 'npc-hint';

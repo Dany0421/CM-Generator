@@ -224,3 +224,43 @@
 .theme-dossier .badge-completed { border-color: #2a7a3e; color: #2a7a3e; }
 .theme-dossier .badge-failed, .theme-dossier .badge-broken { border-color: #b03030; color: #b03030; transform: rotate(4deg); }
 .theme-dossier .badge-active { border-color: #6a5a38; color: #6a5a38; transform: none; }
+
+/* ── Agência · theme-agency ─────────────────────────────── */
+#world-overlay.theme-agency { background: linear-gradient(160deg, #0c0c0e 0%, #14121a 100%); }
+.agency-head {
+  display: flex; align-items: center; gap: 12px; padding-bottom: 12px;
+  border-bottom: 1px solid #2a2620; margin-bottom: 14px;
+}
+.agency-avatar {
+  width: 44px; height: 44px; border-radius: 50%; flex-shrink: 0;
+  background: linear-gradient(135deg, #2a2a30, #1a1a1e); border: 1.5px solid #c8a24a;
+  display: flex; align-items: center; justify-content: center;
+  color: #c8a24a; font-weight: 800; font-size: 15px;
+}
+.agency-who { flex: 1; }
+.agency-name { color: #f0ede6; font-size: 16px; font-weight: 700; margin: 0; }
+.agency-tag { color: #c8a24a; font-size: 8px; font-weight: 700; letter-spacing: 3px; margin: 2px 0 0; }
+.agency-rel { text-align: right; }
+.agency-rel span { color: #c8a24a; font-size: 15px; font-weight: 800; }
+.agency-rel-bar { width: 44px; height: 4px; background: #26221c; border-radius: 2px; margin-top: 3px; }
+.agency-rel-bar div { height: 100%; border-radius: 2px; background: linear-gradient(90deg, #c8a24a, #e8d090); }
+.theme-agency .card { background: linear-gradient(160deg, #16141a 0%, #121016 100%); border: 1px solid #2a2620; border-radius: 6px; }
+.agency-bubble {
+  background: #1e1c22; border-left: 2px solid #c8a24a; border-radius: 2px 12px 12px 12px;
+  padding: 8px 12px; margin: 0 0 6px; max-width: 88%; color: #e8e4da;
+  font-size: 13px; line-height: 1.5;
+}
+.agency-option-btn {
+  display: flex; justify-content: space-between; align-items: center; gap: 8px;
+  width: 100%; text-align: left; margin: 10px 0 0; padding: 9px 13px;
+  background: transparent; border: 1px solid #2e2a26; border-radius: 4px;
+  color: #b0aa9e; font-size: 13px; font-weight: 600; cursor: pointer;
+}
+.agency-option-btn:hover { border-color: #c8a24a; color: #e8d8b0; }
+.agency-option-btn.pick { border-color: #c8a24a; background: rgba(200,162,74,.10); color: #e8d8b0; }
+.agency-pick-tag { color: #c8a24a; font-size: 8px; font-weight: 800; letter-spacing: 1.5px; }
+.theme-agency .agency-consequence { color: #8a857a; font-size: 12px; margin: 4px 0 0; }
+.theme-agency .btn-primary { background: #c8a24a; color: #14121a; border: none; font-weight: 800; }
+/* histórico como placas de negócios */
+.theme-agency .agency-history { border-bottom: 2px solid #c8a24a; border-radius: 4px; }
+.theme-agency .agency-history .news-headline { color: #c8a24a; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; }

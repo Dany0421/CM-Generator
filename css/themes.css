@@ -183,3 +183,44 @@
   color: #e8f0e8; font-family: var(--font-chalk); border-radius: 5px;
 }
 .theme-locker .card { background: #23262c; border: 1px solid #3c414a; }
+
+/* ── Club Office + Boardroom · theme-dossier ────────────── */
+#world-overlay.theme-dossier { background: linear-gradient(180deg, #2a2118 0%, #1e1810 100%); }
+.theme-dossier .office-wrap h2, .theme-dossier .module-panel h2 {
+  font-family: var(--font-type); letter-spacing: 1px; color: #d8c088;
+}
+.theme-dossier .card {
+  background: #d8c088; border: none; border-radius: 3px 10px 3px 3px;
+  box-shadow: 0 5px 14px rgba(0,0,0,.5); color: #3a3020;
+  font-family: var(--font-type); position: relative;
+}
+.theme-dossier .card::after {
+  content: 'CONFIDENCIAL'; position: absolute; top: 10px; right: 12px;
+  border: 2.5px solid #b03030; color: #b03030; font-size: 9px; font-weight: 800;
+  padding: 2px 7px; transform: rotate(8deg); letter-spacing: 1px; opacity: .5;
+  pointer-events: none;
+}
+.theme-dossier .office-card-title, .theme-dossier .sponsor-title { color: #3a3020; }
+.theme-dossier .office-squad-name, .theme-dossier .office-formation,
+.theme-dossier .office-rules, .theme-dossier .office-empty { color: #3a3020; }
+.theme-dossier .office-squad-pos, .theme-dossier .office-group-label,
+.theme-dossier .office-hint { color: #6a5a38; }
+.theme-dossier .office-squad-row { background: rgba(255,255,255,.5); border: 1px solid #b0a070; padding: 4px 8px; }
+.theme-dossier .form-input {
+  background: #fff; border: 1.5px solid #8a7a50; border-radius: 0;
+  color: #3a3020; font-family: var(--font-type); font-weight: 800;
+}
+.theme-dossier .btn-primary, .theme-dossier .btn-secondary {
+  background: #3a3020; color: #d8c088; border: none; border-radius: 0;
+  font-family: var(--font-type); font-weight: 800; letter-spacing: 1px; text-transform: uppercase;
+}
+.theme-dossier .btn-ghost { color: #6a5a38; border-color: #8a7a50; border-radius: 0; font-family: var(--font-type); }
+/* tracker statuses become rubber stamps */
+.theme-dossier .badge, .theme-dossier .tracker-status-btn {
+  border-radius: 0; border-width: 2.5px; border-style: solid; background: transparent;
+  font-family: var(--font-type); font-weight: 800; letter-spacing: 1px;
+  text-transform: uppercase; transform: rotate(-5deg);
+}
+.theme-dossier .badge-completed { border-color: #2a7a3e; color: #2a7a3e; }
+.theme-dossier .badge-failed, .theme-dossier .badge-broken { border-color: #b03030; color: #b03030; transform: rotate(4deg); }
+.theme-dossier .badge-active { border-color: #6a5a38; color: #6a5a38; transform: none; }

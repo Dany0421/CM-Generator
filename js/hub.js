@@ -2373,10 +2373,23 @@ const HubModule = (() => {
     const seasons = (hub.seasons || []).filter(s => s.club || s.notes || Object.values(s.trophies || {}).some(Boolean));
     const wrap    = document.createElement('div');
 
+    // the save's logline from Setup — the sentence this career is chasing;
+    // shown from day one, even before any season is on the timeline
+    const setup = Storage.get(Storage.KEYS.SETUP) || {};
+    const concept = setup.save_concept || setup.player?.concept_hook || '';
+
     if (seasons.length === 0) {
       const empty = document.createElement('div');
       empty.className = 'history-empty card';
-      empty.textContent = 'No seasons recorded yet. Add seasons in the Trophies tab to build your archive.';
+      if (concept) {
+        const epigraph = document.createElement('p');
+        epigraph.className = 'history-epigraph';
+        epigraph.textContent = `“${concept}”`;
+        empty.appendChild(epigraph);
+      }
+      const msg = document.createElement('p');
+      msg.textContent = 'A tua história começa agora — cada época fechada ganha aqui a sua linha.';
+      empty.appendChild(msg);
       wrap.appendChild(empty);
       return wrap;
     }
@@ -2390,9 +2403,6 @@ const HubModule = (() => {
     listLabel.textContent = 'Career Timeline';
     card.appendChild(listLabel);
 
-    // the save's logline from Setup — the sentence this career is chasing
-    const setup = Storage.get(Storage.KEYS.SETUP) || {};
-    const concept = setup.save_concept || setup.player?.concept_hook || '';
     if (concept) {
       const epigraph = document.createElement('p');
       epigraph.className = 'history-epigraph';

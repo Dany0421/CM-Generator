@@ -188,9 +188,20 @@ const WorldNPCs = (() => {
         interact(saved, `Hang out: ${result.summary}`, season);
         save(data);
       }
-      const scene = document.createElement('p');
+      const scene = document.createElement('div');
       scene.className = 'npc-scene';
-      scene.textContent = result.scene;
+      const msgs = Array.isArray(result.messages) && result.messages.length
+        ? result.messages
+        : [{ speaker: npc.name, text: result.scene || '' }]; // compat com resposta antiga
+      for (const m of msgs) {
+        const line = document.createElement('p');
+        line.className = 'npc-scene-line' + (m.speaker === 'Tu' ? ' me' : '');
+        const who = document.createElement('span');
+        who.className = 'npc-scene-who';
+        who.textContent = m.speaker;
+        line.append(who, document.createTextNode(' ' + m.text));
+        scene.appendChild(line);
+      }
       card.insertBefore(scene, btn);
       if (result.live_editor_suggestion) {
         const le = document.createElement('p');

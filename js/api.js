@@ -1317,9 +1317,13 @@ Return ONLY valid JSON (no markdown fences):
     members: S.arr(S.obj({ name: S.str, role: S.str, personality: S.str })),
   });
   const HANGOUT_SCHEMA = S.obj({
-    scene:   S.str,
+    messages: S.arr(S.obj({ speaker: S.str, text: S.str })),
     summary: S.str,
     live_editor_suggestion: S.str,
+  });
+  const HANGOUT_GROUP_SCHEMA = S.obj({
+    messages: S.arr(S.obj({ speaker: S.str, text: S.str })),
+    summary: S.str,
   });
 
   const SYSTEM_NPC_GEN =
@@ -1334,13 +1338,14 @@ Return ONLY valid JSON (no markdown fences):
     'Ground them in the save context when it helps.';
 
   const SYSTEM_HANGOUT =
-    'You write tiny slice-of-life scenes for a FIFA/FC career mode companion app. The user ' +
-    'spends a moment with one person from their world. Write: (1) "scene" — 2-4 sentences, ' +
-    'warm, specific, grounded in that person\'s personality and recent history with the user; ' +
-    'no melodrama, no inventing match results. (2) "summary" — max 8 words describing the ' +
-    'moment (for a history log). (3) "live_editor_suggestion" — normally an empty string; ' +
-    'ONLY when explicitly asked, suggest one small Live Editor attribute tweak on the USER\'S ' +
-    'OWN player (never the NPC), reflecting how this relationship is affecting them.';
+    'You write tiny slice-of-life scenes for a FIFA/FC career mode companion app, as a short ' +
+    'CHAT/DIALOGUE. The user spends a moment with people from their world. Write: ' +
+    '(1) "messages" — 3 to 7 short exchanges; each has "speaker" (the person\'s first name, or ' +
+    'exactly "Tu" for the user) and "text" (1-2 sentences, natural spoken register, may include ' +
+    'a light emoji when in character). Warm, specific, grounded in personality and recent ' +
+    'history; no melodrama, no inventing match results. (2) "summary" — max 8 words for a ' +
+    'history log. (3) "live_editor_suggestion" — normally empty; ONLY when explicitly asked, ' +
+    'one small Live Editor tweak on the USER\'S OWN player (never the NPC).';
 
   async function generateNpcs(seeds, kind) {
     const setup   = Storage.get(Storage.KEYS.SETUP) || {};
@@ -1364,6 +1369,17 @@ Return ONLY valid JSON (no markdown fences):
       (low ? '\nThe relationship is LOW — let the scene carry that tension, and include a live_editor_suggestion (one attribute on the USER\'S own player).'
            : '\nlive_editor_suggestion must be an empty string.');
     return call(SYSTEM_HANGOUT, msg, 1024, HANGOUT_SCHEMA);
+  }
+
+  async function generateGroupHangout(npcs) {
+    const setup   = Storage.get(Storage.KEYS.SETUP) || {};
+    const context = setup.mode === 'player' || setup.mode === 'fiction' ? buildPlayerContext() : buildContext();
+    const who = npcs.map(n =>
+      `- ${n.name} — ${n.role}${n.personality ? ` (${n.personality})` : ''}, relação ${n.value}/100`).join('\n');
+    const msg = `${context}\n\nGROUP HANG OUT — everyone below is present and everyone ` +
+      `should speak at least once:\n${who}\n\nWrite the group scene as messages. ` +
+      `No live_editor_suggestion in group scenes.`;
+    return call(SYSTEM_HANGOUT, msg, 1536, HANGOUT_GROUP_SCHEMA);
   }
 
   // Club colors for the world tint (1 call per club, cached in cg_world)
@@ -2047,6 +2063,7 @@ Return ONLY the JSON. No preamble, no markdown fences.`;
     reactToCheckIn,
     generateNpcs,
     generateHangout,
+    generateGroupHangout,
     generateSponsorDeals,
     generateNews,
     generateAgencyOpportunity,

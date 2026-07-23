@@ -51,3 +51,8 @@
 }
 .theme-broadcast .stadium-challenge { border-radius: 0; border-color: #3a4460; }
 .theme-broadcast .stadium-score { font-family: var(--font-cond); font-style: italic; }
+
+/* hangout dialogue — base look everywhere; theme-casa turns these into bubbles */
+.npc-scene-line { font-size: 14px; line-height: 1.5; color: #e6e9ee; margin: 6px 0; }
+.npc-scene-who { font-weight: 700; color: #9fb4d8; margin-right: 6px; }
+.npc-scene-line.me .npc-scene-who { color: #63d68f; }

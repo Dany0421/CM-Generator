@@ -2000,6 +2000,10 @@ a { color: var(--accent); text-decoration: none; }
   padding: 12px 20px 32px;
   box-shadow: var(--shadow-lg);
   animation: slide-up .2s ease;
+  /* never taller than the screen — scroll inside instead (mobile) */
+  max-height: 92vh;
+  max-height: 92dvh;
+  overflow-y: auto;
 }
 
 @keyframes slide-up {
@@ -2020,6 +2024,11 @@ a { color: var(--accent); text-decoration: none; }
   align-items: center;
   justify-content: space-between;
   margin-bottom: 20px;
+  /* stays pinned while the sheet scrolls — the close X is always reachable */
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--bg-card);
 }
 
 .modal-header h2 {

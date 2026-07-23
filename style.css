@@ -1904,6 +1904,15 @@ a { color: var(--accent); text-decoration: none; }
 
 /* History Archive */
 
+.history-epigraph {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-style: italic;
+  font-size: 0.9375rem;
+  color: var(--text-secondary);
+  margin: -8px 0 20px;
+  line-height: 1.5;
+}
+
 .history-entry {
   border-left: 2px solid var(--border);
   padding-left: 16px;

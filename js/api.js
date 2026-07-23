@@ -1591,6 +1591,8 @@ Return ONLY valid JSON (no markdown fences):
 
     pastSeasons.push({
       season:      currentNum,
+      // the save's logline as it read when this season closed (it's editable)
+      concept:     setup.save_concept || setup.player?.concept_hook || '',
       summary:     summary || '',
       narrative:   Storage.get(Storage.KEYS.NARRATIVE),
       // Archive challenges WITH their final tracker status — failed ones become scars

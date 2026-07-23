@@ -2390,6 +2390,16 @@ const HubModule = (() => {
     listLabel.textContent = 'Career Timeline';
     card.appendChild(listLabel);
 
+    // the save's logline from Setup — the sentence this career is chasing
+    const setup = Storage.get(Storage.KEYS.SETUP) || {};
+    const concept = setup.save_concept || setup.player?.concept_hook || '';
+    if (concept) {
+      const epigraph = document.createElement('p');
+      epigraph.className = 'history-epigraph';
+      epigraph.textContent = `“${concept}”`;
+      card.appendChild(epigraph);
+    }
+
     seasons.forEach((s, i) => {
       const entry = document.createElement('div');
       entry.className = 'history-entry';

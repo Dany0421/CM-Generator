@@ -184,7 +184,7 @@ const WorldCasa = (() => {
     } else {
       const hint = document.createElement('p');
       hint.className = 'npc-hint';
-      hint.textContent = 'Toca numa polaroid para abrir a conversa. A família perdoa muito — mas negligência longa fica banked.';
+      hint.textContent = 'Toca numa polaroid para abrir a conversa. A família perdoa muito — mas negligência longa acumula-se e não se apaga com um jantar.';
       wrap.appendChild(hint);
 
       const wall = document.createElement('div');

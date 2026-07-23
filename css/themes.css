@@ -346,3 +346,8 @@
 .theme-lottery .board-badge.negative { color: #b03030; }
 .theme-lottery .board-text { color: #2a2620; }
 .theme-lottery .board-rollnum { color: #8a8270; font-weight: 800; letter-spacing: 1px; }
+
+/* ── Chrome neutro (Settings/Chat/Setup nos overlays do mundo) ── */
+.modal-sheet { background: #14161c; border: 1px solid #262b36; }
+.modal-header { background: #14161c; }
+#module-setup .card, #settings-modal .card { background: #191d26; }

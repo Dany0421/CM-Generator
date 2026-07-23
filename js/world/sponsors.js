@@ -88,7 +88,10 @@ const WorldSponsors = (() => {
 
   function _offerCard(offer, activeCount) {
     const card = document.createElement('div');
-    card.className = 'card sponsor-card';
+    card.className = 'card sponsor-card pitch';
+    const bc = WorldTheme.brandColor(offer.sponsor);
+    card.style.setProperty('--brand-bg', bc.bg);
+    card.style.setProperty('--brand-fg', bc.fg);
     card.appendChild(_head(offer));
     _body(card, offer);
     const cond = document.createElement('p');
@@ -101,7 +104,7 @@ const WorldSponsors = (() => {
       btn.textContent = `Máx. ${MAX_ACTIVE} deals ativos`;
       btn.disabled = true;
     } else {
-      btn.textContent = 'Aceitar deal';
+      btn.textContent = '✒ Assinar';
       btn.addEventListener('click', () => {
         const data = _data();
         const idx = data.offers.findIndex(o => o.id === offer.id);
@@ -120,8 +123,16 @@ const WorldSponsors = (() => {
     const setup = Storage.get(Storage.KEYS.SETUP) || {};
     const solo = setup.mode === 'player' || setup.mode === 'fiction';
     const card = document.createElement('div');
-    card.className = 'card sponsor-card' + (deal.status === 'Paid' ? ' paid' : '');
+    card.className = 'card sponsor-card cheque' + (deal.status === 'Paid' ? ' paid' : '');
+    const num = document.createElement('span');
+    num.className = 'cheque-num';
+    num.textContent = `Nº ${String(deal.id || '').slice(-4).toUpperCase()}`;
+    card.appendChild(num);
     card.appendChild(_head(deal));
+    const payee = document.createElement('p');
+    payee.className = 'cheque-payee';
+    payee.textContent = 'Pague-se a: o teu clube';
+    card.appendChild(payee);
     _body(card, deal);
 
     const value = ChallengesModule.computeProgress(deal.metric, _seasonEntries(deal.season), solo);
@@ -144,7 +155,7 @@ const WorldSponsors = (() => {
     if (deal.status === 'Paid') {
       const tag = document.createElement('span');
       tag.className = 'sponsor-paid-tag';
-      tag.textContent = 'Pago';
+      tag.textContent = 'DEPOSITADO';
       card.appendChild(tag);
     } else if (done) {
       const btn = document.createElement('button');
@@ -203,6 +214,15 @@ const WorldSponsors = (() => {
     const h = document.createElement('h2');
     h.textContent = 'Sponsors';
     wrap.appendChild(h);
+
+    const seasonNum = Storage.get(Storage.KEYS.SETUP)?.season || 1;
+    const paidTotal = _data().deals
+      .filter(d => d.status === 'Paid' && d.season === seasonNum)
+      .reduce((s, d) => s + (Number(d.reward) || 0), 0);
+    const counter = document.createElement('p');
+    counter.className = 'vault-counter';
+    counter.textContent = `época: ${_money(paidTotal)} recebidos`;
+    wrap.appendChild(counter);
 
     const standing = _npc();
     const hint = document.createElement('p');

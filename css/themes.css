@@ -9,12 +9,16 @@
   --font-chalk: 'Segoe Print', 'Comic Sans MS', cursive;
   --font-type:  'Courier New', monospace;
   --font-serif: Georgia, 'Times New Roman', serif;
-  /* chrome neutro: o mundo deixa de vestir o laranja da app antiga */
-  --accent: #5a8af0;
-  --accent-hover: #82a8f5;
-  --accent-dim: rgba(90, 138, 240, 0.12);
-  --accent-dim-hover: rgba(90, 138, 240, 0.2);
+  /* chrome do mundo: lima elétrico — a assinatura matchday em toda a app */
+  --accent: #ccff00;
+  --accent-hover: #d9ff40;
+  --accent-dim: rgba(204, 255, 0, 0.10);
+  --accent-dim-hover: rgba(204, 255, 0, 0.18);
 }
+/* lima é claro — botões primários precisam de texto escuro (os temas com
+   btn-primary próprio, ex. dossier, mantêm o deles por especificidade) */
+.btn-primary { color: #0a0e1a; }
+.btn-primary svg { stroke: #0a0e1a; }
 
 /* ── Estádio · theme-broadcast ──────────────────────────── */
 #world-overlay.theme-broadcast { background: #0a0e1a; }

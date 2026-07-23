@@ -15,10 +15,11 @@
   --accent-dim: rgba(204, 255, 0, 0.10);
   --accent-dim-hover: rgba(204, 255, 0, 0.18);
 }
-/* lima é claro — botões primários precisam de texto escuro (os temas com
-   btn-primary próprio, ex. dossier, mantêm o deles por especificidade) */
-.btn-primary { color: #0a0e1a; }
-.btn-primary svg { stroke: #0a0e1a; }
+/* lima é claro — TUDO o que tem fundo accent precisa de texto/ícone escuro
+   (os temas com btn-primary próprio, ex. dossier, mantêm o deles por
+   especificidade). Se o style.css ganhar novos fundos accent, adicionar aqui. */
+.btn-primary, .setup-mode-btn.active, .chat-fab { color: #0a0e1a; }
+.btn-primary svg, .chat-fab svg { stroke: #0a0e1a; }
 
 /* ── Estádio · theme-broadcast ──────────────────────────── */
 #world-overlay.theme-broadcast { background: #0a0e1a; }

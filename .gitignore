@@ -5,6 +5,9 @@ Thumbs.db
 *.log
 DetectiveGameV2/
 .superpowers/
-assets/
+assets/*
+!assets/sprites
+assets/sprites/*
+!assets/sprites/dist
 tests/
 tools/
